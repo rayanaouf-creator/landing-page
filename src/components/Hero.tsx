@@ -41,6 +41,26 @@ export function Hero() {
         </div>
       </motion.div>
 
+      <motion.div
+        className="absolute top-[45%] left-[2%] lg:top-[55%] lg:left-[6%] opacity-40 lg:opacity-60 hover:opacity-100 transition-opacity z-0"
+        animate={{ y: [0, -18, 0], rotate: [2, -3, 2] }}
+        transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+      >
+        <div className="bg-white p-3 lg:p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
+          <img src="https://cdn.simpleicons.org/apple/000000" alt="iOS" className="h-8 w-8 lg:h-10 lg:w-10 object-contain" />
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-[12%] right-[6%] lg:bottom-[20%] lg:right-[10%] opacity-40 lg:opacity-60 hover:opacity-100 transition-opacity z-0"
+        animate={{ y: [0, 22, 0], rotate: [-2, 4, -2] }}
+        transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+      >
+        <div className="bg-white p-3 lg:p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
+          <img src="https://cdn.simpleicons.org/android/3DDC84" alt="Android" className="h-8 w-8 lg:h-10 lg:w-10 object-contain" />
+        </div>
+      </motion.div>
+
       <div className="mx-auto max-w-5xl text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
