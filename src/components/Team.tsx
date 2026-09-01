@@ -10,7 +10,7 @@ const team = [
   },
   {
     name: 'Akram',
-    role: 'Chief Technology Officer',
+    role: 'Fullstack Developer',
     imageUrl: '/assets/team/akram.jpg',
     bio: 'Tech enthusiast and architect, specializing in scalable ecosystems and cloud infrastructure.'
   },
@@ -28,9 +28,15 @@ const team = [
   },
   {
     name: 'Farid',
-    role: 'Senior Consultant',
+    role: 'ERPNext Developer',
     imageUrl: '/assets/team/farid.jpg',
     bio: 'Expert in streamlining supply chains and operational workflows through data-driven methodologies.'
+  },
+  {
+    name: 'Sami Adel',
+    role: 'Expert ERPNext Developer',
+    imageUrl: '/assets/team/sami.jpg',
+    bio: 'Expert ERPNext developer building seamless ERPNext integrations.'
   }
 ];
 
