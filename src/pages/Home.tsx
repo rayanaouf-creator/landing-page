@@ -1,4 +1,5 @@
 import { Hero } from '../components/Hero';
+import { Partners } from '../components/Partners';
 import { Services } from '../components/Services';
 import { Modules } from '../components/Modules';
 import { Link } from 'react-router-dom';
@@ -7,6 +8,7 @@ export function Home() {
   return (
     <main>
       <Hero />
+      <Partners />
       <Services />
       <Modules />
       <section id="contact" className="relative isolate bg-[#1b6b6a] py-24 sm:py-32 overflow-hidden">
