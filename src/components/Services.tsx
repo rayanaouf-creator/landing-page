@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Layers, Server, Code, Settings } from 'lucide-react';
+import { Layers, Server, Code, Settings, Award } from 'lucide-react';
 
 const services = [
   {
@@ -11,6 +11,11 @@ const services = [
     name: 'Custom Development',
     description: 'Need something unique? We build custom web, mobile, and desktop applications that integrate seamlessly with your core systems.',
     icon: Code,
+  },
+  {
+    name: 'ISO 9001 Digitalization',
+    description: 'Digitize your Quality Management Systems (QMS) to ensure ISO 9001 compliance, streamline audits, and automate document control.',
+    icon: Award,
   },
   {
     name: 'Cloud Hosting',
@@ -53,7 +58,7 @@ export function Services() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative flex flex-col gap-5 rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-1 transition-all"
+                className={`relative flex flex-col gap-5 rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-1 transition-all ${index === 4 ? 'sm:col-span-2' : ''}`}
               >
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e6f4f4] text-[#44ACAB]">
                   <service.icon className="h-7 w-7" />

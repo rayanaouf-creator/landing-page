@@ -12,32 +12,32 @@ export function Hero() {
       
       {/* Floating Tech Logos */}
       <motion.div
-        className="absolute top-[20%] left-[10%] hidden lg:block opacity-60 hover:opacity-100 transition-opacity"
+        className="absolute top-[12%] left-[4%] lg:top-[20%] lg:left-[10%] opacity-40 lg:opacity-60 hover:opacity-100 transition-opacity z-0"
         animate={{ y: [0, -15, 0], rotate: [-2, 2, -2] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       >
-        <div className="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
-          <img src="https://cdn.simpleicons.org/erpnext/0089FF" alt="ERPNext" className="h-10 w-10 object-contain" />
+        <div className="bg-white p-3 lg:p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
+          <img src="https://cdn.simpleicons.org/erpnext/0089FF" alt="ERPNext" className="h-8 w-8 lg:h-10 lg:w-10 object-contain" />
         </div>
       </motion.div>
 
       <motion.div
-        className="absolute bottom-[20%] left-[15%] hidden lg:block opacity-60 hover:opacity-100 transition-opacity"
+        className="absolute bottom-[10%] left-[8%] lg:bottom-[20%] lg:left-[15%] opacity-40 lg:opacity-60 hover:opacity-100 transition-opacity z-0"
         animate={{ y: [0, 20, 0], rotate: [2, -2, 2] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       >
-        <div className="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
-          <img src="https://cdn.simpleicons.org/nextdotjs/000000" alt="Next.js" className="h-10 w-10 object-contain" />
+        <div className="bg-white p-3 lg:p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
+          <img src="https://cdn.simpleicons.org/nextdotjs/000000" alt="Next.js" className="h-8 w-8 lg:h-10 lg:w-10 object-contain" />
         </div>
       </motion.div>
 
       <motion.div
-        className="absolute top-[30%] right-[12%] hidden lg:block opacity-60 hover:opacity-100 transition-opacity"
+        className="absolute top-[15%] right-[4%] lg:top-[30%] lg:right-[12%] opacity-40 lg:opacity-60 hover:opacity-100 transition-opacity z-0"
         animate={{ y: [0, -20, 0], rotate: [-3, 3, -3] }}
         transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
       >
-        <div className="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
-          <img src="https://cdn.simpleicons.org/nestjs/E0234E" alt="NestJS" className="h-10 w-10 object-contain" />
+        <div className="bg-white p-3 lg:p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
+          <img src="https://cdn.simpleicons.org/nestjs/E0234E" alt="NestJS" className="h-8 w-8 lg:h-10 lg:w-10 object-contain" />
         </div>
       </motion.div>
 

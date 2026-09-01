@@ -20,7 +20,7 @@ export function Navbar() {
     <nav className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-3">
-          <img src="/logo.jpg" alt="JetNext Logo" className="h-10 w-auto rounded-xl shadow-sm object-contain bg-white" />
+          <img src="/logo.jpg" alt="JetNext Logo" className="h-11 w-11 rounded-xl shadow-sm object-cover bg-white" />
           <div className="flex flex-col">
             <span className="text-xl font-extrabold tracking-tight text-slate-900 leading-none">JetNext</span>
             <span className="text-[10px] font-bold tracking-wider text-[#44ACAB] uppercase mt-1">By Jethings</span>
