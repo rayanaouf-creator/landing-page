@@ -34,11 +34,6 @@ const services: ServiceItem[] = [
     customIcon: 'https://cdn.simpleicons.org/flutter/02569B',
   },
   {
-    name: 'ISO 9001 Digitalization',
-    description: 'Digitize your Quality Management Systems (QMS) to ensure ISO 9001 compliance, streamline audits, and automate document control.',
-    icon: Award,
-  },
-  {
     name: 'Cloud Hosting',
     description: 'Reliable, secure, and fast hosting solutions for your ERP platform, ensuring maximum uptime and data integrity.',
     customIcon: 'https://cdn.simpleicons.org/googlecloud/4285F4',
@@ -79,7 +74,7 @@ export function Services() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`relative flex flex-col gap-5 rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-1 transition-all ${index === 6 ? 'sm:col-span-2' : ''}`}
+                className="relative flex flex-col gap-5 rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-1 transition-all"
               >
                 <div className={`flex h-14 items-center justify-center gap-3 rounded-2xl bg-[#e6f4f4] text-[#44ACAB] self-start ${service.customIcons ? 'px-4' : 'w-14'}`}>
                   {service.customIcons ? (

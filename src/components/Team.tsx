@@ -43,6 +43,13 @@ const team = [
     imageUrl: '/assets/team/sami.jpg',
     bio: 'Expert ERPNext developer building seamless ERPNext integrations.',
     linkedinUrl: 'https://www.linkedin.com/in/samidev016/'
+  },
+  {
+    name: 'Achraf Saidi',
+    role: 'AI Developer',
+    imageUrl: '/assets/team/achraf.jpg',
+    bio: 'Creator of our custom AI module and innovative solutions, currently pursuing his doctorate.',
+    linkedinUrl: 'https://www.linkedin.com/in/achraf-saidi-b141b8247/'
   }
 ];
 
