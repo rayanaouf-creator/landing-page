@@ -1,0 +1,6 @@
+{
+  "name": "JetNext",
+  "description": "Custom Software Development & ERPNext Integrations. A Jethings Company.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
