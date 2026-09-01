@@ -1,0 +1,106 @@
+import { motion } from 'motion/react';
+import { Linkedin, Mail, Twitter } from 'lucide-react';
+
+const team = [
+  {
+    name: 'Rayan Aouf',
+    role: 'Founder & CEO',
+    imageUrl: '/assets/team/rayan.jpg',
+    bio: 'Visionary leader driving digital transformation and innovative ERP solutions at JetNext.'
+  },
+  {
+    name: 'Akram',
+    role: 'Chief Technology Officer',
+    imageUrl: '/assets/team/akram.jpg',
+    bio: 'Tech enthusiast and architect, specializing in scalable ecosystems and cloud infrastructure.'
+  },
+  {
+    name: 'Abdo',
+    role: 'Lead Developer',
+    imageUrl: '/assets/team/abdo.jpg',
+    bio: 'Dedicated to building robust applications with a focus on clean architecture and performance.'
+  },
+  {
+    name: 'Djalil',
+    role: 'Implementation Specialist',
+    imageUrl: '/assets/team/djalil.jpg',
+    bio: 'Ensures seamless adoption of enterprise systems and optimizes client operational workflows.'
+  },
+  {
+    name: 'Farid',
+    role: 'Senior Consultant',
+    imageUrl: '/assets/team/farid.jpg',
+    bio: 'Expert in streamlining supply chains and operational workflows through data-driven methodologies.'
+  }
+];
+
+export function Team() {
+  return (
+    <section id="team" className="bg-[#f4f7fb] py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-sm font-bold tracking-widest text-[#44ACAB] uppercase">The Minds Behind JetNext</h2>
+            <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              Meet our expert team
+            </p>
+            <p className="mt-4 text-lg leading-8 text-slate-600">
+              Passionate professionals dedicated to building scalable foundations and driving your business forward.
+            </p>
+          </motion.div>
+        </div>
+
+        <div className="mx-auto mt-16 flex flex-wrap justify-center gap-x-8 gap-y-12 lg:mx-0">
+          {team.map((person, index) => (
+            <motion.div
+              key={person.name}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="flex flex-col items-center text-center bg-white p-8 rounded-[2rem] shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-2 transition-all duration-300 group w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm"
+            >
+              <div className="relative mb-6">
+                <div className="absolute inset-0 rounded-full bg-[#44ACAB] blur-md opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                <img
+                  className="relative h-32 w-32 rounded-full object-cover shadow-sm ring-4 ring-white"
+                  src={person.imageUrl}
+                  alt={person.name}
+                />
+              </div>
+              <h3 className="text-xl font-bold tracking-tight text-slate-900">{person.name}</h3>
+              <p className="text-sm font-semibold leading-6 text-[#44ACAB] mb-4">{person.role}</p>
+              <p className="text-sm leading-6 text-slate-600 mb-6 flex-grow">{person.bio}</p>
+              
+              <ul className="flex gap-x-4">
+                <li>
+                  <a href="#" className="text-slate-400 hover:text-[#44ACAB] transition-colors">
+                    <span className="sr-only">LinkedIn</span>
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-slate-400 hover:text-[#44ACAB] transition-colors">
+                    <span className="sr-only">Twitter</span>
+                    <Twitter className="h-5 w-5" />
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-slate-400 hover:text-[#44ACAB] transition-colors">
+                    <span className="sr-only">Email</span>
+                    <Mail className="h-5 w-5" />
+                  </a>
+                </li>
+              </ul>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

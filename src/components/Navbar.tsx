@@ -29,6 +29,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-8 bg-white/80 backdrop-blur-md px-8 py-3 rounded-full shadow-sm ring-1 ring-slate-200/50">
           <Link to={isHome ? "#services" : "/#services"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Services</Link>
           <Link to={isHome ? "#modules" : "/#modules"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Modules</Link>
+          <Link to={isHome ? "#team" : "/#team"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Team</Link>
           <Link to={isHome ? "#contact" : "/#contact"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Contact</Link>
         </div>
         <div className="flex items-center">
