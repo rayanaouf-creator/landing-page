@@ -1,7 +1,15 @@
 import { motion } from 'motion/react';
 import { Layers, Server, Code, Settings, Award } from 'lucide-react';
 
-const services = [
+type ServiceItem = {
+  name: string;
+  description: string;
+  icon?: any;
+  customIcon?: string;
+  customIcons?: string[];
+};
+
+const services: ServiceItem[] = [
   {
     name: 'ERP Implementation',
     description: 'End-to-end ERPNext setup tailored to your workflows. We analyze, configure, and deploy the perfect system for your business.',
@@ -15,7 +23,15 @@ const services = [
   {
     name: 'Mobile App',
     description: 'Native and cross-platform mobile experiences designed for performance, built to keep your users engaged on the go.',
-    customIcon: 'https://cdn.simpleicons.org/kotlin/7F52FF',
+    customIcons: [
+      'https://cdn.simpleicons.org/android/3DDC84',
+      'https://cdn.simpleicons.org/apple/000000'
+    ],
+  },
+  {
+    name: 'Desktop App',
+    description: 'High-performance desktop applications for Windows, macOS, and Linux built with modern frameworks.',
+    customIcon: 'https://cdn.simpleicons.org/flutter/02569B',
   },
   {
     name: 'ISO 9001 Digitalization',
@@ -31,11 +47,6 @@ const services = [
     name: 'System Integration',
     description: 'Connect ERPNext with your existing tools. We build robust APIs and middleware for seamless data flow.',
     icon: Layers,
-  },
-  {
-    name: 'Desktop App',
-    description: 'High-performance desktop applications for Windows, macOS, and Linux built with modern frameworks.',
-    customIcon: 'https://cdn.simpleicons.org/flutter/02569B',
   },
 ];
 
@@ -70,8 +81,12 @@ export function Services() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className={`relative flex flex-col gap-5 rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-1 transition-all ${index === 6 ? 'sm:col-span-2' : ''}`}
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e6f4f4] text-[#44ACAB]">
-                  {service.customIcon ? (
+                <div className={`flex h-14 items-center justify-center gap-3 rounded-2xl bg-[#e6f4f4] text-[#44ACAB] self-start ${service.customIcons ? 'px-4' : 'w-14'}`}>
+                  {service.customIcons ? (
+                    service.customIcons.map((iconUrl, i) => (
+                      <img key={i} src={iconUrl} alt={`${service.name} icon ${i + 1}`} className="h-7 w-7 object-contain" />
+                    ))
+                  ) : service.customIcon ? (
                     <img src={service.customIcon} alt={`${service.name} icon`} className="h-7 w-7 object-contain" />
                   ) : service.icon ? (
                     <service.icon className="h-7 w-7" />

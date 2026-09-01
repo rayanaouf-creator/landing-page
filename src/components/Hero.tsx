@@ -22,7 +22,7 @@ export function Hero() {
       </motion.div>
 
       <motion.div
-        className="absolute bottom-[10%] left-[8%] lg:bottom-[20%] lg:left-[15%] opacity-40 lg:opacity-60 hover:opacity-100 transition-opacity z-0"
+        className="absolute bottom-[25%] left-[8%] lg:bottom-[40%] lg:left-[15%] opacity-40 lg:opacity-60 hover:opacity-100 transition-opacity z-0"
         animate={{ y: [0, 20, 0], rotate: [2, -2, 2] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       >
@@ -52,7 +52,7 @@ export function Hero() {
       </motion.div>
 
       <motion.div
-        className="absolute bottom-[12%] right-[6%] lg:bottom-[20%] lg:right-[10%] opacity-40 lg:opacity-60 hover:opacity-100 transition-opacity z-0"
+        className="absolute bottom-[28%] right-[6%] lg:bottom-[35%] lg:right-[10%] opacity-40 lg:opacity-60 hover:opacity-100 transition-opacity z-0"
         animate={{ y: [0, 22, 0], rotate: [-2, 4, -2] }}
         transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
       >

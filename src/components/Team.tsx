@@ -6,37 +6,43 @@ const team = [
     name: 'Rayan Aouf',
     role: 'Founder & CEO',
     imageUrl: '/assets/team/rayan.jpg',
-    bio: 'Visionary leader driving digital transformation and innovative ERP solutions at JetNext.'
+    bio: 'Visionary leader driving digital transformation and innovative ERP solutions at JetNext.',
+    linkedinUrl: 'https://www.linkedin.com/in/rayan-aouf-54a878315/'
   },
   {
     name: 'Akram',
     role: 'Fullstack Developer',
     imageUrl: '/assets/team/akram.jpg',
-    bio: 'Tech enthusiast and architect, specializing in scalable ecosystems and cloud infrastructure.'
+    bio: 'Tech enthusiast and architect, specializing in scalable ecosystems and cloud infrastructure.',
+    linkedinUrl: 'https://www.linkedin.com/in/ferkioui-akram/'
   },
   {
     name: 'Abdo',
     role: 'Lead Developer',
     imageUrl: '/assets/team/abdo.jpg',
-    bio: 'Dedicated to building robust applications with a focus on clean architecture and performance.'
+    bio: 'Dedicated to building robust applications with a focus on clean architecture and performance.',
+    linkedinUrl: 'https://www.linkedin.com/in/chehri/'
   },
   {
     name: 'Djalil',
     role: 'Implementation Specialist',
     imageUrl: '/assets/team/djalil.jpg',
-    bio: 'Ensures seamless adoption of enterprise systems and optimizes client operational workflows.'
+    bio: 'Ensures seamless adoption of enterprise systems and optimizes client operational workflows.',
+    linkedinUrl: 'https://www.linkedin.com/in/abdeldjalil-dahmani-805b49276/'
   },
   {
     name: 'Farid',
     role: 'ERPNext Developer',
     imageUrl: '/assets/team/farid.jpg',
-    bio: 'Expert in streamlining supply chains and operational workflows through data-driven methodologies.'
+    bio: 'Expert in streamlining supply chains and operational workflows through data-driven methodologies.',
+    linkedinUrl: 'https://www.linkedin.com/in/farid-neggaz-367943295/'
   },
   {
     name: 'Sami Adel',
     role: 'Expert ERPNext Developer',
     imageUrl: '/assets/team/sami.jpg',
-    bio: 'Expert ERPNext developer building seamless ERPNext integrations.'
+    bio: 'Expert ERPNext developer building seamless ERPNext integrations.',
+    linkedinUrl: 'https://www.linkedin.com/in/samidev016/'
   }
 ];
 
@@ -85,7 +91,7 @@ export function Team() {
               
               <ul className="flex gap-x-4">
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-[#44ACAB] transition-colors">
+                  <a href={person.linkedinUrl || "#"} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-[#44ACAB] transition-colors">
                     <span className="sr-only">LinkedIn</span>
                     <Linkedin className="h-5 w-5" />
                   </a>
