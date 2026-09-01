@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Hero() {
   return (
@@ -9,7 +10,38 @@ export function Hero() {
       <div className="absolute top-40 -left-20 -z-10 w-[500px] h-[500px] bg-[#44ACAB]/10 blur-[100px] rounded-full mix-blend-multiply pointer-events-none"></div>
       <div className="absolute top-20 -right-20 -z-10 w-[600px] h-[600px] bg-[#44ACAB]/15 blur-[120px] rounded-full mix-blend-multiply pointer-events-none"></div>
       
-      <div className="mx-auto max-w-5xl text-center">
+      {/* Floating Tech Logos */}
+      <motion.div
+        className="absolute top-[20%] left-[10%] hidden lg:block opacity-60 hover:opacity-100 transition-opacity"
+        animate={{ y: [0, -15, 0], rotate: [-2, 2, -2] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <div className="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
+          <img src="https://cdn.simpleicons.org/erpnext/0089FF" alt="ERPNext" className="h-10 w-10 object-contain" />
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-[20%] left-[15%] hidden lg:block opacity-60 hover:opacity-100 transition-opacity"
+        animate={{ y: [0, 20, 0], rotate: [2, -2, 2] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      >
+        <div className="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
+          <img src="https://cdn.simpleicons.org/nextdotjs/000000" alt="Next.js" className="h-10 w-10 object-contain" />
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="absolute top-[30%] right-[12%] hidden lg:block opacity-60 hover:opacity-100 transition-opacity"
+        animate={{ y: [0, -20, 0], rotate: [-3, 3, -3] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+      >
+        <div className="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 ring-1 ring-slate-100">
+          <img src="https://cdn.simpleicons.org/nestjs/E0234E" alt="NestJS" className="h-10 w-10 object-contain" />
+        </div>
+      </motion.div>
+
+      <div className="mx-auto max-w-5xl text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -29,13 +61,13 @@ export function Hero() {
             We build custom digital solutions and tailored ERP ecosystems to automate your operations, connect your teams, and scale your growth.
           </p>
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-            <a
-              href="#contact"
+            <Link
+              to="/book"
               className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#44ACAB] px-8 py-4 text-base font-bold text-white shadow-xl shadow-[#44ACAB]/20 transition-all hover:bg-[#328887] hover:-translate-y-1"
             >
               Start Your Project
               <ArrowRight className="h-5 w-5" />
-            </a>
+            </Link>
             <a href="#services" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:-translate-y-1 transition-all">
               Discover Our Services
             </a>
@@ -45,3 +77,4 @@ export function Hero() {
     </section>
   );
 }
+
