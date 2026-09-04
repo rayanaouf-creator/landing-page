@@ -84,6 +84,27 @@ export function Iso9001Page() {
           </dl>
         </div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-24 rounded-3xl bg-white p-8 sm:p-12 shadow-sm ring-1 ring-slate-200/60"
+        >
+          <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start text-center lg:text-left">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#44ACAB]/10 text-[#44ACAB]">
+              <Award className="h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold tracking-tight text-slate-900 mb-4">
+                {t('iso9001Page.partner.title')}
+              </h3>
+              <p className="text-lg leading-relaxed text-slate-600 font-medium">
+                {t('iso9001Page.partner.desc')}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
