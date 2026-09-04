@@ -39,7 +39,7 @@ export function Modules() {
         </div>
 
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
             {modules.map((mod, index) => (
               <motion.div
                 key={mod.name}
@@ -47,14 +47,14 @@ export function Modules() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="group relative flex flex-col items-start gap-4 rounded-[2rem] bg-white p-8 shadow-sm hover:shadow-xl hover:shadow-[#44ACAB]/10 transition-all hover:-translate-y-1"
+                className="group relative flex flex-col items-start gap-3 sm:gap-4 rounded-3xl sm:rounded-[2rem] bg-white p-4 sm:p-8 shadow-sm hover:shadow-xl hover:shadow-[#44ACAB]/10 transition-all hover:-translate-y-1"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e6f4f4] text-[#44ACAB] group-hover:bg-[#44ACAB] group-hover:text-white transition-colors duration-300">
-                  <mod.icon className="h-8 w-8" />
+                <div className="flex h-10 w-10 sm:h-16 sm:w-16 items-center justify-center rounded-xl sm:rounded-2xl bg-[#e6f4f4] text-[#44ACAB] group-hover:bg-[#44ACAB] group-hover:text-white transition-colors duration-300">
+                  <mod.icon className="h-5 w-5 sm:h-8 sm:w-8" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">{mod.name}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{mod.desc}</p>
+                  <h3 className="text-sm sm:text-xl font-bold text-slate-900 leading-tight">{mod.name}</h3>
+                  <p className="hidden sm:block mt-3 text-sm leading-relaxed text-slate-600">{mod.desc}</p>
                 </div>
               </motion.div>
             ))}
