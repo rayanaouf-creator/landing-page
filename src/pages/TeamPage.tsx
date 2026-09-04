@@ -77,44 +77,44 @@ export function TeamPage() {
           </motion.div>
         </div>
 
-        <div className="mx-auto mt-20 flex flex-wrap justify-center gap-x-8 gap-y-12 lg:mx-0">
+        <div className="mx-auto mt-16 sm:mt-20 grid grid-cols-2 gap-3 sm:gap-8 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl lg:mx-0">
           {team.map((person, index) => (
             <motion.div
               key={person.name}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="flex flex-col items-center text-center bg-white p-6 sm:p-8 rounded-[2rem] shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-2 transition-all duration-300 group w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm"
+              className="flex flex-col items-center text-center bg-white p-4 sm:p-8 rounded-3xl sm:rounded-[2rem] shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-2 transition-all duration-300 group"
             >
-              <div className="relative mb-6">
+              <div className="relative mb-3 sm:mb-6">
                 <div className="absolute inset-0 rounded-full bg-[#44ACAB] blur-md opacity-20 group-hover:opacity-40 transition-opacity"></div>
                 <img
-                  className="relative h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover shadow-sm ring-4 ring-white"
+                  className="relative h-16 w-16 sm:h-32 sm:w-32 rounded-full object-cover shadow-sm ring-2 sm:ring-4 ring-white"
                   src={person.imageUrl}
                   alt={person.name}
                 />
               </div>
-              <h3 className="text-xl font-bold tracking-tight text-slate-900">{person.name}</h3>
-              <p className="text-sm font-semibold leading-6 text-[#44ACAB] mb-4">{person.role}</p>
-              <p className="text-sm leading-6 text-slate-600 mb-6 flex-grow">{person.bio}</p>
+              <h3 className="text-sm sm:text-xl font-bold tracking-tight text-slate-900">{person.name}</h3>
+              <p className="text-xs sm:text-sm font-semibold leading-normal sm:leading-6 text-[#44ACAB] mb-3 sm:mb-4">{person.role}</p>
+              <p className="hidden sm:block text-sm leading-6 text-slate-600 mb-6 flex-grow">{person.bio}</p>
               
-              <ul className="flex gap-x-4">
+              <ul className="flex gap-x-3 sm:gap-x-4 mt-auto">
                 <li>
                   <a href={person.linkedinUrl || "#"} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-[#44ACAB] transition-colors">
                     <span className="sr-only">LinkedIn</span>
-                    <Linkedin className="h-5 w-5" />
+                    <Linkedin className="h-4 w-4 sm:h-5 sm:w-5" />
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-slate-400 hover:text-[#44ACAB] transition-colors">
                     <span className="sr-only">Twitter</span>
-                    <Twitter className="h-5 w-5" />
+                    <Twitter className="h-4 w-4 sm:h-5 sm:w-5" />
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-slate-400 hover:text-[#44ACAB] transition-colors">
                     <span className="sr-only">Email</span>
-                    <Mail className="h-5 w-5" />
+                    <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
                   </a>
                 </li>
               </ul>
