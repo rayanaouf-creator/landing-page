@@ -1,8 +1,9 @@
 import { motion } from 'motion/react';
 import { Linkedin, Mail, Twitter } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
-export function Team() {
+export function TeamPage() {
   const { t } = useTranslation();
 
   const team = [
@@ -15,14 +16,14 @@ export function Team() {
     },
     {
       name: 'Akram',
-      role: t('team.members.akram.role'), // t('team.members.akram.role') is Software Architect, let's just use it
+      role: t('team.members.akram.role'),
       imageUrl: '/assets/team/akram.jpg',
       bio: t('team.members.akram.bio'),
       linkedinUrl: 'https://www.linkedin.com/in/ferkioui-akram/'
     },
     {
       name: 'Abdo',
-      role: t('team.members.abdo.role'), // I will use translation for role instead of hardcoding
+      role: t('team.members.abdo.role'),
       imageUrl: '/assets/team/abdo.jpg',
       bio: t('team.members.abdo.bio'),
       linkedinUrl: 'https://www.linkedin.com/in/chehri/'
@@ -58,31 +59,30 @@ export function Team() {
   ];
 
   return (
-    <section id="team" className="bg-[#f4f7fb] py-24 sm:py-32">
+    <div className="pt-32 pb-24 min-h-screen bg-[#f4f7fb]">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-sm font-bold tracking-widest text-[#44ACAB] uppercase">{t('team.subtitle')}</h2>
-            <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            <h1 className="text-sm font-bold tracking-widest text-[#44ACAB] uppercase">{t('team.subtitle')}</h1>
+            <p className="mt-2 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
               {t('team.title1')} <span className="text-[#44ACAB]">{t('team.title2')}</span>
             </p>
-            <p className="mt-4 text-lg leading-8 text-slate-600">
+            <p className="mt-6 text-xl leading-8 text-slate-600">
               {t('team.desc')}
             </p>
           </motion.div>
         </div>
-        <div className="mx-auto mt-16 flex flex-wrap justify-center gap-x-8 gap-y-12 lg:mx-0">
+
+        <div className="mx-auto mt-20 flex flex-wrap justify-center gap-x-8 gap-y-12 lg:mx-0">
           {team.map((person, index) => (
             <motion.div
               key={person.name}
               initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="flex flex-col items-center text-center bg-white p-6 sm:p-8 rounded-[2rem] shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-2 transition-all duration-300 group w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm"
             >
@@ -121,7 +121,28 @@ export function Team() {
             </motion.div>
           ))}
         </div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-32 rounded-3xl bg-[#1b6b6a] px-6 py-16 sm:p-16 text-center relative overflow-hidden"
+        >
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(#ffffff22_1px,transparent_1px)] [background-size:16px_16px] opacity-30"></div>
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-6">
+            {t('home.contact_title')}
+          </h2>
+          <div className="flex justify-center gap-4 mt-8">
+            <Link
+              to="/book"
+              className="rounded-full bg-white px-8 py-4 text-base font-bold text-[#44ACAB] shadow-xl hover:bg-slate-50 hover:-translate-y-1 transition-all"
+            >
+              {t('home.contact_btn')}
+            </Link>
+          </div>
+        </motion.div>
+
       </div>
-    </section>
+    </div>
   );
 }

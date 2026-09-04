@@ -77,7 +77,7 @@ export function Services() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative flex flex-col gap-5 rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-1 transition-all"
+                className="relative flex flex-col gap-5 rounded-[2rem] bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-1 transition-all"
               >
                 <div className={`flex h-14 items-center justify-center gap-3 rounded-2xl bg-[#e6f4f4] text-[#44ACAB] self-start ${service.customIcons ? 'px-4' : 'w-14'}`}>
                   {service.customIcons ? (

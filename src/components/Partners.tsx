@@ -1,13 +1,11 @@
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { Aperture, Hexagon, Component, Sparkles } from 'lucide-react';
 
 const partners = [
   { 
     name: 'Optilens', 
     logo: (
       <div className="flex items-center gap-2">
-        <Aperture className="h-7 w-7" />
         <span className="text-2xl font-bold tracking-tight">Optilens</span>
       </div>
     )
@@ -16,7 +14,6 @@ const partners = [
     name: 'Halfware', 
     logo: (
       <div className="flex items-center gap-2">
-        <Hexagon className="h-7 w-7" />
         <span className="text-2xl font-black uppercase tracking-widest">HALFWARE</span>
       </div>
     )
@@ -25,7 +22,6 @@ const partners = [
     name: 'Jethings', 
     logo: (
       <div className="flex items-center gap-2">
-        <Component className="h-7 w-7" />
         <span className="text-2xl font-extrabold tracking-tighter">Jethings</span>
       </div>
     )
@@ -34,8 +30,15 @@ const partners = [
     name: 'Novalis Ai', 
     logo: (
       <div className="flex items-center gap-2">
-        <Sparkles className="h-7 w-7" />
         <span className="text-2xl font-light tracking-wide">Novalis <strong className="font-bold">Ai</strong></span>
+      </div>
+    )
+  },
+  {
+    name: 'HCA Consulting',
+    logo: (
+      <div className="flex items-center gap-2">
+        <span className="text-2xl font-serif font-semibold tracking-tight">HCA Consulting</span>
       </div>
     )
   }

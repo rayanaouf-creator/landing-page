@@ -69,7 +69,7 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[5.5rem] font-extrabold tracking-tight text-slate-900 leading-[1.15] sm:leading-[1.1]">
+          <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.2] sm:leading-[1.15]">
             {t('hero.title1')} <br className="hidden sm:block" />
             {t('hero.title2')} <span className="text-[#44ACAB]">{t('hero.title3')}</span>
           </h1>

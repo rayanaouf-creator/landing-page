@@ -9,14 +9,14 @@
     "work": "Nos Réalisations"
   },
   "hero": {
-    "title1": "Libérez le potentiel",
-    "title2": "de votre entreprise en Algérie avec",
+    "title1": "Arrêtez de gérer votre entreprise",
+    "title2": "sur Excel. Évoluez avec Jet-Next, et utilisez",
     "subtitle": "Nous concevons des solutions numériques sur mesure et des écosystèmes ERP adaptés pour automatiser vos opérations, connecter vos équipes et accélérer votre croissance.",
     "book": "Démarrer Votre Projet",
     "explore": "Découvrir Nos Services",
     "partners": "Partenaires Officiels",
     "integrators": "Intégrateurs Certifiés",
-    "title3": "ERPNext"
+    "title3": "ERPNext."
   },
   "partners": {
     "title": "Approuvé par les leaders de l'industrie",
@@ -215,6 +215,32 @@
     "partner": {
       "title": "Transformation Numérique Guidée",
       "desc": "Nous collaborons avec des bureaux d'études partenaires spécialisés qui vous accompagnent à chaque étape de l'informatisation de votre entreprise. Ensemble, nous veillons à ce que votre transition vers la norme ISO 9001 soit fluide, gérée par des experts et parfaitement alignée sur vos objectifs."
+    }
+  },
+  "servicesPage": {
+    "hero_title": "Nos Services",
+    "hero_subtitle": "Des solutions complètes en informatique et en gestion de la qualité, conçues pour accélérer la croissance de votre entreprise et sa transformation numérique.",
+    "items": {
+      "erp": {
+        "title": "Intégration ERPNext",
+        "desc": "Simplifiez votre travail et suivez toutes les activités de votre entreprise avec une solution ERPNext entièrement intégrée."
+      },
+      "iso": {
+        "title": "Consulting ISO 9001",
+        "desc": "Accompagnement et conseil expert ISO 9001, fournis par l'intermédiaire de notre partenaire de confiance, HCA Consulting."
+      },
+      "consulting": {
+        "title": "Conseil en Informatique",
+        "desc": "Conseil stratégique en informatique pour vous aider à aligner la technologie sur vos objectifs commerciaux et optimiser vos opérations."
+      },
+      "support": {
+        "title": "Support Informatique",
+        "desc": "Un support informatique dédié et une maintenance continue pour toutes les solutions logicielles que nous intégrons."
+      },
+      "hosting": {
+        "title": "Hébergement Cloud",
+        "desc": "Des solutions d'hébergement cloud sécurisées, fiables et évolutives pour assurer le bon fonctionnement de vos systèmes 24h/24 et 7j/7."
+      }
     }
   }
 }

@@ -9,14 +9,14 @@
     "work": "Our Work"
   },
   "hero": {
-    "title1": "Unlock your business",
-    "title2": "potential in Algeria with",
+    "title1": "Stop Running Your Business",
+    "title2": "on Excel. Scale with Jet-Next, and use",
     "subtitle": "We build custom digital solutions and tailored ERP ecosystems to automate your operations, connect your teams, and scale your growth.",
     "book": "Start Your Project",
     "explore": "Discover Our Services",
     "partners": "Official Partners",
     "integrators": "Certified Integrators",
-    "title3": "ERPNext"
+    "title3": "ERPNext."
   },
   "partners": {
     "title": "Trusted by industry leaders",
@@ -215,6 +215,32 @@
     "partner": {
       "title": "Guided Digital Transformation",
       "desc": "We collaborate with specialized partner offices who work alongside us to guide you through every step of digitizing your company. Together, we ensure your transition to ISO 9001 compliance is seamless, expertly managed, and perfectly aligned with your business goals."
+    }
+  },
+  "servicesPage": {
+    "hero_title": "Our Services",
+    "hero_subtitle": "Comprehensive IT and Quality Management solutions tailored to accelerate your business growth and digital transformation.",
+    "items": {
+      "erp": {
+        "title": "ERPNext Integration",
+        "desc": "Make your work easier and track everything in your company with a seamless, fully integrated ERPNext solution."
+      },
+      "iso": {
+        "title": "ISO 9001 Consulting",
+        "desc": "Expert ISO 9001 consulting and implementation support, provided through our trusted partner, HCA Consulting."
+      },
+      "consulting": {
+        "title": "IT Consulting",
+        "desc": "Strategic IT consulting to help you align technology with your business goals and optimize your operations."
+      },
+      "support": {
+        "title": "IT Support",
+        "desc": "Dedicated ongoing IT support and maintenance for all the software solutions we integrate."
+      },
+      "hosting": {
+        "title": "Cloud Hosting",
+        "desc": "Secure, reliable, and scalable cloud hosting solutions to keep your systems running smoothly 24/7."
+      }
     }
   }
 }
