@@ -69,7 +69,7 @@ export function Services() {
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 sm:grid-cols-2">
             {services.map((service, index) => (
               <motion.div
                 key={service.name}
@@ -77,22 +77,22 @@ export function Services() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative flex flex-col gap-5 rounded-[2rem] bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-1 transition-all"
+                className="relative flex flex-col gap-3 sm:gap-5 rounded-3xl bg-white p-4 sm:p-8 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100 hover:-translate-y-1 transition-all"
               >
-                <div className={`flex h-14 items-center justify-center gap-3 rounded-2xl bg-[#e6f4f4] text-[#44ACAB] self-start ${service.customIcons ? 'px-4' : 'w-14'}`}>
+                <div className={`flex h-10 sm:h-14 items-center justify-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl bg-[#e6f4f4] text-[#44ACAB] self-start ${service.customIcons ? 'px-3 sm:px-4' : 'w-10 sm:w-14'}`}>
                   {service.customIcons ? (
                     service.customIcons.map((iconUrl, i) => (
-                      <img key={i} src={iconUrl} alt={`${service.name} icon ${i + 1}`} className="h-7 w-7 object-contain" />
+                      <img key={i} src={iconUrl} alt={`${service.name} icon ${i + 1}`} className="h-5 w-5 sm:h-7 sm:w-7 object-contain" />
                     ))
                   ) : service.customIcon ? (
-                    <img src={service.customIcon} alt={`${service.name} icon`} className="h-7 w-7 object-contain" />
+                    <img src={service.customIcon} alt={`${service.name} icon`} className="h-5 w-5 sm:h-7 sm:w-7 object-contain" />
                   ) : service.icon ? (
-                    <service.icon className="h-7 w-7" />
+                    <service.icon className="h-5 w-5 sm:h-7 sm:w-7" />
                   ) : null}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">{service.name}</h3>
-                  <p className="mt-3 text-base leading-relaxed text-slate-600">{service.description}</p>
+                  <h3 className="text-sm sm:text-xl font-bold text-slate-900 leading-tight">{service.name}</h3>
+                  <p className="hidden sm:block mt-3 text-base leading-relaxed text-slate-600">{service.description}</p>
                 </div>
               </motion.div>
             ))}
