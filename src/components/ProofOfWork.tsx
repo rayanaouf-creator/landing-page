@@ -1,31 +1,59 @@
 import { motion } from 'motion/react';
-import { CheckCircle2, TrendingUp, Package, MapPin } from 'lucide-react';
-
-const projects = [
-  {
-    name: 'Optilens',
-    industry: 'Optical Distribution',
-    description: 'A leading optical company that imports and distributes lenses across 14 wilayas in Algeria.',
-    solution: 'We developed and implemented a tailored ERPNext solution to streamline their entire national distribution network. The system centralizes their inventory management, manages complex supply chain operations, and provides real-time visibility across all their regional hubs.',
-    highlights: [
-      { text: 'Custom ERPNext Implementation', icon: TrendingUp },
-      { text: 'Inventory management for 14 Wilayas', icon: MapPin },
-      { text: 'Optimized distribution workflows', icon: Package },
-    ]
-  }
-];
+import { CheckCircle2, TrendingUp, Package, MapPin, Code, Server, Barcode, Users, Receipt } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export function ProofOfWork() {
+  const { t } = useTranslation();
+
+  const projects = [
+    {
+      name: t('proof.projects.optilens.name'),
+      industry: t('proof.projects.optilens.industry'),
+      description: t('proof.projects.optilens.desc'),
+      solution: t('proof.projects.optilens.solution'),
+      delivered: t('proof.projects.optilens.delivered'),
+      highlights: [
+        { text: t('proof.projects.optilens.h1'), icon: TrendingUp },
+        { text: t('proof.projects.optilens.h2'), icon: MapPin },
+        { text: t('proof.projects.optilens.h3'), icon: Package },
+      ]
+    },
+    {
+      name: t('proof.projects.choptic.name'),
+      industry: t('proof.projects.choptic.industry'),
+      description: t('proof.projects.choptic.desc'),
+      solution: t('proof.projects.choptic.solution'),
+      delivered: t('proof.projects.choptic.delivered'),
+      highlights: [
+        { text: t('proof.projects.choptic.h1'), icon: Code },
+        { text: t('proof.projects.choptic.h2'), icon: Server },
+        { text: t('proof.projects.choptic.h3'), icon: Package },
+      ]
+    },
+    {
+      name: t('proof.projects.essilor.name'),
+      industry: t('proof.projects.essilor.industry'),
+      description: t('proof.projects.essilor.desc'),
+      solution: t('proof.projects.essilor.solution'),
+      delivered: t('proof.projects.essilor.delivered'),
+      highlights: [
+        { text: t('proof.projects.essilor.h1'), icon: Barcode },
+        { text: t('proof.projects.essilor.h2'), icon: Users },
+        { text: t('proof.projects.essilor.h3'), icon: Receipt },
+      ]
+    }
+  ];
+
   return (
     <section id="proof-of-work" className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-[#44ACAB]">Proof of Work</h2>
+          <h2 className="text-sm font-bold uppercase tracking-widest text-[#44ACAB]">{t('proof.subtitle')}</h2>
           <p className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-            Success <span className="text-[#44ACAB]">Stories</span>
+            {t('proof.title1')} <span className="text-[#44ACAB]">{t('proof.title2')}</span>
           </p>
           <p className="mt-6 text-lg leading-relaxed text-slate-600 font-medium">
-            See how we've helped businesses transform their operations with tailored digital solutions.
+            {t('proof.desc')}
           </p>
         </div>
 
@@ -49,7 +77,7 @@ export function ProofOfWork() {
                     {project.description}
                   </p>
                   <p className="mt-4 text-slate-600 leading-relaxed">
-                    <strong className="text-slate-900 font-bold">What we delivered: </strong>
+                    <strong className="text-slate-900 font-bold">{project.delivered}</strong>
                     {project.solution}
                   </p>
                   
@@ -75,9 +103,9 @@ export function ProofOfWork() {
                     
                     <div className="relative z-10 flex flex-col items-center text-center">
                        <div className="h-28 w-28 rounded-[2rem] bg-white shadow-xl shadow-[#44ACAB]/20 flex items-center justify-center mb-6 ring-1 ring-slate-100 rotate-3 transition-transform hover:rotate-0">
-                           <span className="text-5xl font-black text-[#44ACAB]">O</span>
+                           <span className="text-5xl font-black text-[#44ACAB]">{project.name.charAt(0)}</span>
                        </div>
-                       <div className="text-3xl font-black tracking-tight text-slate-900">Optilens</div>
+                       <div className="text-3xl font-black tracking-tight text-slate-900">{project.name}</div>
                        <div className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2 py-1 text-xs font-bold uppercase tracking-widest text-slate-500">
                          <img src="https://cdn.simpleicons.org/erpnext/0089FF" alt="ERPNext" className="h-4 w-4 opacity-70" />
                          ERPNext

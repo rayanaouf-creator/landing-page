@@ -1,0 +1,172 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "solutions": "Solutions",
+    "services": "Services",
+    "team": "Équipe",
+    "book": "Réserver",
+    "lang": "Langue",
+    "work": "Nos Réalisations"
+  },
+  "hero": {
+    "title1": "Libérez le potentiel",
+    "title2": "de votre entreprise en Algérie avec",
+    "subtitle": "Nous concevons des solutions numériques sur mesure et des écosystèmes ERP adaptés pour automatiser vos opérations, connecter vos équipes et accélérer votre croissance.",
+    "book": "Démarrer Votre Projet",
+    "explore": "Découvrir Nos Services",
+    "partners": "Partenaires Officiels",
+    "integrators": "Intégrateurs Certifiés",
+    "title3": "ERPNext"
+  },
+  "partners": {
+    "title": "Approuvé par les leaders de l'industrie",
+    "desc": "Nous collaborons avec les meilleurs fournisseurs de technologies pour fournir des solutions robustes et évolutives à votre entreprise."
+  },
+  "services": {
+    "subtitle": "Notre Expertise",
+    "title": "Solutions Numériques",
+    "desc": "De l'infrastructure de base aux applications destinées aux utilisateurs, nous offrons une excellence technique de bout en bout.",
+    "items": {
+      "erp_title": "Implémentation ERP",
+      "erp_desc": "Configuration ERPNext de bout en bout adaptée à vos flux de travail. Nous analysons, configurons et déployons le système parfait pour votre entreprise.",
+      "custom_title": "Développement Sur Mesure",
+      "custom_desc": "Applications web évolutives construites avec des technologies modernes (React, Node.js, NestJS) pour des exigences métier complexes.",
+      "mobile_title": "Application Mobile",
+      "mobile_desc": "Expériences mobiles natives et multiplateformes conçues pour la performance, pour maintenir l'engagement de vos utilisateurs en déplacement.",
+      "desktop_title": "Application de Bureau",
+      "desktop_desc": "Applications de bureau hautes performances pour Windows, macOS et Linux conçues avec des frameworks modernes.",
+      "cloud_title": "Hébergement Cloud",
+      "cloud_desc": "Solutions d'hébergement fiables, sécurisées et rapides pour votre plateforme ERP, garantissant une disponibilité maximale et l'intégrité des données.",
+      "integration_title": "Intégration de Systèmes",
+      "integration_desc": "Connectez ERPNext à vos outils existants. Nous construisons des API robustes et des middlewares pour un flux de données fluide."
+    }
+  },
+  "modules": {
+    "subtitle": "Écosystème Complet",
+    "title1": "Tout ce dont votre",
+    "title2": "entreprise a besoin",
+    "desc": "Propulsés par Frappe et ERPNext, nous offrons une plateforme unifiée pour gérer tous les aspects de vos opérations, en éliminant les silos de données.",
+    "items": {
+      "crm_title": "CRM & Ventes",
+      "crm_desc": "Suivez les prospects, les opportunités et gérez les relations clients.",
+      "inv_title": "Inventaire & Stock",
+      "inv_desc": "Suivi des stocks en temps réel, gestion multi-entrepôts.",
+      "mfg_title": "Fabrication",
+      "mfg_desc": "Nomenclature, planification de la production et contrôle qualité.",
+      "fin_title": "Finance & Comptabilité",
+      "fin_desc": "Grand livre, comptes fournisseurs/clients et rapports.",
+      "pm_title": "Gestion de Projet",
+      "pm_desc": "Suivi des tâches, feuilles de temps et rentabilité des projets.",
+      "hr_title": "RH & Paie",
+      "hr_desc": "Cycle de vie des employés, présences, congés et traitement des salaires.",
+      "pur_title": "Achats",
+      "pur_desc": "Gestion des fournisseurs, bons de commande et demandes de matériel.",
+      "help_title": "Assistance & Support",
+      "help_desc": "Système de tickets, SLA et résolution des problèmes clients."
+    }
+  },
+  "proof": {
+    "subtitle": "Preuve de Travail",
+    "title1": "Histoires de",
+    "title2": "Réussite",
+    "desc": "Découvrez comment nous avons aidé des entreprises à transformer leurs opérations avec des solutions numériques sur mesure.",
+    "projects": {
+      "optilens": {
+        "name": "Optilens",
+        "industry": "Distribution Optique",
+        "desc": "Une entreprise optique de premier plan qui importe et distribue des lentilles dans 14 wilayas en Algérie.",
+        "delivered": "Ce que nous avons livré : ",
+        "solution": "Nous avons développé et mis en œuvre une solution ERPNext sur mesure pour rationaliser l'ensemble de leur réseau de distribution national. Le système centralise leur gestion des stocks, gère les opérations complexes de la chaîne d'approvisionnement et offre une visibilité en temps réel sur tous leurs centres régionaux.",
+        "h1": "Implémentation ERPNext sur Mesure",
+        "h2": "Gestion des stocks pour 14 Wilayas",
+        "h3": "Flux de distribution optimisés"
+      },
+      "choptic": {
+        "name": "CH Optic",
+        "industry": "Grossiste en Lentilles de Contact",
+        "desc": "Un grossiste de premier plan fournissant des lentilles de contact et des produits optiques aux détaillants et cliniques.",
+        "delivered": "Ce que nous avons livré : ",
+        "solution": "Nous avons développé un logiciel sur mesure pour rationaliser leurs opérations de vente en gros, gérer les commandes B2B complexes et offrir un suivi des stocks en temps réel pour leur vaste catalogue de produits.",
+        "h1": "Développement de logiciel sur mesure",
+        "h2": "Gestion des commandes B2B",
+        "h3": "Suivi des stocks de gros"
+      },
+      "essilor": {
+        "name": "Essilor",
+        "industry": "Optique Ophtalmique et Équipement",
+        "desc": "Leader mondial de la conception, fabrication et distribution de verres ophtalmiques et équipements d'optique.",
+        "delivered": "Ce que nous avons livré : ",
+        "solution": "Nous avons développé un système de gestion complet pour suivre leurs machines optiques et leurs stocks via des numéros de série, gérer la relation client et automatiser leurs processus de vente et de facturation.",
+        "h1": "Suivi des machines et stocks par numéro de série",
+        "h2": "Gestion de la relation client et des ventes",
+        "h3": "Facturation automatisée"
+      }
+    }
+  },
+  "team": {
+    "subtitle": "Notre Équipe",
+    "title1": "Les Esprits Derrière",
+    "title2": "JetNext",
+    "desc": "Rencontrez les experts dédiés à l'ingénierie de votre succès.",
+    "members": {
+      "rayan": {
+        "role": "Fondateur & PDG",
+        "bio": "Leader visionnaire conduisant la transformation numérique et des solutions ERP innovantes chez JetNext."
+      },
+      "akram": {
+        "role": "Architecte Logiciel",
+        "bio": "Passionné de technologie et architecte, spécialisé dans les écosystèmes évolutifs et l'infrastructure cloud."
+      },
+      "abdo": {
+        "role": "Développeur Full Stack",
+        "bio": "Dédié à la création d'applications robustes avec un accent sur une architecture propre et la performance."
+      },
+      "djalil": {
+        "role": "Consultant ERP",
+        "bio": "Assure l'adoption transparente des systèmes d'entreprise et optimise les flux opérationnels des clients."
+      },
+      "farid": {
+        "role": "Analyste Supply Chain",
+        "bio": "Expert en rationalisation des chaînes d'approvisionnement et des flux opérationnels grâce à des méthodologies basées sur les données."
+      },
+      "sami": {
+        "role": "Développeur ERPNext",
+        "bio": "Développeur expert ERPNext créant des intégrations ERPNext fluides."
+      },
+      "achraf": {
+        "role": "Développeur IA",
+        "bio": "Créateur de notre module IA sur mesure et de solutions innovantes, poursuit actuellement son doctorat."
+      }
+    }
+  },
+  "home": {
+    "contact_title": "Commencez votre transformation numérique",
+    "contact_desc": "Discutez de vos exigences, de vos flux de travail et de vos objectifs avec nos experts ERP. Construisons une base évolutive pour votre entreprise.",
+    "contact_btn": "Réserver une consultation"
+  },
+  "footer": {
+    "desc": "Automatiser l'avenir, un module à la fois.",
+    "rights": "Tous droits réservés."
+  },
+  "book": {
+    "title1": "Réserver une",
+    "title2": "Consultation",
+    "desc": "Planifiez un appel avec nos experts ERP et logiciels pour discuter de la façon dont nous pouvons simplifier vos opérations commerciales.",
+    "received_title": "Demande Reçue",
+    "received_desc": "Merci de nous avoir contactés. Un de nos experts ERP vous contactera sous peu pour confirmer la date et l'heure de votre consultation.",
+    "submit_another": "Soumettre une autre demande",
+    "form": {
+      "name": "Nom Complet",
+      "name_ph": "Jeanne Dupont",
+      "email": "Email Professionnel",
+      "email_ph": "jeanne@entreprise.com",
+      "phone": "Numéro de Téléphone",
+      "phone_ph": "+213 555 000 000",
+      "company": "Nom de l'Entreprise",
+      "company_ph": "Acme Corp",
+      "details": "Détails du Projet",
+      "details_ph": "Parlez-nous de vos besoins, de vos systèmes actuels ou de vos objectifs...",
+      "submit": "Demander une Consultation"
+    }
+  }
+}

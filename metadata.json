@@ -1,6 +1,8 @@
 {
-  "name": "JetNext",
-  "description": "Custom Software Development & ERPNext Integrations. A Jethings Company.",
+  "name": "JetNext - ERPNext Algeria (Algérie)",
+  "description": "JetNext is the leading agency for ERPNext in Algeria (Algérie). Expert ERPNext implementation, customization, and integration.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

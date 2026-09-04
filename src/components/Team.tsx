@@ -1,59 +1,62 @@
 import { motion } from 'motion/react';
 import { Linkedin, Mail, Twitter } from 'lucide-react';
-
-const team = [
-  {
-    name: 'Rayan Aouf',
-    role: 'Founder & CEO',
-    imageUrl: '/assets/team/rayan.jpg',
-    bio: 'Visionary leader driving digital transformation and innovative ERP solutions at JetNext.',
-    linkedinUrl: 'https://www.linkedin.com/in/rayan-aouf-54a878315/'
-  },
-  {
-    name: 'Akram',
-    role: 'Fullstack Developer',
-    imageUrl: '/assets/team/akram.jpg',
-    bio: 'Tech enthusiast and architect, specializing in scalable ecosystems and cloud infrastructure.',
-    linkedinUrl: 'https://www.linkedin.com/in/ferkioui-akram/'
-  },
-  {
-    name: 'Abdo',
-    role: 'Lead Developer',
-    imageUrl: '/assets/team/abdo.jpg',
-    bio: 'Dedicated to building robust applications with a focus on clean architecture and performance.',
-    linkedinUrl: 'https://www.linkedin.com/in/chehri/'
-  },
-  {
-    name: 'Djalil',
-    role: 'Implementation Specialist',
-    imageUrl: '/assets/team/djalil.jpg',
-    bio: 'Ensures seamless adoption of enterprise systems and optimizes client operational workflows.',
-    linkedinUrl: 'https://www.linkedin.com/in/abdeldjalil-dahmani-805b49276/'
-  },
-  {
-    name: 'Farid',
-    role: 'ERPNext Developer',
-    imageUrl: '/assets/team/farid.jpg',
-    bio: 'Expert in streamlining supply chains and operational workflows through data-driven methodologies.',
-    linkedinUrl: 'https://www.linkedin.com/in/farid-neggaz-367943295/'
-  },
-  {
-    name: 'Sami Adel',
-    role: 'Expert ERPNext Developer',
-    imageUrl: '/assets/team/sami.jpg',
-    bio: 'Expert ERPNext developer building seamless ERPNext integrations.',
-    linkedinUrl: 'https://www.linkedin.com/in/samidev016/'
-  },
-  {
-    name: 'Achraf Saidi',
-    role: 'AI Developer',
-    imageUrl: '/assets/team/achraf.jpg',
-    bio: 'Creator of our custom AI module and innovative solutions, currently pursuing his doctorate.',
-    linkedinUrl: 'https://www.linkedin.com/in/achraf-saidi-b141b8247/'
-  }
-];
+import { useTranslation } from 'react-i18next';
 
 export function Team() {
+  const { t } = useTranslation();
+
+  const team = [
+    {
+      name: 'Rayan Aouf',
+      role: t('team.members.rayan.role'),
+      imageUrl: '/assets/team/rayan.jpg',
+      bio: t('team.members.rayan.bio'),
+      linkedinUrl: 'https://www.linkedin.com/in/rayan-aouf-54a878315/'
+    },
+    {
+      name: 'Akram',
+      role: t('team.members.akram.role'), // t('team.members.akram.role') is Software Architect, let's just use it
+      imageUrl: '/assets/team/akram.jpg',
+      bio: t('team.members.akram.bio'),
+      linkedinUrl: 'https://www.linkedin.com/in/ferkioui-akram/'
+    },
+    {
+      name: 'Abdo',
+      role: t('team.members.abdo.role'), // I will use translation for role instead of hardcoding
+      imageUrl: '/assets/team/abdo.jpg',
+      bio: t('team.members.abdo.bio'),
+      linkedinUrl: 'https://www.linkedin.com/in/chehri/'
+    },
+    {
+      name: 'Djalil',
+      role: t('team.members.djalil.role'),
+      imageUrl: '/assets/team/djalil.jpg',
+      bio: t('team.members.djalil.bio'),
+      linkedinUrl: 'https://www.linkedin.com/in/abdeldjalil-dahmani-805b49276/'
+    },
+    {
+      name: 'Farid',
+      role: t('team.members.farid.role'),
+      imageUrl: '/assets/team/farid.jpg',
+      bio: t('team.members.farid.bio'),
+      linkedinUrl: 'https://www.linkedin.com/in/farid-neggaz-367943295/'
+    },
+    {
+      name: 'Sami Adel',
+      role: t('team.members.sami.role'),
+      imageUrl: '/assets/team/sami.jpg',
+      bio: t('team.members.sami.bio'),
+      linkedinUrl: 'https://www.linkedin.com/in/samidev016/'
+    },
+    {
+      name: 'Achraf Saidi',
+      role: t('team.members.achraf.role'),
+      imageUrl: '/assets/team/achraf.jpg',
+      bio: t('team.members.achraf.bio'),
+      linkedinUrl: 'https://www.linkedin.com/in/achraf-saidi-b141b8247/'
+    }
+  ];
+
   return (
     <section id="team" className="bg-[#f4f7fb] py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -64,16 +67,15 @@ export function Team() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-sm font-bold tracking-widest text-[#44ACAB] uppercase">The Minds Behind JetNext</h2>
+            <h2 className="text-sm font-bold tracking-widest text-[#44ACAB] uppercase">{t('team.subtitle')}</h2>
             <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Meet our expert team
+              {t('team.title1')} <span className="text-[#44ACAB]">{t('team.title2')}</span>
             </p>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              Passionate professionals dedicated to building scalable foundations and driving your business forward.
+              {t('team.desc')}
             </p>
           </motion.div>
         </div>
-
         <div className="mx-auto mt-16 flex flex-wrap justify-center gap-x-8 gap-y-12 lg:mx-0">
           {team.map((person, index) => (
             <motion.div

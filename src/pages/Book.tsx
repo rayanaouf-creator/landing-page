@@ -1,8 +1,10 @@
 import { motion } from 'motion/react';
 import { Calendar, Clock, ArrowRight, Building2, User, Mail, MessageSquare, Phone } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function Book() {
+  const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -37,10 +39,10 @@ ${message}`;
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Book a <span className="text-[#44ACAB]">Consultation</span>
+              {t('book.title1')} <span className="text-[#44ACAB]">{t('book.title2')}</span>
             </h2>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              Schedule a call with our ERP and software experts to discuss how we can streamline your business operations.
+              {t('book.desc')}
             </p>
           </motion.div>
         </div>
@@ -55,15 +57,15 @@ ${message}`;
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#e6f4f4] mb-6">
                 <Calendar className="h-8 w-8 text-[#44ACAB]" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Request Received</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">{t('book.received_title')}</h3>
               <p className="text-slate-600 mb-8">
-                Thank you for reaching out. One of our ERP experts will contact you shortly to confirm the date and time of your consultation.
+                {t('book.received_desc')}
               </p>
               <button 
                 onClick={() => setSubmitted(false)}
                 className="text-[#44ACAB] font-semibold hover:text-[#328887] transition-colors"
               >
-                Submit another request
+                {t('book.submit_another')}
               </button>
             </motion.div>
           ) : (
@@ -89,7 +91,7 @@ ${message}`;
                       id="name"
                       required
                       className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all"
-                      placeholder="Jane Doe"
+                      placeholder={t('book.form.name_ph')}
                     />
                   </div>
                 </div>
@@ -108,7 +110,7 @@ ${message}`;
                       id="email"
                       required
                       className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all"
-                      placeholder="jane@company.com"
+                      placeholder={t('book.form.email_ph')}
                     />
                   </div>
                 </div>
@@ -126,7 +128,7 @@ ${message}`;
                       name="phone"
                       id="phone"
                       className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all"
-                      placeholder="+1 (555) 000-0000"
+                      placeholder={t('book.form.phone_ph')}
                     />
                   </div>
                 </div>
@@ -144,7 +146,7 @@ ${message}`;
                       name="company"
                       id="company"
                       className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all"
-                      placeholder="Acme Corp"
+                      placeholder={t('book.form.company_ph')}
                     />
                   </div>
                 </div>
@@ -163,7 +165,7 @@ ${message}`;
                       rows={4}
                       required
                       className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all"
-                      placeholder="Tell us about your requirements, current systems, or goals..."
+                      placeholder={t('book.form.details_ph')}
                     />
                   </div>
                 </div>

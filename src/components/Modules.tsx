@@ -9,31 +9,35 @@ import {
   ShoppingCart,
   Calculator
 } from 'lucide-react';
-
-const modules = [
-  { name: 'CRM & Sales', icon: Users, desc: 'Track leads, opportunities, and manage customer relationships.' },
-  { name: 'Inventory & Stock', icon: Package, desc: 'Real-time stock tracking, multi-warehouse management.' },
-  { name: 'Manufacturing', icon: Factory, desc: 'Bill of materials, production planning, and quality control.' },
-  { name: 'Finance & Accounting', icon: Calculator, desc: 'General ledger, accounts payable/receivable, and reporting.' },
-  { name: 'Project Management', icon: Briefcase, desc: 'Task tracking, timesheets, and project profitability.' },
-  { name: 'HR & Payroll', icon: PieChart, desc: 'Employee lifecycle, attendance, leaves, and salary processing.' },
-  { name: 'Purchasing', icon: ShoppingCart, desc: 'Supplier management, purchase orders, and material requests.' },
-  { name: 'Helpdesk & Support', icon: Headset, desc: 'Ticketing system, SLAs, and customer issue resolution.' },
-];
+import { useTranslation } from 'react-i18next';
 
 export function Modules() {
+  const { t } = useTranslation();
+
+  const modules = [
+    { name: t('modules.items.crm_title'), icon: Users, desc: t('modules.items.crm_desc') },
+    { name: t('modules.items.inv_title'), icon: Package, desc: t('modules.items.inv_desc') },
+    { name: t('modules.items.mfg_title'), icon: Factory, desc: t('modules.items.mfg_desc') },
+    { name: t('modules.items.fin_title'), icon: Calculator, desc: t('modules.items.fin_desc') },
+    { name: t('modules.items.pm_title'), icon: Briefcase, desc: t('modules.items.pm_desc') },
+    { name: t('modules.items.hr_title'), icon: PieChart, desc: t('modules.items.hr_desc') },
+    { name: t('modules.items.pur_title'), icon: ShoppingCart, desc: t('modules.items.pur_desc') },
+    { name: t('modules.items.help_title'), icon: Headset, desc: t('modules.items.help_desc') },
+  ];
+
   return (
     <section id="modules" className="bg-[#f0fbfb] py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-[#44ACAB]">Comprehensive Ecosystem</h2>
+          <h2 className="text-sm font-bold uppercase tracking-widest text-[#44ACAB]">{t('modules.subtitle')}</h2>
           <p className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-            Everything your <span className="text-[#44ACAB]">business needs</span>
+            {t('modules.title1')} <span className="text-[#44ACAB]">{t('modules.title2')}</span>
           </p>
           <p className="mt-6 text-lg leading-relaxed text-slate-600 font-medium">
-            Powered by Frappe and ERPNext, we provide a unified platform to manage every aspect of your operations, eliminating data silos.
+            {t('modules.desc')}
           </p>
         </div>
+
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {modules.map((mod, index) => (

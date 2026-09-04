@@ -1,0 +1,172 @@
+{
+  "nav": {
+    "home": "Home",
+    "solutions": "Solutions",
+    "services": "Services",
+    "team": "Team",
+    "book": "Book Consultation",
+    "lang": "Language",
+    "work": "Our Work"
+  },
+  "hero": {
+    "title1": "Unlock your business",
+    "title2": "potential in Algeria with",
+    "subtitle": "We build custom digital solutions and tailored ERP ecosystems to automate your operations, connect your teams, and scale your growth.",
+    "book": "Start Your Project",
+    "explore": "Discover Our Services",
+    "partners": "Official Partners",
+    "integrators": "Certified Integrators",
+    "title3": "ERPNext"
+  },
+  "partners": {
+    "title": "Trusted by industry leaders",
+    "desc": "We collaborate with the best technology providers to deliver robust, scalable solutions for your enterprise."
+  },
+  "services": {
+    "subtitle": "Our Expertise",
+    "title": "Digital Solutions",
+    "desc": "From core infrastructure to user-facing applications, we deliver end-to-end technical excellence.",
+    "items": {
+      "erp_title": "ERP Implementation",
+      "erp_desc": "End-to-end ERPNext setup tailored to your workflows. We analyze, configure, and deploy the perfect system for your business.",
+      "custom_title": "Custom Development",
+      "custom_desc": "Scalable web applications built with modern stacks (React, Node.js, NestJS) for complex business requirements.",
+      "mobile_title": "Mobile App",
+      "mobile_desc": "Native and cross-platform mobile experiences designed for performance, built to keep your users engaged on the go.",
+      "desktop_title": "Desktop App",
+      "desktop_desc": "High-performance desktop applications for Windows, macOS, and Linux built with modern frameworks.",
+      "cloud_title": "Cloud Hosting",
+      "cloud_desc": "Reliable, secure, and fast hosting solutions for your ERP platform, ensuring maximum uptime and data integrity.",
+      "integration_title": "System Integration",
+      "integration_desc": "Connect ERPNext with your existing tools. We build robust APIs and middleware for seamless data flow."
+    }
+  },
+  "modules": {
+    "subtitle": "Comprehensive Ecosystem",
+    "title1": "Everything your",
+    "title2": "business needs",
+    "desc": "Powered by Frappe and ERPNext, we provide a unified platform to manage every aspect of your operations, eliminating data silos.",
+    "items": {
+      "crm_title": "CRM & Sales",
+      "crm_desc": "Track leads, opportunities, and manage customer relationships.",
+      "inv_title": "Inventory & Stock",
+      "inv_desc": "Real-time stock tracking, multi-warehouse management.",
+      "mfg_title": "Manufacturing",
+      "mfg_desc": "Bill of materials, production planning, and quality control.",
+      "fin_title": "Finance & Accounting",
+      "fin_desc": "General ledger, accounts payable/receivable, and reporting.",
+      "pm_title": "Project Management",
+      "pm_desc": "Task tracking, timesheets, and project profitability.",
+      "hr_title": "HR & Payroll",
+      "hr_desc": "Employee lifecycle, attendance, leaves, and salary processing.",
+      "pur_title": "Purchasing",
+      "pur_desc": "Supplier management, purchase orders, and material requests.",
+      "help_title": "Helpdesk & Support",
+      "help_desc": "Ticketing system, SLAs, and customer issue resolution."
+    }
+  },
+  "proof": {
+    "subtitle": "Proof of Work",
+    "title1": "Success",
+    "title2": "Stories",
+    "desc": "See how we've helped businesses transform their operations with tailored digital solutions.",
+    "projects": {
+      "optilens": {
+        "name": "Optilens",
+        "industry": "Optical Distribution",
+        "desc": "A leading optical company that imports and distributes lenses across 14 wilayas in Algeria.",
+        "delivered": "What we delivered: ",
+        "solution": "We developed and implemented a tailored ERPNext solution to streamline their entire national distribution network. The system centralizes their inventory management, manages complex supply chain operations, and provides real-time visibility across all their regional hubs.",
+        "h1": "Custom ERPNext Implementation",
+        "h2": "Inventory management for 14 Wilayas",
+        "h3": "Optimized distribution workflows"
+      },
+      "choptic": {
+        "name": "CH Optic",
+        "industry": "Contact Lens Wholesaler",
+        "desc": "A prominent wholesaler providing contact lenses and optical products to retailers and clinics.",
+        "delivered": "What we delivered: ",
+        "solution": "We developed custom software to streamline their wholesale operations, managing complex B2B orders and providing real-time inventory tracking for their extensive product catalog.",
+        "h1": "Custom software development",
+        "h2": "B2B order management",
+        "h3": "Wholesale inventory tracking"
+      },
+      "essilor": {
+        "name": "Essilor",
+        "industry": "Ophthalmic Optics & Equipment",
+        "desc": "A global leader in the design, manufacture, and distribution of ophthalmic lenses and optical equipment.",
+        "delivered": "What we delivered: ",
+        "solution": "We developed a comprehensive tracking and management system to monitor their optical machines and stock via serial numbers, handle client relationships, and automate their sales and invoicing processes.",
+        "h1": "Machine & stock tracking by serial number",
+        "h2": "Client relationship & sales management",
+        "h3": "Automated billing and invoicing"
+      }
+    }
+  },
+  "team": {
+    "subtitle": "Our Team",
+    "title1": "The Minds Behind",
+    "title2": "JetNext",
+    "desc": "Meet the experts dedicated to engineering your success.",
+    "members": {
+      "rayan": {
+        "role": "Founder & CEO",
+        "bio": "Visionary leader driving digital transformation and innovative ERP solutions at JetNext."
+      },
+      "akram": {
+        "role": "Software Architect",
+        "bio": "Tech enthusiast and architect, specializing in scalable ecosystems and cloud infrastructure."
+      },
+      "abdo": {
+        "role": "Full Stack Developer",
+        "bio": "Dedicated to building robust applications with a focus on clean architecture and performance."
+      },
+      "djalil": {
+        "role": "ERP Consultant",
+        "bio": "Ensures seamless adoption of enterprise systems and optimizes client operational workflows."
+      },
+      "farid": {
+        "role": "Supply Chain Analyst",
+        "bio": "Expert in streamlining supply chains and operational workflows through data-driven methodologies."
+      },
+      "sami": {
+        "role": "ERPNext Developer",
+        "bio": "Expert ERPNext developer building seamless ERPNext integrations."
+      },
+      "achraf": {
+        "role": "AI Developer",
+        "bio": "Creator of our custom AI module and innovative solutions, currently pursuing his doctorate."
+      }
+    }
+  },
+  "home": {
+    "contact_title": "Start your digital transformation",
+    "contact_desc": "Discuss your requirements, workflows, and objectives with our ERP experts. Let's build a scalable foundation for your business.",
+    "contact_btn": "Book a Consultation"
+  },
+  "footer": {
+    "desc": "Automating the future, one module at a time.",
+    "rights": "All rights reserved."
+  },
+  "book": {
+    "title1": "Book a",
+    "title2": "Consultation",
+    "desc": "Schedule a call with our ERP and software experts to discuss how we can streamline your business operations.",
+    "received_title": "Request Received",
+    "received_desc": "Thank you for reaching out. One of our ERP experts will contact you shortly to confirm the date and time of your consultation.",
+    "submit_another": "Submit another request",
+    "form": {
+      "name": "Full Name",
+      "name_ph": "Jane Doe",
+      "email": "Work Email",
+      "email_ph": "jane@company.com",
+      "phone": "Phone Number",
+      "phone_ph": "+1 (555) 000-0000",
+      "company": "Company Name",
+      "company_ph": "Acme Corp",
+      "details": "Project Details",
+      "details_ph": "Tell us about your requirements, current systems, or goals...",
+      "submit": "Request Consultation"
+    }
+  }
+}

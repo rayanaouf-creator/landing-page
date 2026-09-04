@@ -1,8 +1,10 @@
 import { motion } from 'motion/react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function Hero() {
+  const { t } = useTranslation();
   return (
     <section id="hero" className="relative overflow-hidden bg-[#f4f7fb] px-6 py-32 sm:py-40 lg:px-8 pt-40">
       {/* Abstract soft background blobs */}
@@ -67,29 +69,23 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="mb-10 flex justify-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-[#44ACAB] shadow-sm ring-1 ring-black/5">
-              <Sparkles className="h-4 w-4" />
-              Empowering Digital Transformations
-            </span>
-          </div>
           <h1 className="text-6xl font-extrabold tracking-tight text-slate-900 sm:text-[5.5rem] leading-[1.1]">
-            Unlock your business <br className="hidden sm:block" />
-            potential with <span className="text-[#44ACAB]">ERPNext</span>
+            {t('hero.title1')} <br className="hidden sm:block" />
+            {t('hero.title2')} <span className="text-[#44ACAB]">{t('hero.title3')}</span>
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-xl leading-relaxed text-slate-600 font-medium">
-            We build custom digital solutions and tailored ERP ecosystems to automate your operations, connect your teams, and scale your growth.
+            {t('hero.subtitle')}
           </p>
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
             <Link
               to="/book"
               className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#44ACAB] px-8 py-4 text-base font-bold text-white shadow-xl shadow-[#44ACAB]/20 transition-all hover:bg-[#328887] hover:-translate-y-1"
             >
-              Start Your Project
+              {t('hero.book')}
               <ArrowRight className="h-5 w-5" />
             </Link>
             <a href="#services" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:-translate-y-1 transition-all">
-              Discover Our Services
+              {t('hero.explore')}
             </a>
           </div>
         </motion.div>

@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Layers, Server, Code, Settings, Award } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 type ServiceItem = {
   name: string;
@@ -9,43 +10,45 @@ type ServiceItem = {
   customIcons?: string[];
 };
 
-const services: ServiceItem[] = [
-  {
-    name: 'ERP Implementation',
-    description: 'End-to-end ERPNext setup tailored to your workflows. We analyze, configure, and deploy the perfect system for your business.',
-    customIcon: 'https://cdn.simpleicons.org/erpnext/0089FF',
-  },
-  {
-    name: 'Web App',
-    description: 'Need something unique? We build custom web applications that integrate seamlessly with your core systems.',
-    customIcon: 'https://cdn.simpleicons.org/nestjs/E0234E',
-  },
-  {
-    name: 'Mobile App',
-    description: 'Native and cross-platform mobile experiences designed for performance, built to keep your users engaged on the go.',
-    customIcons: [
-      'https://cdn.simpleicons.org/android/3DDC84',
-      'https://cdn.simpleicons.org/apple/000000'
-    ],
-  },
-  {
-    name: 'Desktop App',
-    description: 'High-performance desktop applications for Windows, macOS, and Linux built with modern frameworks.',
-    customIcon: 'https://cdn.simpleicons.org/flutter/02569B',
-  },
-  {
-    name: 'Cloud Hosting',
-    description: 'Reliable, secure, and fast hosting solutions for your ERP platform, ensuring maximum uptime and data integrity.',
-    customIcon: 'https://cdn.simpleicons.org/googlecloud/4285F4',
-  },
-  {
-    name: 'System Integration',
-    description: 'Connect ERPNext with your existing tools. We build robust APIs and middleware for seamless data flow.',
-    icon: Layers,
-  },
-];
-
 export function Services() {
+  const { t } = useTranslation();
+
+  const services: ServiceItem[] = [
+    {
+      name: t('services.items.erp_title'),
+      description: t('services.items.erp_desc'),
+      customIcon: 'https://cdn.simpleicons.org/erpnext/0089FF',
+    },
+    {
+      name: t('services.items.custom_title'),
+      description: t('services.items.custom_desc'),
+      customIcon: 'https://cdn.simpleicons.org/nestjs/E0234E',
+    },
+    {
+      name: t('services.items.mobile_title'),
+      description: t('services.items.mobile_desc'),
+      customIcons: [
+        'https://cdn.simpleicons.org/android/3DDC84',
+        'https://cdn.simpleicons.org/apple/000000'
+      ],
+    },
+    {
+      name: t('services.items.desktop_title'),
+      description: t('services.items.desktop_desc'),
+      customIcon: 'https://cdn.simpleicons.org/flutter/02569B',
+    },
+    {
+      name: t('services.items.cloud_title'),
+      description: t('services.items.cloud_desc'),
+      customIcon: 'https://cdn.simpleicons.org/googlecloud/4285F4',
+    },
+    {
+      name: t('services.items.integration_title'),
+      description: t('services.items.integration_desc'),
+      icon: Layers,
+    },
+  ];
+
   return (
     <section id="services" className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -57,12 +60,12 @@ export function Services() {
             transition={{ duration: 0.6 }}
             className="max-w-2xl"
           >
-            <h2 className="text-sm font-bold uppercase tracking-widest text-[#44ACAB]">Our Expertise</h2>
+            <h2 className="text-sm font-bold uppercase tracking-widest text-[#44ACAB]">{t('services.subtitle')}</h2>
             <p className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl leading-tight">
-              Tailored solutions for your <span className="text-[#44ACAB]">digital journey</span>
+              {t('services.title')}
             </p>
             <p className="mt-6 text-lg leading-relaxed text-slate-600 font-medium">
-              We don't just install software. We partner with you to understand your exact requirements, adapt the systems to your operations, and provide ongoing support to fuel your growth.
+              {t('services.desc')}
             </p>
           </motion.div>
           

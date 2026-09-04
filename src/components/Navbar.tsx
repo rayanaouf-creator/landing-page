@@ -1,10 +1,16 @@
-import { Building2 } from 'lucide-react';
+import { Building2, Globe } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr');
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,17 +33,25 @@ export function Navbar() {
           </div>
         </Link>
         <div className="hidden md:flex items-center gap-8 bg-white/80 backdrop-blur-md px-8 py-3 rounded-full shadow-sm ring-1 ring-slate-200/50">
-          <Link to={isHome ? "#services" : "/#services"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Services</Link>
+          <Link to={isHome ? "#services" : "/#services"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.services')}</Link>
           <Link to={isHome ? "#modules" : "/#modules"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Modules</Link>
-          <Link to={isHome ? "#team" : "/#team"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Team</Link>
+          <Link to="/work" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.work')}</Link>
+          <Link to={isHome ? "#team" : "/#team"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.team')}</Link>
           <Link to={isHome ? "#contact" : "/#contact"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Contact</Link>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={toggleLanguage}
+            className="flex items-center gap-1 text-sm font-bold text-slate-600 hover:text-[#44ACAB] transition-colors"
+          >
+            <Globe className="h-4 w-4" />
+            {i18n.language === 'fr' ? 'EN' : 'FR'}
+          </button>
           <Link
             to="/book"
             className="rounded-full bg-[#44ACAB] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#328887] hover:-translate-y-0.5 shadow-lg shadow-[#44ACAB]/30"
           >
-            Get an Estimate
+            {t('nav.book')}
           </Link>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { Aperture, Hexagon, Component, Sparkles } from 'lucide-react';
 
 const partners = [
@@ -41,6 +42,7 @@ const partners = [
 ];
 
 export function Partners() {
+  const { t } = useTranslation();
   return (
     <section className="bg-white py-12 sm:py-16 border-b border-slate-100">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
