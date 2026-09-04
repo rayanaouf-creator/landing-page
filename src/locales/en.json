@@ -168,5 +168,49 @@
       "details_ph": "Tell us about your requirements, current systems, or goals...",
       "submit": "Request Consultation"
     }
+  },
+  "erpnextPage": {
+    "hero_title": "Why Choose ERPNext?",
+    "hero_subtitle": "The world's best 100% open-source ERP. A single, agile platform to manage your entire business seamlessly.",
+    "benefits": {
+      "all_in_one": {
+        "title": "All-in-One Solution",
+        "desc": "Accounting, HR, Sales, Purchasing, Inventory, CRM, and more in one unified system."
+      },
+      "open_source": {
+        "title": "No Licensing Fees",
+        "desc": "As an open-source platform, you pay for implementation and support, not expensive per-user licenses."
+      },
+      "customizable": {
+        "title": "Highly Customizable",
+        "desc": "Tailor workflows, custom fields, and reports to match your exact business processes."
+      },
+      "scalable": {
+        "title": "Scales with Your Growth",
+        "desc": "From small startups to large enterprises, ERPNext handles millions of records effortlessly."
+      }
+    }
+  },
+  "iso9001Page": {
+    "hero_title": "ISO 9001 Implementation Support",
+    "hero_subtitle": "We help businesses stream-line their processes and successfully implement Quality Management Systems to achieve ISO 9001 compliance.",
+    "benefits": {
+      "b1": {
+        "title": "Process Optimization",
+        "desc": "We analyze and improve your existing business processes to align with ISO 9001 standards."
+      },
+      "b2": {
+        "title": "QMS Software Integration",
+        "desc": "Implement a digital Quality Management System built on robust platforms like ERPNext."
+      },
+      "b3": {
+        "title": "Training & Adoption",
+        "desc": "Ensure your team understands the standards and utilizes the new processes effectively."
+      },
+      "b4": {
+        "title": "Audit Preparation",
+        "desc": "Thorough readiness assessments to ensure you pass your ISO 9001 certification audit smoothly."
+      }
+    }
   }
 }

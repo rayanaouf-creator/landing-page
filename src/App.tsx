@@ -4,6 +4,8 @@ import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 import { Book } from './pages/Book';
 import { Work } from './pages/Work';
+import { ERPNextPage } from './pages/ERPNext';
+import { Iso9001Page } from './pages/Iso9001';
 
 export default function App() {
   return (
@@ -13,6 +15,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/book" element={<Book />} />
         <Route path="/work" element={<Work />} />
+        <Route path="/erpnext" element={<ERPNextPage />} />
+        <Route path="/iso9001" element={<Iso9001Page />} />
       </Routes>
       <Footer />
     </div>

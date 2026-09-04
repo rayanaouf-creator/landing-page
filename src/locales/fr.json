@@ -168,5 +168,49 @@
       "details_ph": "Parlez-nous de vos besoins, de vos systèmes actuels ou de vos objectifs...",
       "submit": "Demander une Consultation"
     }
+  },
+  "erpnextPage": {
+    "hero_title": "Pourquoi Choisir ERPNext ?",
+    "hero_subtitle": "Le meilleur ERP 100% open-source au monde. Une plateforme unique et agile pour gérer toute votre entreprise.",
+    "benefits": {
+      "all_in_one": {
+        "title": "Solution Tout-en-Un",
+        "desc": "Comptabilité, RH, Ventes, Achats, Stocks, CRM et bien plus dans un système unifié."
+      },
+      "open_source": {
+        "title": "Aucun Frais de Licence",
+        "desc": "En tant que plateforme open-source, vous payez pour l'intégration, pas pour des licences coûteuses."
+      },
+      "customizable": {
+        "title": "Hautement Personnalisable",
+        "desc": "Adaptez les flux de travail, les champs personnalisés et les rapports à vos processus métiers."
+      },
+      "scalable": {
+        "title": "Évolutif avec Votre Croissance",
+        "desc": "Des petites startups aux grandes entreprises, ERPNext gère des millions d'enregistrements sans effort."
+      }
+    }
+  },
+  "iso9001Page": {
+    "hero_title": "Accompagnement ISO 9001",
+    "hero_subtitle": "Nous aidons les entreprises à rationaliser leurs processus et à mettre en œuvre des systèmes de management de la qualité pour atteindre la conformité ISO 9001.",
+    "benefits": {
+      "b1": {
+        "title": "Optimisation des Processus",
+        "desc": "Nous analysons et améliorons vos processus métiers existants pour les aligner sur les normes ISO 9001."
+      },
+      "b2": {
+        "title": "Intégration d'un logiciel SMQ",
+        "desc": "Mettez en œuvre un système de management de la qualité numérique basé sur des plateformes robustes telles qu'ERPNext."
+      },
+      "b3": {
+        "title": "Formation et Adoption",
+        "desc": "Assurez-vous que votre équipe comprend les normes et utilise efficacement les nouveaux processus."
+      },
+      "b4": {
+        "title": "Préparation à l'Audit",
+        "desc": "Évaluations approfondies pour vous assurer de réussir votre audit de certification ISO 9001 en toute sérénité."
+      }
+    }
   }
 }

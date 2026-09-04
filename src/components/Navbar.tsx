@@ -1,4 +1,4 @@
-import { Building2, Globe } from 'lucide-react';
+import { Building2, Globe, Award } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -34,7 +34,8 @@ export function Navbar() {
         </Link>
         <div className="hidden md:flex items-center gap-8 bg-white/80 backdrop-blur-md px-8 py-3 rounded-full shadow-sm ring-1 ring-slate-200/50">
           <Link to={isHome ? "#services" : "/#services"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.services')}</Link>
-          <Link to={isHome ? "#modules" : "/#modules"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Modules</Link>
+          <Link to="/erpnext" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">ERPNext</Link>
+          <Link to="/iso9001" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">ISO 9001</Link>
           <Link to="/work" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.work')}</Link>
           <Link to={isHome ? "#team" : "/#team"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.team')}</Link>
           <Link to={isHome ? "#contact" : "/#contact"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Contact</Link>
