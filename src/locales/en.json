@@ -244,5 +244,127 @@
         "desc": "Secure, reliable, and scalable cloud hosting solutions to keep your systems running smoothly 24/7."
       }
     }
+  },
+  "comparison": {
+    "title": "Compare and discover why ERPNext excels",
+    "subtitle": "ERPNext provides a modern ERP experience combining simplicity and flexibility, giving you the freedom to customize at a lower cost without vendor lock-in.",
+    "best": "The Best",
+    "features": "Key Features",
+    "rows": [
+      {
+        "feature": "Cost",
+        "erpnext": {
+          "text": "No fees",
+          "check": true
+        },
+        "odoo": {
+          "text": "Annual fees",
+          "check": false
+        },
+        "sap": {
+          "text": "Annual fees",
+          "check": false
+        },
+        "oracle": {
+          "text": "High cost",
+          "check": false
+        }
+      },
+      {
+        "feature": "Customization",
+        "erpnext": {
+          "text": "High flexibility",
+          "check": true
+        },
+        "odoo": {
+          "text": "Medium",
+          "check": false
+        },
+        "sap": {
+          "text": "Hard",
+          "check": false
+        },
+        "oracle": {
+          "text": "Expensive",
+          "check": false
+        }
+      },
+      {
+        "feature": "Ease of Use",
+        "erpnext": {
+          "text": "Simple UI",
+          "check": true
+        },
+        "odoo": {
+          "text": "Medium",
+          "check": false
+        },
+        "sap": {
+          "text": "Complex",
+          "check": false
+        },
+        "oracle": {
+          "text": "Complex",
+          "check": false
+        }
+      },
+      {
+        "feature": "Integration",
+        "erpnext": {
+          "text": "Open API",
+          "check": true
+        },
+        "odoo": {
+          "text": "Needs add-ons",
+          "check": false
+        },
+        "sap": {
+          "text": "Limited",
+          "check": false
+        },
+        "oracle": {
+          "text": "Expensive",
+          "check": false
+        }
+      },
+      {
+        "feature": "Language & Support",
+        "erpnext": {
+          "text": "Full support",
+          "check": true
+        },
+        "odoo": {
+          "text": "Partial",
+          "check": false
+        },
+        "sap": {
+          "text": "Limited",
+          "check": false
+        },
+        "oracle": {
+          "text": "Limited",
+          "check": false
+        }
+      },
+      {
+        "feature": "Hosting & Updates",
+        "erpnext": {
+          "text": "Cloud & Local",
+          "check": true
+        },
+        "odoo": {
+          "text": "Paid plans",
+          "check": false
+        },
+        "sap": {
+          "text": "Complex",
+          "check": false
+        },
+        "oracle": {
+          "text": "Complex",
+          "check": false
+        }
+      }
+    ]
   }
 }

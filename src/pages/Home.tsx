@@ -1,5 +1,6 @@
 import { Hero } from '../components/Hero';
 import { Partners } from '../components/Partners';
+import { Comparison } from '../components/Comparison';
 import { Services } from '../components/Services';
 import { Modules } from '../components/Modules';
 
@@ -13,6 +14,7 @@ export function Home() {
     <main>
       <Hero />
       <Partners />
+      <Comparison />
       <Services />
       <Modules />
       
