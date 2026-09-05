@@ -84,6 +84,25 @@ export function ERPNextPage() {
           </dl>
         </div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-32 text-center"
+        >
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl mb-4">
+            {t('erpnextPage.ecosystem_title')}
+          </h2>
+          <p className="text-xl leading-relaxed text-slate-600 font-medium mb-12">
+            {t('erpnextPage.ecosystem_subtitle')}
+          </p>
+          <img 
+            src="/ERPNext1.png" 
+            alt="ERPNext Ecosystem" 
+            className="w-full max-w-5xl mx-auto object-contain rounded-2xl"
+          />
+        </motion.div>
+
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

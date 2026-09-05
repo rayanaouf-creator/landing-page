@@ -189,7 +189,9 @@
         "title": "Scales with Your Growth",
         "desc": "From small startups to large enterprises, ERPNext handles millions of records effortlessly."
       }
-    }
+    },
+    "ecosystem_title": "A global open-source ecosystem in the making",
+    "ecosystem_subtitle": "30,000+ companies have adopted ERPNext"
   },
   "iso9001Page": {
     "hero_title": "ISO 9001 Implementation Support",
