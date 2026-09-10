@@ -42,21 +42,23 @@ export function Comparison() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="relative w-full overflow-x-auto pb-12 -mx-6 px-6 lg:mx-0 lg:px-0 scrollbar-hide"
+          className="relative w-full overflow-x-auto pb-12 pt-8 -mx-6 px-6 lg:mx-0 lg:px-0 scrollbar-hide"
         >
-          <div className="min-w-[960px] grid grid-cols-5 bg-white rounded-3xl shadow-xl shadow-slate-200/40 ring-1 ring-slate-100 relative mt-8">
+          <div className="min-w-[960px] grid grid-cols-5 bg-white rounded-3xl shadow-xl shadow-slate-200/40 ring-1 ring-slate-100 relative mt-10">
             
             {/* Header Row */}
-            <div className="col-span-5 grid grid-cols-5 bg-gradient-to-r from-[#155a59] to-[#1b6b6a] rounded-t-3xl items-end relative overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(#ffffff22_1px,transparent_1px)] [background-size:12px_12px] opacity-20"></div>
+            <div className="col-span-5 grid grid-cols-5 bg-gradient-to-r from-[#155a59] to-[#1b6b6a] rounded-t-3xl items-end relative">
+              <div className="absolute inset-0 rounded-t-3xl overflow-hidden pointer-events-none z-0">
+                <div className="absolute inset-0 bg-[radial-gradient(#ffffff22_1px,transparent_1px)] [background-size:12px_12px] opacity-20"></div>
+              </div>
               
               <div className="p-8 flex items-center justify-start font-bold text-white text-xl h-28 relative z-10">
                 {t('comparison.features')}
               </div>
               
               {/* ERPNext Column Header - Pop out */}
-              <div className="relative p-6 flex flex-col items-center justify-center bg-white border-t-4 border-[#44ACAB] rounded-t-[2rem] h-[130%] -mt-8 shadow-[0_-12px_30px_-10px_rgba(68,172,171,0.25)] z-20">
-                <div className="absolute -top-4 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg shadow-amber-500/30">
+              <div className="relative p-6 flex flex-col items-center justify-center bg-white border-t-4 border-[#44ACAB] rounded-t-[2rem] h-[130%] -mt-10 shadow-[0_-12px_30px_-10px_rgba(68,172,171,0.25)] z-20">
+                <div className="absolute -top-5 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg shadow-amber-500/30 whitespace-nowrap">
                   <Star className="w-3.5 h-3.5 fill-white text-white" />
                   <span className="tracking-wide uppercase">{t('comparison.best')}</span>
                 </div>
@@ -65,20 +67,20 @@ export function Comparison() {
               </div>
 
               <div className="p-8 flex flex-col items-center justify-center h-28 relative z-10">
-                <div className="bg-white/10 backdrop-blur-md px-6 py-2.5 rounded-2xl flex items-center justify-center shadow-sm border border-white/10">
-                   <img src="https://cdn.simpleicons.org/odoo/FFFFFF" alt="Odoo" className="h-6 w-auto opacity-90" />
+                <div className="bg-white/10 backdrop-blur-md px-8 py-3 rounded-2xl flex items-center justify-center shadow-sm border border-white/10">
+                   <span className="font-bold text-xl text-white tracking-wide">Odoo</span>
                 </div>
               </div>
               
               <div className="p-8 flex flex-col items-center justify-center h-28 relative z-10">
-                 <div className="bg-white/10 backdrop-blur-md px-6 py-2.5 rounded-2xl flex items-center justify-center shadow-sm border border-white/10">
-                   <img src="https://cdn.simpleicons.org/sap/FFFFFF" alt="SAP" className="h-6 w-auto opacity-90" />
+                 <div className="bg-white/10 backdrop-blur-md px-8 py-3 rounded-2xl flex items-center justify-center shadow-sm border border-white/10">
+                   <span className="font-bold text-xl text-white tracking-wide">SAP</span>
                  </div>
               </div>
               
               <div className="p-8 flex flex-col items-center justify-center h-28 relative z-10">
-                 <div className="bg-white/10 backdrop-blur-md px-6 py-2.5 rounded-2xl flex items-center justify-center shadow-sm border border-white/10">
-                   <img src="https://cdn.simpleicons.org/oracle/FFFFFF" alt="Oracle" className="h-4 w-auto opacity-90" />
+                 <div className="bg-white/10 backdrop-blur-md px-8 py-3 rounded-2xl flex items-center justify-center shadow-sm border border-white/10">
+                   <span className="font-bold text-xl text-white tracking-wide">Oracle</span>
                  </div>
               </div>
             </div>
@@ -91,35 +93,35 @@ export function Comparison() {
                 </div>
                 
                 {/* ERPNext Column */}
-                <div className={`p-6 flex items-center justify-center gap-3 bg-white shadow-[0_0_30px_rgba(68,172,171,0.06)] z-20 relative transition-transform ${index === rows.length - 1 ? 'rounded-b-[2rem] border-b-4 border-[#44ACAB] shadow-[0_12px_30px_rgba(68,172,171,0.15)] pb-8' : ''}`}>
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100">
+                <div className={`py-6 px-4 pl-6 lg:pl-10 flex items-center justify-start gap-3 bg-white shadow-[0_0_30px_rgba(68,172,171,0.06)] z-20 relative transition-transform ${index === rows.length - 1 ? 'rounded-b-[2rem] border-b-4 border-[#44ACAB] shadow-[0_12px_30px_rgba(68,172,171,0.15)] pb-8' : ''}`}>
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 shrink-0">
                     <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
                   </div>
-                  <span className="text-sm sm:text-base font-bold text-slate-900 text-center">{row.erpnext.text}</span>
+                  <span className="text-sm sm:text-base font-bold text-slate-900 text-left">{row.erpnext.text}</span>
                 </div>
 
                 {/* Odoo Column */}
-                <div className="p-6 flex items-center justify-center gap-2.5 z-0">
-                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-slate-100">
+                <div className="py-6 px-4 pl-6 lg:pl-10 flex items-center justify-start gap-2.5 z-0">
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 shrink-0">
                     <X className="w-3 h-3 text-slate-400 stroke-[3]" />
                   </div>
-                  <span className="text-sm text-slate-500 text-center font-medium">{row.odoo.text}</span>
+                  <span className="text-sm text-slate-500 text-left font-medium">{row.odoo.text}</span>
                 </div>
 
                 {/* SAP Column */}
-                <div className="p-6 flex items-center justify-center gap-2.5 z-0">
-                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-slate-100">
+                <div className="py-6 px-4 pl-6 lg:pl-10 flex items-center justify-start gap-2.5 z-0">
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 shrink-0">
                     <X className="w-3 h-3 text-slate-400 stroke-[3]" />
                   </div>
-                  <span className="text-sm text-slate-500 text-center font-medium">{row.sap.text}</span>
+                  <span className="text-sm text-slate-500 text-left font-medium">{row.sap.text}</span>
                 </div>
 
                 {/* Oracle Column */}
-                <div className="p-6 flex items-center justify-center gap-2.5 z-0">
-                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-slate-100">
+                <div className="py-6 px-4 pl-6 lg:pl-10 flex items-center justify-start gap-2.5 z-0">
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 shrink-0">
                     <X className="w-3 h-3 text-slate-400 stroke-[3]" />
                   </div>
-                  <span className="text-sm text-slate-500 text-center font-medium">{row.oracle.text}</span>
+                  <span className="text-sm text-slate-500 text-left font-medium">{row.oracle.text}</span>
                 </div>
               </div>
             ))}
