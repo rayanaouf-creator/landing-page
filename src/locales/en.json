@@ -76,10 +76,12 @@
         "industry": "Optical Distribution",
         "desc": "A leading optical company that imports and distributes lenses across 14 wilayas in Algeria.",
         "delivered": "What we delivered: ",
-        "solution": "We developed and implemented a tailored ERPNext solution to streamline their entire national distribution network. The system centralizes their inventory management, manages complex supply chain operations, and provides real-time visibility across all their regional hubs.",
+        "solution": "We developed and implemented a tailored ERPNext solution, featuring a robust multi-company system, to streamline their entire national distribution network. The setup centralizes their inventory management, manages complex supply chain operations across different entities, and provides real-time visibility across all their regional hubs.",
         "h1": "Custom ERPNext Implementation",
         "h2": "Inventory management for 14 Wilayas",
-        "h3": "Optimized distribution workflows"
+        "h3": "Optimized distribution workflows",
+        "h4": "Dead stock and needed stock control",
+        "h5": "Multi-company system & inter-company transactions"
       },
       "choptic": {
         "name": "CH Optic",
@@ -215,8 +217,8 @@
       }
     },
     "partner": {
-      "title": "Guided Digital Transformation",
-      "desc": "We collaborate with specialized partner offices who work alongside us to guide you through every step of digitizing your company. Together, we ensure your transition to ISO 9001 compliance is seamless, expertly managed, and perfectly aligned with your business goals."
+      "title": "Expert ISO 9001 Certification Partners",
+      "desc": "While our core expertise is delivering world-class software, we have partnered with specialized ISO 9001 certification offices. They work closely with us to audit and structure your business processes before digitalization. This strategic partnership ensures your workflows are highly structured, compliant, and rock-solid, giving you absolute confidence in the foundation of your new software."
     }
   },
   "servicesPage": {

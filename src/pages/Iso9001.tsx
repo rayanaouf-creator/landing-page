@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Award, Target, Activity, FileCheck, CheckCircle2 } from 'lucide-react';
+import { Award, Target, Activity, FileCheck, CheckCircle2, Handshake } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -92,7 +92,7 @@ export function Iso9001Page() {
         >
           <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start text-center lg:text-left">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#44ACAB]/10 text-[#44ACAB]">
-              <Award className="h-8 w-8" />
+              <Handshake className="h-8 w-8" />
             </div>
             <div>
               <h3 className="text-2xl font-bold tracking-tight text-slate-900 mb-4">

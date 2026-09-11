@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { CheckCircle2, TrendingUp, Package, MapPin, Code, Server, Barcode, Users, Receipt } from 'lucide-react';
+import { CheckCircle2, TrendingUp, Package, MapPin, Code, Server, Barcode, Users, Receipt, Building2, BarChart } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export function ProofOfWork() {
@@ -16,6 +16,8 @@ export function ProofOfWork() {
         { text: t('proof.projects.optilens.h1'), icon: TrendingUp },
         { text: t('proof.projects.optilens.h2'), icon: MapPin },
         { text: t('proof.projects.optilens.h3'), icon: Package },
+        { text: t('proof.projects.optilens.h4'), icon: BarChart },
+        { text: t('proof.projects.optilens.h5'), icon: Building2 },
       ]
     },
     {

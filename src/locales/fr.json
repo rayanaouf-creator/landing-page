@@ -76,10 +76,12 @@
         "industry": "Distribution Optique",
         "desc": "Une entreprise optique de premier plan qui importe et distribue des lentilles dans 14 wilayas en Algérie.",
         "delivered": "Ce que nous avons livré : ",
-        "solution": "Nous avons développé et mis en œuvre une solution ERPNext sur mesure pour rationaliser l'ensemble de leur réseau de distribution national. Le système centralise leur gestion des stocks, gère les opérations complexes de la chaîne d'approvisionnement et offre une visibilité en temps réel sur tous leurs centres régionaux.",
+        "solution": "Nous avons développé et mis en œuvre une solution ERPNext sur mesure, intégrant un système multi-sociétés robuste, pour rationaliser l'ensemble de leur réseau de distribution national. Le système centralise leur gestion des stocks, gère les opérations complexes de la chaîne d'approvisionnement entre différentes entités et offre une visibilité en temps réel sur tous leurs centres régionaux.",
         "h1": "Implémentation ERPNext sur Mesure",
         "h2": "Gestion des stocks pour 14 Wilayas",
-        "h3": "Flux de distribution optimisés"
+        "h3": "Flux de distribution optimisés",
+        "h4": "Contrôle des stocks dormants et nécessaires",
+        "h5": "Système multi-sociétés et transactions inter-sociétés"
       },
       "choptic": {
         "name": "CH Optic",
@@ -215,8 +217,8 @@
       }
     },
     "partner": {
-      "title": "Transformation Numérique Guidée",
-      "desc": "Nous collaborons avec des bureaux d'études partenaires spécialisés qui vous accompagnent à chaque étape de l'informatisation de votre entreprise. Ensemble, nous veillons à ce que votre transition vers la norme ISO 9001 soit fluide, gérée par des experts et parfaitement alignée sur vos objectifs."
+      "title": "Nos Partenaires Experts en Certification ISO 9001",
+      "desc": "Bien que notre cœur de métier soit le développement de logiciels de pointe, nous collaborons avec des bureaux partenaires spécialisés en certification ISO 9001. Ils travaillent à nos côtés pour auditer et structurer vos processus avant la numérisation. Ce partenariat stratégique garantit que vos flux de travail sont hautement structurés, conformes et robustes, vous offrant une confiance absolue dans les fondations de votre nouveau logiciel."
     }
   },
   "servicesPage": {
