@@ -27,12 +27,8 @@ export function Navbar() {
   return (
     <nav className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-3">
-          <img src="/logo.jpg" alt="JetNext Logo" className="h-11 w-11 rounded-xl shadow-sm object-cover bg-white" />
-          <div className="flex flex-col">
-            <span className="text-xl font-extrabold tracking-tight text-slate-900 leading-none">JetNext</span>
-            <span className="text-[10px] font-bold tracking-wider text-[#44ACAB] uppercase mt-1">By Jethings</span>
-          </div>
+        <Link to="/" className="flex items-center">
+          <img src="/cropedlogo.png.jpg" alt="JetNext Logo" className="h-10 w-auto object-contain" />
         </Link>
         <div className="hidden md:flex items-center gap-8 bg-white/80 backdrop-blur-md px-8 py-3 rounded-full shadow-sm ring-1 ring-slate-200/50">
           <Link to="/services" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.services')}</Link>
@@ -87,12 +83,8 @@ export function Navbar() {
               className="fixed inset-y-0 right-0 z-50 w-full max-w-sm overflow-y-auto bg-white px-6 py-6 shadow-2xl md:hidden"
             >
               <div className="flex items-center justify-between mb-8">
-                <Link to="/" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
-                  <img src="/logo.jpg" alt="JetNext Logo" className="h-10 w-10 rounded-xl shadow-sm object-cover bg-white" />
-                  <div className="flex flex-col">
-                    <span className="text-lg font-extrabold tracking-tight text-slate-900 leading-none">JetNext</span>
-                    <span className="text-[9px] font-bold tracking-wider text-[#44ACAB] uppercase mt-1">By Jethings</span>
-                  </div>
+                <Link to="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
+                  <img src="/cropedlogo.png.jpg" alt="JetNext Logo" className="h-9 w-auto object-contain" />
                 </Link>
                 <button
                   type="button"

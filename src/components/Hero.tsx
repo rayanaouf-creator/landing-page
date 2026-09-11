@@ -73,7 +73,7 @@ export function Hero() {
             {t('hero.title1')} <br className="hidden sm:block" />
             {t('hero.title2')} <span className="text-[#44ACAB]">{t('hero.title3')}</span>
           </h1>
-          <p className="mx-auto mt-8 max-w-2xl text-xl leading-relaxed text-slate-600 font-medium">
+          <p className="mx-auto mt-8 max-w-2xl text-xl leading-relaxed text-slate-600 font-medium hidden sm:block">
             {t('hero.subtitle')}
           </p>
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
