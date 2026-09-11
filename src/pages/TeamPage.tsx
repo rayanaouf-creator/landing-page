@@ -55,6 +55,13 @@ export function TeamPage() {
       imageUrl: '/assets/team/achraf.jpg',
       bio: t('team.members.achraf.bio'),
       linkedinUrl: 'https://www.linkedin.com/in/achraf-saidi-b141b8247/'
+    },
+    {
+      name: 'Khalil Ouras',
+      role: t('team.members.khalil.role'),
+      imageUrl: '/assets/team/khalil.png',
+      bio: t('team.members.khalil.bio'),
+      linkedinUrl: '#'
     }
   ];
 

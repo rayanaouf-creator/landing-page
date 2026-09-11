@@ -138,6 +138,10 @@
       "achraf": {
         "role": "AI Developer",
         "bio": "Creator of our custom AI module and innovative solutions, currently pursuing his doctorate."
+      },
+      "khalil": {
+        "role": "Data Analyst",
+        "bio": "Expert in data analytics, turning complex data into actionable business insights."
       }
     }
   },

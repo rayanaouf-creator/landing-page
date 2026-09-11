@@ -138,6 +138,10 @@
       "achraf": {
         "role": "Développeur IA",
         "bio": "Créateur de notre module IA sur mesure et de solutions innovantes, poursuit actuellement son doctorat."
+      },
+      "khalil": {
+        "role": "Analyste de données",
+        "bio": "Expert en analyse de données, transformant des données complexes en informations stratégiques exploitables."
       }
     }
   },
