@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Layers, Award, Lightbulb, LifeBuoy, Cloud, CheckCircle2 } from 'lucide-react';
+import { Layers, Award, Lightbulb, LifeBuoy, Cloud, CheckCircle2, GraduationCap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -31,6 +31,11 @@ export function ServicesPage() {
       title: t('servicesPage.items.hosting.title'),
       desc: t('servicesPage.items.hosting.desc'),
       icon: Cloud
+    },
+    {
+      title: t('servicesPage.items.formation.title'),
+      desc: t('servicesPage.items.formation.desc'),
+      icon: GraduationCap
     }
   ];
 

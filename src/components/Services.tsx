@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Layers, Server, Code, Settings, Award } from 'lucide-react';
+import { Layers, Server, Code, Settings, Award, GraduationCap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type ServiceItem = {
@@ -46,6 +46,11 @@ export function Services() {
       name: t('services.items.integration_title'),
       description: t('services.items.integration_desc'),
       icon: Layers,
+    },
+    {
+      name: t('services.items.formation_title'),
+      description: t('services.items.formation_desc'),
+      icon: GraduationCap,
     },
   ];
 

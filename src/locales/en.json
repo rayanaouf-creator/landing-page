@@ -38,7 +38,9 @@
       "cloud_title": "Cloud Hosting",
       "cloud_desc": "Reliable, secure, and fast hosting solutions for your ERP platform, ensuring maximum uptime and data integrity.",
       "integration_title": "System Integration",
-      "integration_desc": "Connect ERPNext with your existing tools. We build robust APIs and middleware for seamless data flow."
+      "integration_desc": "Connect ERPNext with your existing tools. We build robust APIs and middleware for seamless data flow.",
+      "formation_title": "Training & Formation",
+      "formation_desc": "Comprehensive training for your team to effectively use ERPNext and our custom-developed modules."
     }
   },
   "modules": {
@@ -248,6 +250,10 @@
       "hosting": {
         "title": "Cloud Hosting",
         "desc": "Secure, reliable, and scalable cloud hosting solutions to keep your systems running smoothly 24/7."
+      },
+      "formation": {
+        "title": "Training & Formation",
+        "desc": "Comprehensive training for your team to effectively use ERPNext and our custom-developed modules."
       }
     }
   },
