@@ -25,7 +25,7 @@ Company: ${company}
 Project Details:
 ${message}`;
 
-    window.location.href = `mailto:jetnext@jethings.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:contact@jethings.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setSubmitted(true);
   };
 
