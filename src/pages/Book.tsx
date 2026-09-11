@@ -174,7 +174,7 @@ ${message}`;
               <div className="mt-10">
                 <button
                   type="submit"
-                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#44ACAB] px-8 py-4 text-base font-bold text-white shadow-lg shadow-[#44ACAB]/20 transition-all hover:bg-[#328887] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#44ACAB]"
+                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#44ACAB] px-8 py-4 text-base font-bold text-white transition-all hover:bg-[#328887] hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#44ACAB]"
                 >
                   Request Consultation
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />

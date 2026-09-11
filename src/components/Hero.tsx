@@ -79,12 +79,12 @@ export function Hero() {
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
             <Link
               to="/book"
-              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#44ACAB] px-8 py-4 text-base font-bold text-white shadow-xl shadow-[#44ACAB]/20 transition-all hover:bg-[#328887] hover:-translate-y-1"
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#44ACAB] px-8 py-4 text-base font-bold text-white transition-all hover:bg-[#328887] hover:-translate-y-1"
             >
               {t('hero.book')}
               <ArrowRight className="h-5 w-5" />
             </Link>
-            <a href="#services" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:-translate-y-1 transition-all">
+            <a href="#services" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-slate-900 hover:bg-slate-50 hover:-translate-y-1 transition-all">
               {t('hero.explore')}
             </a>
           </div>

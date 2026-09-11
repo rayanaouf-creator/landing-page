@@ -31,7 +31,7 @@ export function Home() {
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Link
                 to="/book"
-                className="rounded-full bg-white px-8 py-4 text-base font-bold text-[#44ACAB] shadow-xl hover:bg-slate-50 hover:-translate-y-1 transition-all"
+                className="rounded-full bg-white px-8 py-4 text-base font-bold text-slate-900 hover:bg-slate-50 hover:-translate-y-1 transition-all"
               >
                 {t('home.contact_btn')}
               </Link>

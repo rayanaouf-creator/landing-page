@@ -28,7 +28,7 @@ export function Navbar() {
     <nav className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 lg:px-8">
         <Link to="/" className="flex items-center">
-          <img src="/cropedlogo.png.jpg" alt="JetNext Logo" className="h-10 w-auto object-contain" />
+          <img src="/cropedlogo.png" alt="JetNext Logo" className="h-10 w-auto object-contain" />
         </Link>
         <div className="hidden md:flex items-center gap-8 bg-white/80 backdrop-blur-md px-8 py-3 rounded-full shadow-sm ring-1 ring-slate-200/50">
           <Link to="/services" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.services')}</Link>
@@ -48,7 +48,7 @@ export function Navbar() {
           </button>
           <Link
             to="/book"
-            className="rounded-full bg-[#44ACAB] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#328887] hover:-translate-y-0.5 shadow-lg shadow-[#44ACAB]/30"
+            className="rounded-full bg-[#44ACAB] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#328887] hover:-translate-y-0.5"
           >
             {t('nav.book')}
           </Link>
@@ -84,7 +84,7 @@ export function Navbar() {
             >
               <div className="flex items-center justify-between mb-8">
                 <Link to="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
-                  <img src="/cropedlogo.png.jpg" alt="JetNext Logo" className="h-9 w-auto object-contain" />
+                  <img src="/cropedlogo.png" alt="JetNext Logo" className="h-9 w-auto object-contain" />
                 </Link>
                 <button
                   type="button"
@@ -116,7 +116,7 @@ export function Navbar() {
                     <Link
                       to="/book"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="rounded-full bg-[#44ACAB] px-6 py-4 text-center text-base font-bold text-white shadow-md hover:bg-[#328887] transition-colors mt-2"
+                      className="rounded-full bg-[#44ACAB] px-6 py-4 text-center text-base font-bold text-white hover:bg-[#328887] transition-colors mt-2"
                     >
                       {t('nav.book')}
                     </Link>

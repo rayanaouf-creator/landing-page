@@ -41,6 +41,14 @@ const partners = [
         <span className="text-2xl font-serif font-semibold tracking-tight">HCA Consulting</span>
       </div>
     )
+  },
+  {
+    name: 'Namaa Agency',
+    logo: (
+      <div className="flex items-center gap-2">
+        <span className="text-2xl font-bold tracking-tight">Namaa Agency</span>
+      </div>
+    )
   }
 ];
 
