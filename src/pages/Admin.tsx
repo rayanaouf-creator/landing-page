@@ -1271,281 +1271,295 @@ export function AdminPage() {
       {/* CREATE / EDIT LEAD MODAL */}
       <AnimatePresence>
         {isFormModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl ring-1 ring-slate-200 my-8"
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900">
-                  {editingLead ? `Edit Lead: ${editingLead.company}` : 'Register New Enterprise Lead'}
-                </h2>
+              {/* Fixed Header */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 shrink-0 bg-white">
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                    {editingLead ? `Edit Lead: ${editingLead.company}` : 'Register New Enterprise Lead'}
+                  </h2>
+                  <p className="text-xs text-slate-400">Manage client parameters, location, and project urgency</p>
+                </div>
                 <button
                   onClick={() => setIsFormModalOpen(false)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSaveLead} className="mt-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Company / Enterprise *
-                    </label>
-                    <input
-                      id="lead-form-company"
-                      type="text"
-                      required
-                      value={formCompany}
-                      onChange={(e) => setFormCompany(e.target.value)}
-                      placeholder="e.g. SARL Maghreb Logistics"
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none"
-                    />
+              {/* Form Content with Controlled Height & Internal Scroll */}
+              <form onSubmit={handleSaveLead} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 min-h-0">
+                  {/* Row 1: Company & Contact Person */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Company / Enterprise *
+                      </label>
+                      <input
+                        id="lead-form-company"
+                        type="text"
+                        required
+                        value={formCompany}
+                        onChange={(e) => setFormCompany(e.target.value)}
+                        placeholder="e.g. SARL Maghreb Logistics"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] focus:ring-1 focus:ring-[#44ACAB] outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Contact Person *
+                      </label>
+                      <input
+                        id="lead-form-name"
+                        type="text"
+                        required
+                        value={formName}
+                        onChange={(e) => setFormName(e.target.value)}
+                        placeholder="e.g. Karim Benali"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] focus:ring-1 focus:ring-[#44ACAB] outline-none"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Contact Person *
-                    </label>
-                    <input
-                      id="lead-form-name"
-                      type="text"
-                      required
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      placeholder="e.g. Karim Benali"
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none"
-                    />
+                  {/* Row 2: Poste/Function, Wilaya & Urgency */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Poste / Fonction
+                      </label>
+                      <input
+                        id="lead-form-jobtitle"
+                        type="text"
+                        list="job-titles-list"
+                        value={formJobTitle}
+                        onChange={(e) => setFormJobTitle(e.target.value)}
+                        placeholder="e.g. Directeur Général"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] focus:ring-1 focus:ring-[#44ACAB] outline-none"
+                      />
+                      <datalist id="job-titles-list">
+                        {JOB_TITLE_PRESETS.map((item) => (
+                          <option key={item} value={item} />
+                        ))}
+                      </datalist>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Location / Wilaya
+                      </label>
+                      <input
+                        id="lead-form-location"
+                        type="text"
+                        list="locations-list"
+                        value={formLocation}
+                        onChange={(e) => setFormLocation(e.target.value)}
+                        placeholder="e.g. Alger"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] focus:ring-1 focus:ring-[#44ACAB] outline-none"
+                      />
+                      <datalist id="locations-list">
+                        {LOCATION_PRESETS.map((loc) => (
+                          <option key={loc} value={loc} />
+                        ))}
+                      </datalist>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Emergency Level
+                      </label>
+                      <select
+                        id="lead-form-emergency"
+                        value={formEmergencyLevel}
+                        onChange={(e) => setFormEmergencyLevel(e.target.value as EmergencyLevel)}
+                        className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm bg-white focus:border-[#44ACAB] outline-none font-semibold text-slate-800"
+                      >
+                        <option value="immediate">Immediate (&lt; 2 wks)</option>
+                        <option value="high">Prioritary (&lt; 1 mo)</option>
+                        <option value="medium">Planned (1-3 mos)</option>
+                        <option value="low">Exploratory</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row 3: Email & Phone */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Email Address
+                      </label>
+                      <input
+                        id="lead-form-email"
+                        type="email"
+                        value={formEmail}
+                        onChange={(e) => setFormEmail(e.target.value)}
+                        placeholder="client@company.com"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] focus:ring-1 focus:ring-[#44ACAB] outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Phone Number
+                      </label>
+                      <input
+                        id="lead-form-phone"
+                        type="tel"
+                        value={formPhone}
+                        onChange={(e) => setFormPhone(e.target.value)}
+                        placeholder="e.g. 0550123456"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] focus:ring-1 focus:ring-[#44ACAB] outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Industry & Service Requested */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Industry / Sector
+                      </label>
+                      <select
+                        id="lead-form-industry"
+                        value={formIndustry}
+                        onChange={(e) => setFormIndustry(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm bg-white focus:border-[#44ACAB] outline-none"
+                      >
+                        {INDUSTRY_PRESETS.map((ind) => (
+                          <option key={ind} value={ind}>{ind}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Service Requested
+                      </label>
+                      <select
+                        id="lead-form-service"
+                        value={formService}
+                        onChange={(e) => setFormService(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm bg-white focus:border-[#44ACAB] outline-none"
+                      >
+                        <option value="ERPNext Implementation">ERPNext Implementation</option>
+                        <option value="Custom Module Engineering">Custom Module Engineering</option>
+                        <option value="ISO 9001 Integration">ISO 9001 Integration</option>
+                        <option value="B2B Portal & Inventory">B2B Portal & Inventory</option>
+                        <option value="Data Migration & Auditing">Data Migration & Auditing</option>
+                        <option value="Staff Formation & Training">Staff Formation & Training</option>
+                        <option value="Dedicated Support SLA">Dedicated Support SLA</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row 5: Pipeline metrics (Value, Status, Priority) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Est. Value (DZD)
+                      </label>
+                      <input
+                        id="lead-form-value"
+                        type="number"
+                        value={formValue}
+                        onChange={(e) => setFormValue(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="e.g. 1500000"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Status
+                      </label>
+                      <select
+                        id="lead-form-status"
+                        value={formStatus}
+                        onChange={(e) => setFormStatus(e.target.value as LeadStatus)}
+                        className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm bg-white"
+                      >
+                        <option value="new">New Lead</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="in_discussion">In Discussion</option>
+                        <option value="proposal_sent">Proposal Sent</option>
+                        <option value="converted">Won / Converted</option>
+                        <option value="lost">Lost / Closed</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Priority
+                      </label>
+                      <select
+                        id="lead-form-priority"
+                        value={formPriority}
+                        onChange={(e) => setFormPriority(e.target.value as LeadPriority)}
+                        className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm bg-white"
+                      >
+                        <option value="high">High Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="low">Low Priority</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row 6: Source & Notes */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-1">
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Acquisition Source
+                      </label>
+                      <select
+                        id="lead-form-source"
+                        value={formSource}
+                        onChange={(e) => setFormSource(e.target.value as LeadSource)}
+                        className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm bg-white"
+                      >
+                        <option value="direct_entry">Direct / Internal</option>
+                        <option value="website_booking">Website Form</option>
+                        <option value="referral">Client Referral</option>
+                        <option value="phone">Phone Inquiry</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Internal Notes & Requirements
+                      </label>
+                      <textarea
+                        id="lead-form-notes"
+                        rows={2}
+                        value={formNotes}
+                        onChange={(e) => setFormNotes(e.target.value)}
+                        placeholder="Specific workflow, constraints, timeline, or next steps..."
+                        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] outline-none resize-none"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Poste / Fonction (Job Title)
-                    </label>
-                    <input
-                      id="lead-form-jobtitle"
-                      type="text"
-                      list="job-titles-list"
-                      value={formJobTitle}
-                      onChange={(e) => setFormJobTitle(e.target.value)}
-                      placeholder="e.g. Directeur Général / DSI / DAF"
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none"
-                    />
-                    <datalist id="job-titles-list">
-                      {JOB_TITLE_PRESETS.map((item) => (
-                        <option key={item} value={item} />
-                      ))}
-                    </datalist>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Location / Wilaya
-                    </label>
-                    <input
-                      id="lead-form-location"
-                      type="text"
-                      list="locations-list"
-                      value={formLocation}
-                      onChange={(e) => setFormLocation(e.target.value)}
-                      placeholder="e.g. Alger, Oran, Sétif..."
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none"
-                    />
-                    <datalist id="locations-list">
-                      {LOCATION_PRESETS.map((loc) => (
-                        <option key={loc} value={loc} />
-                      ))}
-                    </datalist>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Industry / Sector
-                    </label>
-                    <select
-                      id="lead-form-industry"
-                      value={formIndustry}
-                      onChange={(e) => setFormIndustry(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-[#44ACAB] outline-none"
-                    >
-                      {INDUSTRY_PRESETS.map((ind) => (
-                        <option key={ind} value={ind}>{ind}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Urgency / Emergency Level
-                    </label>
-                    <select
-                      id="lead-form-emergency"
-                      value={formEmergencyLevel}
-                      onChange={(e) => setFormEmergencyLevel(e.target.value as EmergencyLevel)}
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-[#44ACAB] outline-none font-semibold text-slate-800"
-                    >
-                      <option value="immediate">Urgent / Immédiat (&lt; 2 semaines)</option>
-                      <option value="high">Prioritaire (&lt; 1 mois)</option>
-                      <option value="medium">Planifié (1 à 3 mois)</option>
-                      <option value="low">Exploratoire / Veille</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Email Address
-                    </label>
-                    <input
-                      id="lead-form-email"
-                      type="email"
-                      value={formEmail}
-                      onChange={(e) => setFormEmail(e.target.value)}
-                      placeholder="client@company.com"
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Phone Number
-                    </label>
-                    <input
-                      id="lead-form-phone"
-                      type="tel"
-                      value={formPhone}
-                      onChange={(e) => setFormPhone(e.target.value)}
-                      placeholder="e.g. 0550123456"
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Service Requested
-                    </label>
-                    <select
-                      id="lead-form-service"
-                      value={formService}
-                      onChange={(e) => setFormService(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-[#44ACAB] outline-none"
-                    >
-                      <option value="ERPNext Implementation">ERPNext Implementation</option>
-                      <option value="Custom Module Engineering">Custom Module Engineering</option>
-                      <option value="ISO 9001 Integration">ISO 9001 Integration</option>
-                      <option value="B2B Portal & Inventory">B2B Portal & Inventory</option>
-                      <option value="Data Migration & Auditing">Data Migration & Auditing</option>
-                      <option value="Staff Formation & Training">Staff Formation & Training</option>
-                      <option value="Dedicated Support SLA">Dedicated Support SLA</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Estimated Deal Value (DZD)
-                    </label>
-                    <input
-                      id="lead-form-value"
-                      type="number"
-                      value={formValue}
-                      onChange={(e) => setFormValue(e.target.value === '' ? '' : Number(e.target.value))}
-                      placeholder="e.g. 1500000"
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Status
-                    </label>
-                    <select
-                      id="lead-form-status"
-                      value={formStatus}
-                      onChange={(e) => setFormStatus(e.target.value as LeadStatus)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white"
-                    >
-                      <option value="new">New Lead</option>
-                      <option value="contacted">Contacted</option>
-                      <option value="in_discussion">In Discussion</option>
-                      <option value="proposal_sent">Proposal Sent</option>
-                      <option value="converted">Won / Converted</option>
-                      <option value="lost">Lost / Closed</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Priority
-                    </label>
-                    <select
-                      id="lead-form-priority"
-                      value={formPriority}
-                      onChange={(e) => setFormPriority(e.target.value as LeadPriority)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white"
-                    >
-                      <option value="high">High Priority</option>
-                      <option value="medium">Medium Priority</option>
-                      <option value="low">Low Priority</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Acquisition Source
-                    </label>
-                    <select
-                      id="lead-form-source"
-                      value={formSource}
-                      onChange={(e) => setFormSource(e.target.value as LeadSource)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white"
-                    >
-                      <option value="direct_entry">Direct / Internal</option>
-                      <option value="website_booking">Website Form</option>
-                      <option value="referral">Client Referral</option>
-                      <option value="phone">Phone Inquiry</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Internal Notes & Project Requirements
-                  </label>
-                  <textarea
-                    id="lead-form-notes"
-                    rows={3}
-                    value={formNotes}
-                    onChange={(e) => setFormNotes(e.target.value)}
-                    placeholder="Provide specific client workflow details, timeline constraints, modules needed, or next steps..."
-                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] outline-none"
-                  />
-                </div>
-
-                <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+                {/* Fixed Footer */}
+                <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0 bg-slate-50/80">
                   <button
                     type="button"
                     onClick={() => setIsFormModalOpen(false)}
-                    className="rounded-xl px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100"
+                    className="rounded-lg px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     id="lead-form-save-btn"
                     type="submit"
-                    className="rounded-xl bg-[#44ACAB] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#328887] shadow-sm transition-all"
+                    className="rounded-lg bg-[#44ACAB] px-5 py-2 text-xs font-bold text-white hover:bg-[#328887] shadow-xs transition-all"
                   >
                     {editingLead ? 'Update Lead' : 'Save Lead'}
                   </button>
@@ -1559,14 +1573,14 @@ export function AdminPage() {
       {/* LEAD VIEW DETAILS DRAWER / MODAL */}
       <AnimatePresence>
         {viewingLead && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl ring-1 ring-slate-200"
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-full max-w-xl max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden"
             >
-              <div className="flex items-start justify-between pb-4 border-b border-slate-200">
+              <div className="flex items-start justify-between px-5 py-3.5 border-b border-slate-100 shrink-0 bg-white">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                     <span className={`inline-block rounded-md px-2.5 py-0.5 text-xs font-bold border ${STATUS_CONFIG[viewingLead.status].bg} ${STATUS_CONFIG[viewingLead.status].color} ${STATUS_CONFIG[viewingLead.status].border}`}>
@@ -1600,64 +1614,64 @@ export function AdminPage() {
                 </button>
               </div>
 
-              <div className="mt-6 space-y-4 text-sm">
-                <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50">
+              <div className="overflow-y-auto px-5 py-4 space-y-3.5 flex-1 min-h-0 text-sm">
+                <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 text-xs sm:text-sm">
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Service</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Service</p>
                     <p className="font-semibold text-slate-800 mt-0.5">{viewingLead.serviceRequested}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Urgency Level</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Urgency Level</p>
                     <p className="font-semibold text-slate-800 mt-0.5 flex items-center gap-1.5">
                       <AlertCircle className="h-3.5 w-3.5 text-[#44ACAB]" />
                       <span>{EMERGENCY_CONFIG[viewingLead.emergencyLevel || 'medium'].shortLabel}</span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Location / Wilaya</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Location / Wilaya</p>
                     <p className="font-semibold text-slate-800 mt-0.5 flex items-center gap-1.5">
                       <MapPin className="h-3.5 w-3.5 text-rose-500" />
                       <span>{viewingLead.location || 'Alger'}</span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Industry / Sector</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Industry / Sector</p>
                     <p className="font-semibold text-slate-800 mt-0.5 flex items-center gap-1.5">
                       <Factory className="h-3.5 w-3.5 text-slate-500" />
                       <span className="truncate">{viewingLead.industry || 'Fabrication & Industrie'}</span>
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Priority</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Priority</p>
                     <p className="font-semibold text-slate-800 mt-0.5 capitalize">{viewingLead.priority}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Pipeline Value</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pipeline Value</p>
                     <p className="font-semibold text-slate-800 mt-0.5">
                       {viewingLead.estimatedValueDZD ? `${viewingLead.estimatedValueDZD.toLocaleString('fr-FR')} DZD` : 'To be estimated'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Acquisition Source</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Acquisition Source</p>
                     <p className="font-semibold text-slate-800 mt-0.5 capitalize">
                       {viewingLead.source.replace('_', ' ')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Inquiry Date</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inquiry Date</p>
                     <p className="font-semibold text-slate-800 mt-0.5">
                       {new Date(viewingLead.createdAt).toLocaleString('en-GB')}
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Direct Contact</p>
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Direct Contact</p>
                   <div className="flex flex-wrap gap-2">
                     {viewingLead.email && (
                       <a
                         href={`mailto:${viewingLead.email}`}
-                        className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:border-[#44ACAB] hover:text-[#44ACAB]"
+                        className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#44ACAB] hover:text-[#44ACAB]"
                       >
                         <Mail className="h-3.5 w-3.5 text-[#44ACAB]" />
                         <span>{viewingLead.email}</span>
@@ -1666,7 +1680,7 @@ export function AdminPage() {
                     {viewingLead.phone && (
                       <a
                         href={`tel:${viewingLead.phone}`}
-                        className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:border-[#44ACAB] hover:text-[#44ACAB]"
+                        className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#44ACAB] hover:text-[#44ACAB]"
                       >
                         <Phone className="h-3.5 w-3.5 text-emerald-600" />
                         <span>{viewingLead.phone}</span>
@@ -1676,16 +1690,16 @@ export function AdminPage() {
                 </div>
 
                 {(viewingLead.notes || viewingLead.message) && (
-                  <div className="pt-2">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Notes & Scope</p>
-                    <div className="rounded-2xl bg-slate-50 p-4 text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Notes & Scope</p>
+                    <div className="rounded-xl bg-slate-50 p-3 text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                       {viewingLead.notes || viewingLead.message}
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="mt-8 pt-4 border-t border-slate-200 flex items-center justify-between">
+              <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/80">
                 <button
                   onClick={() => {
                     handleOpenEditModal(viewingLead);
@@ -1699,7 +1713,7 @@ export function AdminPage() {
 
                 <button
                   onClick={() => setViewingLead(null)}
-                  className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white hover:bg-slate-800"
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
                 >
                   Close
                 </button>
