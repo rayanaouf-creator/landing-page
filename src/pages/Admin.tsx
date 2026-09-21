@@ -39,10 +39,17 @@ import {
   AlertCircle,
   Flame,
   Zap,
-  Tag
+  Tag,
+  UserPlus,
+  LifeBuoy,
+  UserCheck
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim } from '../types';
 import { leadStorage } from '../services/leadStorage';
+import { customerStorage } from '../services/customerStorage';
+import { claimStorage } from '../services/claimStorage';
+import { CustomerView } from '../components/admin/CustomerView';
+import { ClaimView } from '../components/admin/ClaimView';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string }> = {
   new: { label: 'New Lead', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
@@ -127,7 +134,22 @@ export function AdminPage() {
     );
   });
 
+  // Active CRM Tab: 'customer' | 'lead' | 'claim'
+  const [activeTab, setActiveTab] = useState<'customer' | 'lead' | 'claim'>('customer');
+
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [claims, setClaims] = useState<Claim[]>([]);
+
+  // Sub-filters for Customer and Claim
+  const [customerStatusFilter, setCustomerStatusFilter] = useState<string>('all');
+  const [claimStatusFilter, setClaimStatusFilter] = useState<string>('all');
+
+  // Modals for Customer & Claim from sidebar
+  const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
+  const [isAddClaimModalOpen, setIsAddClaimModalOpen] = useState(false);
+  const [initialCustomerForClaim, setInitialCustomerForClaim] = useState<Customer | null>(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -163,12 +185,39 @@ export function AdminPage() {
   useEffect(() => {
     if (isAuthenticated) {
       loadLeads();
+      loadCustomers();
+      loadClaims();
     }
   }, [isAuthenticated]);
 
   const loadLeads = () => {
     const list = leadStorage.getLeads();
     setLeads(list);
+  };
+
+  const loadCustomers = () => {
+    const list = customerStorage.getCustomers();
+    setCustomers(list);
+  };
+
+  const loadClaims = () => {
+    const list = claimStorage.getClaims();
+    setClaims(list);
+  };
+
+  const handleConvertLeadToCustomer = (lead: Lead) => {
+    customerStorage.convertLeadToCustomer(lead);
+    leadStorage.updateLead(lead.id, { status: 'converted' });
+    loadLeads();
+    loadCustomers();
+    showToast(`Converted "${lead.company}" into an active Customer account!`);
+    setActiveTab('customer');
+  };
+
+  const handleFileClaimForCustomer = (cust: Customer) => {
+    setInitialCustomerForClaim(cust);
+    setIsAddClaimModalOpen(true);
+    setActiveTab('claim');
   };
 
   const showToast = (msg: string) => {
@@ -395,6 +444,10 @@ export function AdminPage() {
     return { total, newCount, active, converted, totalPipelineDZD };
   }, [leads]);
 
+  const openClaimsCount = useMemo(() => {
+    return claims.filter(c => c.status === 'open' || c.status === 'investigating' || c.status === 'in_progress').length;
+  }, [claims]);
+
   // Filtering and Sorting
   const filteredLeads = useMemo(() => {
     return leads
@@ -619,186 +672,411 @@ export function AdminPage() {
             </button>
           </div>
 
-          {/* Quick Action: New Lead Button */}
-          <div>
-            <button
-              id="admin-sidebar-new-lead-btn"
-              onClick={() => {
-                handleOpenAddModal();
-                setIsSidebarOpen(false);
-              }}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-3 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
-            >
-              <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
-              <span>Add New Lead</span>
-            </button>
-          </div>
-
-          {/* Pipeline Stage Views */}
-          <div className="space-y-1">
+          {/* PRIMARY NAVIGATION: Customer, Lead, and Claim */}
+          <div className="space-y-1.5">
             <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Pipeline Views
+              CRM Modules
             </p>
+
+            {/* 1. Customer */}
             <button
-              id="admin-filter-all-btn"
+              id="admin-sidebar-nav-customer"
               onClick={() => {
-                setStatusFilter('all');
+                setActiveTab('customer');
                 setIsSidebarOpen(false);
               }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                statusFilter === 'all' 
-                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs' 
+                activeTab === 'customer'
+                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <LayoutDashboard className="h-4 w-4" />
-                <span>All Inquiries</span>
+                <Building2 className={`h-4 w-4 ${activeTab === 'customer' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                <span className="text-sm">Customer</span>
               </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full ${
-                statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'customer' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {customers.length}
+              </span>
+            </button>
+
+            {/* 2. Lead */}
+            <button
+              id="admin-sidebar-nav-lead"
+              onClick={() => {
+                setActiveTab('lead');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'lead'
+                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <UserPlus className={`h-4 w-4 ${activeTab === 'lead' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                <span className="text-sm">Lead</span>
+              </div>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'lead' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
               }`}>
                 {leads.length}
               </span>
             </button>
 
+            {/* 3. Claim */}
             <button
-              id="admin-filter-new-btn"
+              id="admin-sidebar-nav-claim"
               onClick={() => {
-                setStatusFilter('new');
+                setActiveTab('claim');
                 setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                statusFilter === 'new' 
-                  ? 'bg-emerald-950/80 text-emerald-300 ring-1 ring-emerald-500/40 font-bold' 
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'claim'
+                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span>New Inquiries</span>
+                <LifeBuoy className={`h-4 w-4 ${activeTab === 'claim' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                <span className="text-sm">Claim</span>
               </div>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400">
-                {leads.filter(l => l.status === 'new').length}
-              </span>
-            </button>
-
-            <button
-              id="admin-filter-indiscussion-btn"
-              onClick={() => {
-                setStatusFilter('in_discussion');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                statusFilter === 'in_discussion' 
-                  ? 'bg-teal-950/80 text-teal-300 ring-1 ring-teal-500/40 font-bold' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 rounded-full bg-teal-400" />
-                <span>In Discussion</span>
-              </div>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-teal-400">
-                {leads.filter(l => l.status === 'in_discussion').length}
-              </span>
-            </button>
-
-            <button
-              id="admin-filter-proposals-btn"
-              onClick={() => {
-                setStatusFilter('proposal_sent');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                statusFilter === 'proposal_sent' 
-                  ? 'bg-purple-950/80 text-purple-300 ring-1 ring-purple-500/40 font-bold' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 rounded-full bg-purple-400" />
-                <span>Proposal Sent</span>
-              </div>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-purple-400">
-                {leads.filter(l => l.status === 'proposal_sent').length}
-              </span>
-            </button>
-
-            <button
-              id="admin-filter-converted-btn"
-              onClick={() => {
-                setStatusFilter('converted');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                statusFilter === 'converted' 
-                  ? 'bg-emerald-900/60 text-emerald-200 ring-1 ring-emerald-400/40 font-bold' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-300" />
-                <span>Won / Converted</span>
-              </div>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-300">
-                {leads.filter(l => l.status === 'converted').length}
-              </span>
-            </button>
-
-            <button
-              id="admin-filter-lost-btn"
-              onClick={() => {
-                setStatusFilter('lost');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                statusFilter === 'lost' 
-                  ? 'bg-slate-800 text-white font-bold' 
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 rounded-full bg-slate-500" />
-                <span>Lost / Closed</span>
-              </div>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
-                {leads.filter(l => l.status === 'lost').length}
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'claim'
+                  ? 'bg-white/20 text-white'
+                  : openClaimsCount > 0
+                    ? 'bg-rose-950/80 text-rose-300 border border-rose-500/30'
+                    : 'bg-slate-800 text-slate-400'
+              }`}>
+                {openClaimsCount > 0 ? `${openClaimsCount} open` : claims.length}
               </span>
             </button>
           </div>
 
-          {/* Data Tools */}
-          <div className="pt-2 border-t border-slate-800 space-y-1">
-            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Data & Backups
-            </p>
-            <button
-              id="admin-sidebar-export-csv"
-              onClick={() => leadStorage.exportCSV()}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
-            >
-              <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
-              <span>Export CSV (Excel)</span>
-            </button>
+          {/* DYNAMIC CONTEXTUAL MODULE ACTIONS & VIEWS */}
+          {activeTab === 'customer' && (
+            <div className="space-y-4 pt-3 border-t border-slate-800">
+              {/* Add Customer Button */}
+              <div>
+                <button
+                  id="admin-sidebar-add-customer-btn"
+                  onClick={() => {
+                    setIsAddCustomerModalOpen(true);
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-2.5 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
+                >
+                  <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  <span>Add Customer</span>
+                </button>
+              </div>
 
-            <button
-              id="admin-sidebar-backup-json"
-              onClick={() => leadStorage.exportJSON()}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
-            >
-              <Download className="h-4 w-4 text-blue-400" />
-              <span>Backup Database (JSON)</span>
-            </button>
+              {/* Status Filters */}
+              <div className="space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Account Status
+                </p>
+                {[
+                  { id: 'all', label: 'All Accounts', count: customers.length },
+                  { id: 'active', label: 'Active Contracts', count: customers.filter(c => c.status === 'active').length, dot: 'bg-emerald-400' },
+                  { id: 'onboarding', label: 'In Onboarding', count: customers.filter(c => c.status === 'onboarding').length, dot: 'bg-blue-400' },
+                  { id: 'suspended', label: 'Suspended / Churned', count: customers.filter(c => c.status === 'suspended' || c.status === 'churned').length, dot: 'bg-slate-500' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    id={`admin-filter-customer-${item.id}`}
+                    onClick={() => {
+                      setCustomerStatusFilter(item.id);
+                      setIsSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      customerStatusFilter === item.id
+                        ? 'bg-slate-800 text-white font-bold ring-1 ring-slate-700'
+                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {item.dot && <span className={`h-2 w-2 rounded-full ${item.dot}`} />}
+                      <span>{item.label}</span>
+                    </div>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                      {item.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
 
-            <label
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors cursor-pointer"
-            >
-              <Upload className="h-4 w-4 text-purple-400" />
-              <span>Restore Backup</span>
-              <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
-            </label>
-          </div>
+              {/* Data Export */}
+              <div className="pt-2 border-t border-slate-800 space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Customer Tools
+                </p>
+                <button
+                  id="admin-sidebar-export-customers-csv"
+                  onClick={() => customerStorage.exportCSV()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                  <span>Export Customers (CSV)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'lead' && (
+            <div className="space-y-4 pt-3 border-t border-slate-800">
+              {/* Quick Action: New Lead Button */}
+              <div>
+                <button
+                  id="admin-sidebar-new-lead-btn"
+                  onClick={() => {
+                    handleOpenAddModal();
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-2.5 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
+                >
+                  <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  <span>Add New Lead</span>
+                </button>
+              </div>
+
+              {/* Pipeline Stage Views */}
+              <div className="space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Pipeline Views
+                </p>
+                <button
+                  id="admin-filter-all-btn"
+                  onClick={() => {
+                    setStatusFilter('all');
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    statusFilter === 'all' 
+                      ? 'bg-slate-800 text-white font-bold ring-1 ring-slate-700' 
+                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>All Inquiries</span>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                    {leads.length}
+                  </span>
+                </button>
+
+                <button
+                  id="admin-filter-new-btn"
+                  onClick={() => {
+                    setStatusFilter('new');
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    statusFilter === 'new' 
+                      ? 'bg-emerald-950/80 text-emerald-300 ring-1 ring-emerald-500/40 font-bold' 
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                    <span>New Inquiries</span>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400">
+                    {leads.filter(l => l.status === 'new').length}
+                  </span>
+                </button>
+
+                <button
+                  id="admin-filter-indiscussion-btn"
+                  onClick={() => {
+                    setStatusFilter('in_discussion');
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    statusFilter === 'in_discussion' 
+                      ? 'bg-teal-950/80 text-teal-300 ring-1 ring-teal-500/40 font-bold' 
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-2 w-2 rounded-full bg-teal-400" />
+                    <span>In Discussion</span>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-teal-400">
+                    {leads.filter(l => l.status === 'in_discussion').length}
+                  </span>
+                </button>
+
+                <button
+                  id="admin-filter-proposals-btn"
+                  onClick={() => {
+                    setStatusFilter('proposal_sent');
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    statusFilter === 'proposal_sent' 
+                      ? 'bg-purple-950/80 text-purple-300 ring-1 ring-purple-500/40 font-bold' 
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-2 w-2 rounded-full bg-purple-400" />
+                    <span>Proposal Sent</span>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-purple-400">
+                    {leads.filter(l => l.status === 'proposal_sent').length}
+                  </span>
+                </button>
+
+                <button
+                  id="admin-filter-converted-btn"
+                  onClick={() => {
+                    setStatusFilter('converted');
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    statusFilter === 'converted' 
+                      ? 'bg-emerald-900/60 text-emerald-200 ring-1 ring-emerald-400/40 font-bold' 
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-300" />
+                    <span>Won / Converted</span>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-300">
+                    {leads.filter(l => l.status === 'converted').length}
+                  </span>
+                </button>
+
+                <button
+                  id="admin-filter-lost-btn"
+                  onClick={() => {
+                    setStatusFilter('lost');
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    statusFilter === 'lost' 
+                      ? 'bg-slate-800 text-white font-bold' 
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-2 w-2 rounded-full bg-slate-500" />
+                    <span>Lost / Closed</span>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                    {leads.filter(l => l.status === 'lost').length}
+                  </span>
+                </button>
+              </div>
+
+              {/* Data Tools */}
+              <div className="pt-2 border-t border-slate-800 space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Data & Backups
+                </p>
+                <button
+                  id="admin-sidebar-export-csv"
+                  onClick={() => leadStorage.exportCSV()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                  <span>Export CSV (Excel)</span>
+                </button>
+
+                <button
+                  id="admin-sidebar-backup-json"
+                  onClick={() => leadStorage.exportJSON()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                >
+                  <Download className="h-4 w-4 text-blue-400" />
+                  <span>Backup Database (JSON)</span>
+                </button>
+
+                <label
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors cursor-pointer"
+                >
+                  <Upload className="h-4 w-4 text-purple-400" />
+                  <span>Restore Backup</span>
+                  <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'claim' && (
+            <div className="space-y-4 pt-3 border-t border-slate-800">
+              {/* File New Claim Button */}
+              <div>
+                <button
+                  id="admin-sidebar-file-claim-btn"
+                  onClick={() => {
+                    setInitialCustomerForClaim(null);
+                    setIsAddClaimModalOpen(true);
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-2.5 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
+                >
+                  <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  <span>File New Claim</span>
+                </button>
+              </div>
+
+              {/* Status Filters */}
+              <div className="space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Claim Status
+                </p>
+                {[
+                  { id: 'all', label: 'All Claims', count: claims.length },
+                  { id: 'open', label: 'Open / Unassigned', count: claims.filter(c => c.status === 'open').length, dot: 'bg-rose-400' },
+                  { id: 'in_progress', label: 'Action in Progress', count: claims.filter(c => c.status === 'investigating' || c.status === 'in_progress').length, dot: 'bg-amber-400' },
+                  { id: 'resolved', label: 'Resolved / Closed', count: claims.filter(c => c.status === 'resolved' || c.status === 'closed').length, dot: 'bg-emerald-400' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    id={`admin-filter-claim-${item.id}`}
+                    onClick={() => {
+                      setClaimStatusFilter(item.id);
+                      setIsSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      claimStatusFilter === item.id
+                        ? 'bg-slate-800 text-white font-bold ring-1 ring-slate-700'
+                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {item.dot && <span className={`h-2 w-2 rounded-full ${item.dot}`} />}
+                      <span>{item.label}</span>
+                    </div>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                      {item.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Data Export */}
+              <div className="pt-2 border-t border-slate-800 space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Claim Tools
+                </p>
+                <button
+                  id="admin-sidebar-export-claims-csv"
+                  onClick={() => claimStorage.exportCSV()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                  <span>Export Claims (CSV)</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar Footer: Profile & Session Controls */}
@@ -850,8 +1128,40 @@ export function AdminPage() {
 
       {/* Main Workspace Area */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-        {/* Workspace Top Header (Clean replacement of old topbar) */}
-        <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {activeTab === 'customer' && (
+          <CustomerView
+            customers={customers}
+            onRefresh={loadCustomers}
+            showToast={showToast}
+            onFileClaimForCustomer={handleFileClaimForCustomer}
+            isAddModalOpen={isAddCustomerModalOpen}
+            onCloseAddModal={() => setIsAddCustomerModalOpen(false)}
+            statusFilter={customerStatusFilter}
+            onStatusFilterChange={setCustomerStatusFilter}
+          />
+        )}
+
+        {activeTab === 'claim' && (
+          <ClaimView
+            claims={claims}
+            customers={customers}
+            onRefresh={loadClaims}
+            showToast={showToast}
+            isAddModalOpen={isAddClaimModalOpen}
+            onCloseAddModal={() => {
+              setIsAddClaimModalOpen(false);
+              setInitialCustomerForClaim(null);
+            }}
+            initialCustomerForClaim={initialCustomerForClaim}
+            statusFilter={claimStatusFilter}
+            onStatusFilterChange={setClaimStatusFilter}
+          />
+        )}
+
+        {activeTab === 'lead' && (
+          <div>
+            {/* Workspace Top Header (Clean replacement of old topbar) */}
+            <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center rounded-md bg-[#e6f4f4] px-2.5 py-0.5 text-xs font-bold text-[#1b6b6a]">
@@ -1249,6 +1559,14 @@ export function AdminPage() {
                               <Edit3 className="h-4 w-4" />
                             </button>
                             <button
+                              id={`admin-convert-lead-${lead.id}`}
+                              onClick={() => handleConvertLeadToCustomer(lead)}
+                              className="rounded-lg p-1.5 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                              title="Convert Lead to Active Customer Account"
+                            >
+                              <UserCheck className="h-4 w-4" />
+                            </button>
+                            <button
                               id={`admin-delete-lead-${lead.id}`}
                               onClick={() => handleDeleteLead(lead.id, lead.company)}
                               className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
@@ -1266,7 +1584,9 @@ export function AdminPage() {
             </div>
           )}
         </div>
-      </main>
+      </div>
+    )}
+  </main>
 
       {/* CREATE / EDIT LEAD MODAL */}
       <AnimatePresence>
@@ -1699,17 +2019,30 @@ export function AdminPage() {
                 )}
               </div>
 
-              <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/80">
-                <button
-                  onClick={() => {
-                    handleOpenEditModal(viewingLead);
-                    setViewingLead(null);
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#44ACAB] hover:text-[#328887]"
-                >
-                  <Edit3 className="h-3.5 w-3.5" />
-                  <span>Edit Full Details</span>
-                </button>
+              <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/80 gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      handleOpenEditModal(viewingLead);
+                      setViewingLead(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#44ACAB] hover:text-[#328887] px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                  >
+                    <Edit3 className="h-3.5 w-3.5" />
+                    <span>Edit Lead</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const l = viewingLead;
+                      setViewingLead(null);
+                      handleConvertLeadToCustomer(l);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <Building2 className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Convert to Customer</span>
+                  </button>
+                </div>
 
                 <button
                   onClick={() => setViewingLead(null)}
