@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
@@ -11,9 +11,12 @@ import { ServicesPage } from './pages/ServicesPage';
 import { AdminPage } from './pages/Admin';
 
 export default function App() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-[#44ACAB]/30 selection:text-[#1b6b6a]">
-      <Navbar />
+      {!isAdminRoute && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/book" element={<Book />} />
@@ -24,7 +27,7 @@ export default function App() {
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Routes>
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </div>
   );
 }

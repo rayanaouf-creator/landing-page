@@ -1,8 +1,9 @@
 import { motion } from 'motion/react';
-import { Calendar, Clock, ArrowRight, Building2, User, Mail, MessageSquare, Phone } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Building2, User, Mail, MessageSquare, Phone, MapPin, Briefcase, Factory, AlertCircle } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { leadStorage } from '../services/leadStorage';
+import { EmergencyLevel } from '../types';
 
 export function Book() {
   const { t } = useTranslation();
@@ -15,6 +16,10 @@ export function Book() {
     const email = (formData.get('email') as string) || '';
     const phone = (formData.get('phone') as string) || '';
     const company = (formData.get('company') as string) || '';
+    const jobTitle = (formData.get('jobTitle') as string) || '';
+    const location = (formData.get('location') as string) || '';
+    const industry = (formData.get('industry') as string) || '';
+    const emergencyLevel = (formData.get('emergencyLevel') as EmergencyLevel) || 'high';
     const message = (formData.get('message') as string) || '';
 
     // Persist lead directly into storage for Admin section
@@ -23,19 +28,27 @@ export function Book() {
       email,
       phone,
       company: company || 'Independent Inquiry',
+      jobTitle,
+      location,
+      industry,
+      emergencyLevel,
       serviceRequested: 'Consultation & ERP Evaluation',
       message,
       status: 'new',
-      priority: 'high',
+      priority: emergencyLevel === 'immediate' ? 'high' : emergencyLevel === 'high' ? 'high' : 'medium',
       source: 'website_booking',
-      notes: 'Submitted via /book consultation form.'
+      notes: `Location: ${location || 'N/A'} | Industry: ${industry || 'N/A'} | Post: ${jobTitle || 'N/A'} | Urgency: ${emergencyLevel}`
     });
 
     const subject = `Consultation Request: ${company || name}`;
     const body = `Name: ${name}
+Post / Function: ${jobTitle}
+Company: ${company}
+Location: ${location}
+Industry: ${industry}
+Emergency Level: ${emergencyLevel}
 Email: ${email}
 Phone: ${phone}
-Company: ${company}
 
 Project Details:
 ${message}`;
@@ -148,9 +161,9 @@ ${message}`;
                   </div>
                 </div>
 
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-1">
                   <label htmlFor="company" className="block text-sm font-semibold leading-6 text-slate-900">
-                    Company Name
+                    Company Name *
                   </label>
                   <div className="relative mt-2.5">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -160,9 +173,116 @@ ${message}`;
                       type="text"
                       name="company"
                       id="company"
+                      required
                       className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all"
                       placeholder={t('book.form.company_ph')}
                     />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-1">
+                  <label htmlFor="jobTitle" className="block text-sm font-semibold leading-6 text-slate-900">
+                    Post / Function (Poste)
+                  </label>
+                  <div className="relative mt-2.5">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <Briefcase className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <select
+                      name="jobTitle"
+                      id="jobTitle"
+                      className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all bg-white"
+                      defaultValue="Directeur Général / CEO / Owner"
+                    >
+                      <option value="Directeur Général / CEO / Owner">Directeur Général / CEO / Owner</option>
+                      <option value="Directeur des Systèmes d'Information / DSI">Directeur des Systèmes d'Information / DSI</option>
+                      <option value="Directeur Financier / DAF / CFO">Directeur Financier / DAF / CFO</option>
+                      <option value="Directeur des Opérations / COO">Directeur des Opérations / COO</option>
+                      <option value="Responsable Supply Chain & Logistique">Responsable Supply Chain & Logistique</option>
+                      <option value="Chef de Projet ERP / SI">Chef de Projet ERP / SI</option>
+                      <option value="Autre / Other">Autre / Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-1">
+                  <label htmlFor="location" className="block text-sm font-semibold leading-6 text-slate-900">
+                    Location / Wilaya
+                  </label>
+                  <div className="relative mt-2.5">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <MapPin className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <select
+                      name="location"
+                      id="location"
+                      className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all bg-white"
+                      defaultValue="Alger"
+                    >
+                      <option value="Alger">Alger</option>
+                      <option value="Oran">Oran</option>
+                      <option value="Constantine">Constantine</option>
+                      <option value="Sétif">Sétif</option>
+                      <option value="Blida">Blida</option>
+                      <option value="Annaba">Annaba</option>
+                      <option value="Béjaïa">Béjaïa</option>
+                      <option value="Tlemcen">Tlemcen</option>
+                      <option value="Batna">Batna</option>
+                      <option value="Biskra">Biskra</option>
+                      <option value="Ouargla / Hassi Messaoud">Ouargla / Hassi Messaoud</option>
+                      <option value="Mostaganem">Mostaganem</option>
+                      <option value="Tizi Ouzou">Tizi Ouzou</option>
+                      <option value="Autre Wilaya / International">Autre Wilaya / International</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-1">
+                  <label htmlFor="industry" className="block text-sm font-semibold leading-6 text-slate-900">
+                    Industry / Sector
+                  </label>
+                  <div className="relative mt-2.5">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <Factory className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <select
+                      name="industry"
+                      id="industry"
+                      className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all bg-white"
+                      defaultValue="Fabrication & Production Industrielle"
+                    >
+                      <option value="Fabrication & Production Industrielle">Fabrication & Production Industrielle</option>
+                      <option value="Distribution, Grossiste & Négoce">Distribution, Grossiste & Négoce</option>
+                      <option value="Pharmaceutique, Chimie & Santé">Pharmaceutique, Chimie & Santé</option>
+                      <option value="Agroalimentaire & Boissons">Agroalimentaire & Boissons</option>
+                      <option value="BTPH, Construction & Immobilier">BTPH, Construction & Immobilier</option>
+                      <option value="Commerce de détail, Retail & Supermarché">Commerce de détail, Retail & Supermarché</option>
+                      <option value="Transport & Logistique">Transport & Logistique</option>
+                      <option value="Services professionnels & IT">Services professionnels & IT</option>
+                      <option value="Autre secteur">Autre secteur</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label htmlFor="emergencyLevel" className="block text-sm font-semibold leading-6 text-slate-900">
+                    Emergency Level (Urgence du projet)
+                  </label>
+                  <div className="relative mt-2.5">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <AlertCircle className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <select
+                      name="emergencyLevel"
+                      id="emergencyLevel"
+                      className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all bg-white"
+                      defaultValue="high"
+                    >
+                      <option value="immediate">Urgent / Immédiat (Démarrage sous 2 semaines)</option>
+                      <option value="high">Prioritaire (Démarrage sous 1 mois)</option>
+                      <option value="medium">Planifié (Sous 1 à 3 mois)</option>
+                      <option value="low">Exploratoire / Évaluation budgétaire</option>
+                    </select>
                   </div>
                 </div>
 

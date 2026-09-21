@@ -29,9 +29,19 @@ import {
   CheckCircle2,
   Clock,
   ArrowUpDown,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Menu,
+  LayoutDashboard,
+  Globe,
+  MapPin,
+  Briefcase,
+  Factory,
+  AlertCircle,
+  Flame,
+  Zap,
+  Tag
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel } from '../types';
 import { leadStorage } from '../services/leadStorage';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string }> = {
@@ -48,6 +58,52 @@ const PRIORITY_CONFIG: Record<LeadPriority, { label: string; color: string; dot:
   medium: { label: 'Medium', color: 'text-amber-700 bg-amber-50 border-amber-200', dot: 'bg-amber-500' },
   low: { label: 'Low', color: 'text-slate-600 bg-slate-50 border-slate-200', dot: 'bg-slate-400' }
 };
+
+export const EMERGENCY_CONFIG: Record<EmergencyLevel, { label: string; shortLabel: string; color: string; bg: string; border: string; dot: string }> = {
+  immediate: { label: 'Urgent / Immediate (< 2 wks)', shortLabel: 'Immediate', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-600' },
+  high: { label: 'Prioritary (< 1 mo)', shortLabel: 'High Urgency', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500' },
+  medium: { label: 'Planned (1-3 mos)', shortLabel: '1-3 Months', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
+  low: { label: 'Exploratory', shortLabel: 'Exploratory', color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-200', dot: 'bg-slate-400' }
+};
+
+export const INDUSTRY_PRESETS = [
+  'Fabrication & Production Industrielle',
+  'Distribution, Grossiste & Négoce',
+  'Pharmaceutique, Chimie & Santé',
+  'Agroalimentaire & Boissons',
+  'BTPH, Construction & Immobilier',
+  'Commerce de détail, Retail & Supermarché',
+  'Transport & Logistique',
+  'Services professionnels & IT',
+  'Autre secteur'
+];
+
+export const LOCATION_PRESETS = [
+  'Alger',
+  'Oran',
+  'Constantine',
+  'Sétif',
+  'Blida',
+  'Annaba',
+  'Béjaïa',
+  'Tlemcen',
+  'Batna',
+  'Biskra',
+  'Ouargla / Hassi Messaoud',
+  'Mostaganem',
+  'Tizi Ouzou',
+  'Autre Wilaya / International'
+];
+
+export const JOB_TITLE_PRESETS = [
+  "Directeur Général / CEO / Owner",
+  "Directeur des Systèmes d'Information / DSI",
+  "Directeur Financier / DAF / CFO",
+  "Directeur des Opérations / COO",
+  "Responsable Supply Chain & Logistique",
+  "Chef de Projet ERP / SI",
+  "Autre / Other"
+];
 
 export function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -75,6 +131,7 @@ export function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [emergencyFilter, setEmergencyFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'company' | 'value_desc'>('date_desc');
 
   // Modals state
@@ -83,6 +140,7 @@ export function AdminPage() {
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -91,6 +149,10 @@ export function AdminPage() {
   const [formEmail, setFormEmail] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formCompany, setFormCompany] = useState('');
+  const [formJobTitle, setFormJobTitle] = useState('Directeur Général / CEO / Owner');
+  const [formLocation, setFormLocation] = useState('Alger');
+  const [formIndustry, setFormIndustry] = useState('Fabrication & Production Industrielle');
+  const [formEmergencyLevel, setFormEmergencyLevel] = useState<EmergencyLevel>('high');
   const [formService, setFormService] = useState('ERPNext Implementation');
   const [formStatus, setFormStatus] = useState<LeadStatus>('new');
   const [formPriority, setFormPriority] = useState<LeadPriority>('high');
@@ -197,6 +259,10 @@ export function AdminPage() {
     setFormEmail('');
     setFormPhone('');
     setFormCompany('');
+    setFormJobTitle('Directeur Général / CEO / Owner');
+    setFormLocation('Alger');
+    setFormIndustry('Fabrication & Production Industrielle');
+    setFormEmergencyLevel('high');
     setFormService('ERPNext Implementation');
     setFormStatus('new');
     setFormPriority('high');
@@ -212,6 +278,10 @@ export function AdminPage() {
     setFormEmail(lead.email);
     setFormPhone(lead.phone);
     setFormCompany(lead.company);
+    setFormJobTitle(lead.jobTitle || 'Directeur Général / CEO / Owner');
+    setFormLocation(lead.location || 'Alger');
+    setFormIndustry(lead.industry || 'Fabrication & Production Industrielle');
+    setFormEmergencyLevel(lead.emergencyLevel || 'high');
     setFormService(lead.serviceRequested);
     setFormStatus(lead.status);
     setFormPriority(lead.priority);
@@ -234,6 +304,10 @@ export function AdminPage() {
         email: formEmail,
         phone: formPhone,
         company: formCompany,
+        jobTitle: formJobTitle,
+        location: formLocation,
+        industry: formIndustry,
+        emergencyLevel: formEmergencyLevel,
         serviceRequested: formService,
         status: formStatus,
         priority: formPriority,
@@ -248,6 +322,10 @@ export function AdminPage() {
         email: formEmail,
         phone: formPhone,
         company: formCompany,
+        jobTitle: formJobTitle,
+        location: formLocation,
+        industry: formIndustry,
+        emergencyLevel: formEmergencyLevel,
         serviceRequested: formService,
         status: formStatus,
         priority: formPriority,
@@ -323,16 +401,21 @@ export function AdminPage() {
       .filter((lead) => {
         const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
         const matchesPriority = priorityFilter === 'all' || lead.priority === priorityFilter;
+        const matchesEmergency = emergencyFilter === 'all' || (lead.emergencyLevel || 'medium') === emergencyFilter;
         const q = searchQuery.toLowerCase().trim();
         const matchesSearch = !q || 
           lead.name.toLowerCase().includes(q) ||
           lead.company.toLowerCase().includes(q) ||
+          (lead.jobTitle && lead.jobTitle.toLowerCase().includes(q)) ||
+          (lead.location && lead.location.toLowerCase().includes(q)) ||
+          (lead.industry && lead.industry.toLowerCase().includes(q)) ||
+          (lead.emergencyLevel && lead.emergencyLevel.toLowerCase().includes(q)) ||
           lead.email.toLowerCase().includes(q) ||
           lead.phone.toLowerCase().includes(q) ||
           (lead.notes && lead.notes.toLowerCase().includes(q)) ||
           (lead.serviceRequested && lead.serviceRequested.toLowerCase().includes(q));
 
-        return matchesStatus && matchesPriority && matchesSearch;
+        return matchesStatus && matchesPriority && matchesEmergency && matchesSearch;
       })
       .sort((a, b) => {
         if (sortBy === 'date_desc') {
@@ -349,12 +432,12 @@ export function AdminPage() {
         }
         return 0;
       });
-  }, [leads, statusFilter, priorityFilter, searchQuery, sortBy]);
+  }, [leads, statusFilter, priorityFilter, emergencyFilter, searchQuery, sortBy]);
 
   // If not authenticated, render Login Screen
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-900 pt-28 pb-20 px-6 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-900 px-4 py-8 flex items-center justify-center">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -458,7 +541,7 @@ export function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pt-24 pb-20">
+    <div className="min-h-screen bg-slate-100/60 flex flex-col md:flex-row font-sans">
       {/* Toast Notification */}
       <AnimatePresence>
         {notification && (
@@ -466,7 +549,7 @@ export function AdminPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 right-6 z-50 rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-xl flex items-center gap-2"
+            className="fixed top-6 right-6 z-50 rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-xl flex items-center gap-2"
           >
             <CheckCircle2 className="h-4 w-4 text-[#44ACAB]" />
             <span>{notification}</span>
@@ -474,77 +557,323 @@ export function AdminPage() {
         )}
       </AnimatePresence>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Top Control Bar */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-8 border-b border-slate-200">
+      {/* Mobile Top Header (Small Screens Only) */}
+      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#44ACAB] text-white font-black text-sm">
+            JN
+          </div>
+          <div>
+            <span className="font-bold text-sm tracking-tight">JetNext</span>
+            <span className="ml-1 text-[10px] font-semibold text-[#44ACAB] bg-[#44ACAB]/15 px-1.5 py-0.5 rounded">
+              CRM
+            </span>
+          </div>
+        </div>
+        <button
+          id="admin-mobile-menu-btn"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+          aria-label="Toggle navigation menu"
+        >
+          {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </header>
+
+      {/* Mobile Overlay Backdrop */}
+      {isSidebarOpen && (
+        <div 
+          onClick={() => setIsSidebarOpen(false)}
+          className="md:hidden fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs"
+        />
+      )}
+
+      {/* Modern Left Sidebar */}
+      <aside className={`
+        fixed md:sticky top-0 left-0 z-50 md:z-30 h-screen w-72 bg-slate-900 text-slate-300 flex flex-col justify-between border-r border-slate-800 transition-transform duration-200 ease-in-out shrink-0
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Top & Navigation Section */}
+        <div className="p-5 flex-1 overflow-y-auto space-y-6">
+          {/* Logo & Brand Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#44ACAB] to-[#1b6b6a] text-white font-black text-base shadow-sm">
+                JN
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-white tracking-tight text-lg">JetNext</span>
+                  <span className="rounded bg-[#44ACAB]/20 text-[#44ACAB] text-[10px] font-bold px-1.5 py-0.5">
+                    CRM
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">Client & Lead Manager</p>
+              </div>
+            </Link>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Quick Action: New Lead Button */}
+          <div>
+            <button
+              id="admin-sidebar-new-lead-btn"
+              onClick={() => {
+                handleOpenAddModal();
+                setIsSidebarOpen(false);
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-3 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
+            >
+              <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+              <span>Add New Lead</span>
+            </button>
+          </div>
+
+          {/* Pipeline Stage Views */}
+          <div className="space-y-1">
+            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+              Pipeline Views
+            </p>
+            <button
+              id="admin-filter-all-btn"
+              onClick={() => {
+                setStatusFilter('all');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                statusFilter === 'all' 
+                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs' 
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <LayoutDashboard className="h-4 w-4" />
+                <span>All Inquiries</span>
+              </div>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full ${
+                statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {leads.length}
+              </span>
+            </button>
+
+            <button
+              id="admin-filter-new-btn"
+              onClick={() => {
+                setStatusFilter('new');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                statusFilter === 'new' 
+                  ? 'bg-emerald-950/80 text-emerald-300 ring-1 ring-emerald-500/40 font-bold' 
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span>New Inquiries</span>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400">
+                {leads.filter(l => l.status === 'new').length}
+              </span>
+            </button>
+
+            <button
+              id="admin-filter-indiscussion-btn"
+              onClick={() => {
+                setStatusFilter('in_discussion');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                statusFilter === 'in_discussion' 
+                  ? 'bg-teal-950/80 text-teal-300 ring-1 ring-teal-500/40 font-bold' 
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-teal-400" />
+                <span>In Discussion</span>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-teal-400">
+                {leads.filter(l => l.status === 'in_discussion').length}
+              </span>
+            </button>
+
+            <button
+              id="admin-filter-proposals-btn"
+              onClick={() => {
+                setStatusFilter('proposal_sent');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                statusFilter === 'proposal_sent' 
+                  ? 'bg-purple-950/80 text-purple-300 ring-1 ring-purple-500/40 font-bold' 
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-purple-400" />
+                <span>Proposal Sent</span>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-purple-400">
+                {leads.filter(l => l.status === 'proposal_sent').length}
+              </span>
+            </button>
+
+            <button
+              id="admin-filter-converted-btn"
+              onClick={() => {
+                setStatusFilter('converted');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                statusFilter === 'converted' 
+                  ? 'bg-emerald-900/60 text-emerald-200 ring-1 ring-emerald-400/40 font-bold' 
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-300" />
+                <span>Won / Converted</span>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-300">
+                {leads.filter(l => l.status === 'converted').length}
+              </span>
+            </button>
+
+            <button
+              id="admin-filter-lost-btn"
+              onClick={() => {
+                setStatusFilter('lost');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                statusFilter === 'lost' 
+                  ? 'bg-slate-800 text-white font-bold' 
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-slate-500" />
+                <span>Lost / Closed</span>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                {leads.filter(l => l.status === 'lost').length}
+              </span>
+            </button>
+          </div>
+
+          {/* Data Tools */}
+          <div className="pt-2 border-t border-slate-800 space-y-1">
+            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+              Data & Backups
+            </p>
+            <button
+              id="admin-sidebar-export-csv"
+              onClick={() => leadStorage.exportCSV()}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+            >
+              <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+              <span>Export CSV (Excel)</span>
+            </button>
+
+            <button
+              id="admin-sidebar-backup-json"
+              onClick={() => leadStorage.exportJSON()}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+            >
+              <Download className="h-4 w-4 text-blue-400" />
+              <span>Backup Database (JSON)</span>
+            </button>
+
+            <label
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors cursor-pointer"
+            >
+              <Upload className="h-4 w-4 text-purple-400" />
+              <span>Restore Backup</span>
+              <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
+            </label>
+          </div>
+        </div>
+
+        {/* Sidebar Footer: Profile & Session Controls */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950/40 space-y-3">
+          {/* User badge */}
+          <div className="flex items-center gap-3 px-1 py-1">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#44ACAB]/20 text-[#44ACAB] font-bold text-xs ring-1 ring-[#44ACAB]/30">
+              {currentUserEmail.slice(0, 2).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-white truncate" title={currentUserEmail}>
+                {currentUserEmail}
+              </p>
+              <p className="text-[10px] text-slate-400">Lead Administrator</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1.5 pt-1">
+            <button
+              id="admin-sidebar-password-btn"
+              onClick={() => setIsChangePasswordOpen(true)}
+              className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition-colors"
+              title="Change Admin Password"
+            >
+              <KeyRound className="h-3.5 w-3.5 text-amber-400" />
+              <span>Password</span>
+            </button>
+
+            <Link
+              to="/"
+              className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition-colors"
+              title="View Public Website"
+            >
+              <Globe className="h-3.5 w-3.5 text-[#44ACAB]" />
+              <span>Site</span>
+            </Link>
+          </div>
+
+          <button
+            id="admin-sidebar-logout-btn"
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-xs font-semibold text-rose-300 transition-colors border border-rose-500/20"
+          >
+            <LogOut className="h-3.5 w-3.5 text-rose-400" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Workspace Area */}
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        {/* Workspace Top Header (Clean replacement of old topbar) */}
+        <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center rounded-md bg-[#e6f4f4] px-2.5 py-0.5 text-xs font-bold text-[#1b6b6a]">
-                CRM System
+                Lead Pipeline
               </span>
-              <span className="text-xs text-slate-400 font-medium">Signed in: {currentUserEmail}</span>
+              <span className="text-xs text-slate-400 font-medium">
+                {statusFilter === 'all' ? 'All Inquiries' : `Filter: ${statusFilter}`}
+              </span>
             </div>
             <h1 className="mt-1 text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Lead Management & Inquiries
+              Customer Pipeline & Inquiries
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5">
             <button
-              id="admin-new-lead-btn"
+              id="admin-main-new-lead-btn"
               onClick={handleOpenAddModal}
               className="inline-flex items-center gap-2 rounded-xl bg-[#44ACAB] px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-[#328887] transition-all shadow-sm"
             >
               <Plus className="h-4 w-4" />
               <span>New Lead</span>
-            </button>
-
-            <button
-              id="admin-change-password-btn"
-              onClick={() => setIsChangePasswordOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors shadow-2xs"
-              title="Change Admin Password"
-            >
-              <KeyRound className="h-4 w-4 text-amber-600" />
-              <span className="hidden sm:inline">Password</span>
-            </button>
-
-            <button
-              id="admin-export-csv-btn"
-              onClick={() => leadStorage.exportCSV()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors shadow-2xs"
-              title="Export leads to Excel-ready CSV"
-            >
-              <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-              <span className="hidden sm:inline">Export CSV</span>
-            </button>
-
-            <button
-              id="admin-export-json-btn"
-              onClick={() => leadStorage.exportJSON()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors shadow-2xs"
-              title="Backup database to JSON"
-            >
-              <Download className="h-4 w-4 text-blue-600" />
-              <span className="hidden sm:inline">Backup</span>
-            </button>
-
-            <label
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
-              title="Restore database from JSON"
-            >
-              <Upload className="h-4 w-4 text-purple-600" />
-              <span className="hidden sm:inline">Restore</span>
-              <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
-            </label>
-
-            <button
-              id="admin-logout-btn"
-              onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-colors"
-              title="Log out from admin"
-            >
-              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -651,21 +980,39 @@ export function AdminPage() {
               </button>
             ))}
 
-            <div className="ml-auto flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-500">Priority:</span>
-              {['all', 'high', 'medium', 'low'].map((pr) => (
-                <button
-                  key={pr}
-                  onClick={() => setPriorityFilter(pr)}
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize transition-all ${
-                    priorityFilter === pr
-                      ? 'bg-slate-800 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
+            <div className="ml-auto flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-500">Urgency:</span>
+                <select
+                  id="admin-filter-emergency"
+                  value={emergencyFilter}
+                  onChange={(e) => setEmergencyFilter(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:border-[#44ACAB]"
                 >
-                  {pr}
-                </button>
-              ))}
+                  <option value="all">All Urgencies</option>
+                  <option value="immediate">Immediate (&lt; 2 wks)</option>
+                  <option value="high">Urgent (&lt; 1 mo)</option>
+                  <option value="medium">Planned (1-3 mos)</option>
+                  <option value="low">Exploratory</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+                <span className="text-xs font-bold text-slate-500">Priority:</span>
+                {['all', 'high', 'medium', 'low'].map((pr) => (
+                  <button
+                    key={pr}
+                    onClick={() => setPriorityFilter(pr)}
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize transition-all ${
+                      priorityFilter === pr
+                        ? 'bg-slate-800 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {pr}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -710,8 +1057,9 @@ export function AdminPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    <th className="py-3.5 pl-6 pr-3">Lead & Enterprise</th>
-                    <th className="px-3 py-3.5">Contact Details</th>
+                    <th className="py-3.5 pl-6 pr-3">Enterprise & Location</th>
+                    <th className="px-3 py-3.5">Contact & Function</th>
+                    <th className="px-3 py-3.5">Urgency</th>
                     <th className="px-3 py-3.5">Requested Solution</th>
                     <th className="px-3 py-3.5">Status</th>
                     <th className="px-3 py-3.5">Priority</th>
@@ -724,13 +1072,14 @@ export function AdminPage() {
                   {filteredLeads.map((lead) => {
                     const statusCfg = STATUS_CONFIG[lead.status];
                     const priorityCfg = PRIORITY_CONFIG[lead.priority];
+                    const emergencyCfg = EMERGENCY_CONFIG[lead.emergencyLevel || 'medium'];
 
                     return (
                       <tr 
                         key={lead.id}
                         className="hover:bg-slate-50/80 transition-colors group"
                       >
-                        {/* Company & Name */}
+                        {/* Company & Location & Industry */}
                         <td className="py-4 pl-6 pr-3">
                           <div className="font-bold text-slate-900 flex items-center gap-2">
                             <span>{lead.company}</span>
@@ -740,24 +1089,44 @@ export function AdminPage() {
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                            <User className="h-3 w-3 text-slate-400" />
-                            <span>{lead.name}</span>
+                          
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            {lead.location && (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-medium">
+                                <MapPin className="h-3 w-3 text-rose-500 shrink-0" />
+                                <span>{lead.location}</span>
+                              </span>
+                            )}
+                            {lead.industry && (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 truncate max-w-[150px]" title={lead.industry}>
+                                <Factory className="h-3 w-3 text-slate-400 shrink-0" />
+                                <span className="truncate">{lead.industry}</span>
+                              </span>
+                            )}
                           </div>
                         </td>
 
-                        {/* Contact info with fast action icons */}
+                        {/* Contact info and Post / Function */}
                         <td className="px-3 py-4">
-                          <div className="flex flex-col space-y-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-slate-900 text-xs">{lead.name}</span>
+                            {lead.jobTitle && (
+                              <span className="inline-block rounded bg-[#e6f4f4] px-1.5 py-0.5 text-[10px] font-semibold text-[#1b6b6a]">
+                                {lead.jobTitle}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col space-y-1 mt-1">
                             {lead.email ? (
                               <div className="flex items-center gap-1.5 text-xs text-slate-700">
                                 <a 
                                   href={`mailto:${lead.email}`}
-                                  className="hover:text-[#44ACAB] transition-colors flex items-center gap-1"
+                                  className="hover:text-[#44ACAB] transition-colors flex items-center gap-1 truncate max-w-[160px]"
                                   title="Send Email"
                                 >
-                                  <Mail className="h-3.5 w-3.5 text-[#44ACAB]" />
-                                  <span>{lead.email}</span>
+                                  <Mail className="h-3.5 w-3.5 text-[#44ACAB] shrink-0" />
+                                  <span className="truncate">{lead.email}</span>
                                 </a>
                                 <button
                                   onClick={() => handleCopy(lead.email, `mail-${lead.id}`)}
@@ -782,7 +1151,7 @@ export function AdminPage() {
                                   className="hover:text-[#44ACAB] transition-colors flex items-center gap-1"
                                   title="Call Phone"
                                 >
-                                  <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                                  <Phone className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                                   <span>{lead.phone}</span>
                                 </a>
                                 <button
@@ -799,6 +1168,14 @@ export function AdminPage() {
                               </div>
                             ) : null}
                           </div>
+                        </td>
+
+                        {/* Urgency / Emergency Level */}
+                        <td className="px-3 py-4">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border ${emergencyCfg.bg} ${emergencyCfg.color} ${emergencyCfg.border}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${emergencyCfg.dot} ${lead.emergencyLevel === 'immediate' ? 'animate-pulse' : ''}`}></span>
+                            {emergencyCfg.shortLabel}
+                          </span>
                         </td>
 
                         {/* Service requested */}
@@ -889,7 +1266,7 @@ export function AdminPage() {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* CREATE / EDIT LEAD MODAL */}
       <AnimatePresence>
@@ -943,6 +1320,83 @@ export function AdminPage() {
                       placeholder="e.g. Karim Benali"
                       className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Poste / Fonction (Job Title)
+                    </label>
+                    <input
+                      id="lead-form-jobtitle"
+                      type="text"
+                      list="job-titles-list"
+                      value={formJobTitle}
+                      onChange={(e) => setFormJobTitle(e.target.value)}
+                      placeholder="e.g. Directeur Général / DSI / DAF"
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none"
+                    />
+                    <datalist id="job-titles-list">
+                      {JOB_TITLE_PRESETS.map((item) => (
+                        <option key={item} value={item} />
+                      ))}
+                    </datalist>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Location / Wilaya
+                    </label>
+                    <input
+                      id="lead-form-location"
+                      type="text"
+                      list="locations-list"
+                      value={formLocation}
+                      onChange={(e) => setFormLocation(e.target.value)}
+                      placeholder="e.g. Alger, Oran, Sétif..."
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none"
+                    />
+                    <datalist id="locations-list">
+                      {LOCATION_PRESETS.map((loc) => (
+                        <option key={loc} value={loc} />
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Industry / Sector
+                    </label>
+                    <select
+                      id="lead-form-industry"
+                      value={formIndustry}
+                      onChange={(e) => setFormIndustry(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-[#44ACAB] outline-none"
+                    >
+                      {INDUSTRY_PRESETS.map((ind) => (
+                        <option key={ind} value={ind}>{ind}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Urgency / Emergency Level
+                    </label>
+                    <select
+                      id="lead-form-emergency"
+                      value={formEmergencyLevel}
+                      onChange={(e) => setFormEmergencyLevel(e.target.value as EmergencyLevel)}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-[#44ACAB] outline-none font-semibold text-slate-800"
+                    >
+                      <option value="immediate">Urgent / Immédiat (&lt; 2 semaines)</option>
+                      <option value="high">Prioritaire (&lt; 1 mois)</option>
+                      <option value="medium">Planifié (1 à 3 mois)</option>
+                      <option value="low">Exploratoire / Veille</option>
+                    </select>
                   </div>
                 </div>
 
@@ -1114,14 +1568,29 @@ export function AdminPage() {
             >
               <div className="flex items-start justify-between pb-4 border-b border-slate-200">
                 <div>
-                  <span className={`inline-block rounded-md px-2.5 py-0.5 text-xs font-bold border ${STATUS_CONFIG[viewingLead.status].bg} ${STATUS_CONFIG[viewingLead.status].color} ${STATUS_CONFIG[viewingLead.status].border} mb-1.5`}>
-                    {STATUS_CONFIG[viewingLead.status].label}
-                  </span>
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span className={`inline-block rounded-md px-2.5 py-0.5 text-xs font-bold border ${STATUS_CONFIG[viewingLead.status].bg} ${STATUS_CONFIG[viewingLead.status].color} ${STATUS_CONFIG[viewingLead.status].border}`}>
+                      {STATUS_CONFIG[viewingLead.status].label}
+                    </span>
+                    {viewingLead.emergencyLevel && (
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold border ${EMERGENCY_CONFIG[viewingLead.emergencyLevel].bg} ${EMERGENCY_CONFIG[viewingLead.emergencyLevel].color} ${EMERGENCY_CONFIG[viewingLead.emergencyLevel].border}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${EMERGENCY_CONFIG[viewingLead.emergencyLevel].dot}`}></span>
+                        {EMERGENCY_CONFIG[viewingLead.emergencyLevel].label}
+                      </span>
+                    )}
+                  </div>
                   <h2 className="text-xl font-black text-slate-900">{viewingLead.company}</h2>
-                  <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
-                    <User className="h-3.5 w-3.5" />
-                    <span>{viewingLead.name}</span>
-                  </p>
+                  <div className="text-sm text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="flex items-center gap-1 text-slate-700 font-semibold">
+                      <User className="h-3.5 w-3.5 text-slate-400" />
+                      {viewingLead.name}
+                    </span>
+                    {viewingLead.jobTitle && (
+                      <span className="rounded bg-[#e6f4f4] px-2 py-0.5 text-xs font-semibold text-[#1b6b6a]">
+                        {viewingLead.jobTitle}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => setViewingLead(null)}
@@ -1138,6 +1607,27 @@ export function AdminPage() {
                     <p className="font-semibold text-slate-800 mt-0.5">{viewingLead.serviceRequested}</p>
                   </div>
                   <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Urgency Level</p>
+                    <p className="font-semibold text-slate-800 mt-0.5 flex items-center gap-1.5">
+                      <AlertCircle className="h-3.5 w-3.5 text-[#44ACAB]" />
+                      <span>{EMERGENCY_CONFIG[viewingLead.emergencyLevel || 'medium'].shortLabel}</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Location / Wilaya</p>
+                    <p className="font-semibold text-slate-800 mt-0.5 flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-rose-500" />
+                      <span>{viewingLead.location || 'Alger'}</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Industry / Sector</p>
+                    <p className="font-semibold text-slate-800 mt-0.5 flex items-center gap-1.5">
+                      <Factory className="h-3.5 w-3.5 text-slate-500" />
+                      <span className="truncate">{viewingLead.industry || 'Fabrication & Industrie'}</span>
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-xs font-bold text-slate-400 uppercase">Priority</p>
                     <p className="font-semibold text-slate-800 mt-0.5 capitalize">{viewingLead.priority}</p>
                   </div>
@@ -1145,6 +1635,12 @@ export function AdminPage() {
                     <p className="text-xs font-bold text-slate-400 uppercase">Pipeline Value</p>
                     <p className="font-semibold text-slate-800 mt-0.5">
                       {viewingLead.estimatedValueDZD ? `${viewingLead.estimatedValueDZD.toLocaleString('fr-FR')} DZD` : 'To be estimated'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Acquisition Source</p>
+                    <p className="font-semibold text-slate-800 mt-0.5 capitalize">
+                      {viewingLead.source.replace('_', ' ')}
                     </p>
                   </div>
                   <div>

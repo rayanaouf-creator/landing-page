@@ -76,12 +76,32 @@ export const leadStorage = {
 
   exportCSV(): void {
     const leads = this.getLeads();
-    const headers = ['ID', 'Date', 'Name', 'Company', 'Email', 'Phone', 'Service', 'Status', 'Priority', 'Est Value (DZD)', 'Notes'];
+    const headers = [
+      'ID', 
+      'Date', 
+      'Company', 
+      'Contact Person', 
+      'Post / Function',
+      'Location / Wilaya',
+      'Industry / Sector',
+      'Emergency Level',
+      'Email', 
+      'Phone', 
+      'Service', 
+      'Status', 
+      'Priority', 
+      'Est Value (DZD)', 
+      'Notes'
+    ];
     const rows = leads.map(l => [
       `"${l.id}"`,
       `"${new Date(l.createdAt).toLocaleDateString()}"`,
-      `"${(l.name || '').replace(/"/g, '""')}"`,
       `"${(l.company || '').replace(/"/g, '""')}"`,
+      `"${(l.name || '').replace(/"/g, '""')}"`,
+      `"${(l.jobTitle || '').replace(/"/g, '""')}"`,
+      `"${(l.location || '').replace(/"/g, '""')}"`,
+      `"${(l.industry || '').replace(/"/g, '""')}"`,
+      `"${(l.emergencyLevel || '').replace(/"/g, '""')}"`,
       `"${(l.email || '').replace(/"/g, '""')}"`,
       `"${(l.phone || '').replace(/"/g, '""')}"`,
       `"${(l.serviceRequested || '').replace(/"/g, '""')}"`,
