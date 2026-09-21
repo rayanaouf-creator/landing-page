@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, Instagram, Linkedin, MapPin, Globe } from 'lucide-react';
+import { Mail, Phone, Instagram, Linkedin, MapPin, Globe, Lock } from 'lucide-react';
 
 export function Footer() {
   const { t } = useTranslation();
@@ -59,6 +59,12 @@ export function Footer() {
                 <a href="/#faq" id="footer-link-faq" className="text-sm text-slate-600 hover:text-[#44ACAB] transition-colors">
                   FAQ
                 </a>
+              </li>
+              <li>
+                <Link to="/admin" id="footer-link-admin" className="text-sm text-slate-600 hover:text-[#44ACAB] transition-colors flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#44ACAB]"></span>
+                  Admin CRM
+                </Link>
               </li>
               <li>
                 <Link to="/book" id="footer-link-book" className="text-sm font-semibold text-[#44ACAB] hover:text-[#328887] transition-colors">
@@ -195,9 +201,19 @@ export function Footer() {
           <p>
             &copy; {new Date().getFullYear()} JetNext. A Jethings Company. {t('footer.rights')}
           </p>
-          <p className="text-slate-400">
-            Algeria
-          </p>
+          <div className="flex items-center gap-4 text-slate-400">
+            <span>Algeria</span>
+            <span>&bull;</span>
+            <Link 
+              to="/admin" 
+              id="footer-admin-lock-link" 
+              className="inline-flex items-center gap-1 text-slate-400 hover:text-[#44ACAB] transition-colors"
+              title="Admin Lead Portal"
+            >
+              <Lock className="h-3 w-3" />
+              <span>Admin Portal</span>
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

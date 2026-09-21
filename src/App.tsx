@@ -8,6 +8,7 @@ import { ERPNextPage } from './pages/ERPNext';
 import { Iso9001Page } from './pages/Iso9001';
 import { TeamPage } from './pages/TeamPage';
 import { ServicesPage } from './pages/ServicesPage';
+import { AdminPage } from './pages/Admin';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/iso9001" element={<Iso9001Page />} />
         <Route path="/team" element={<TeamPage />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
       <Footer />
     </div>

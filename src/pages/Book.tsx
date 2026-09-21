@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Calendar, Clock, ArrowRight, Building2, User, Mail, MessageSquare, Phone } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { leadStorage } from '../services/leadStorage';
 
 export function Book() {
   const { t } = useTranslation();
@@ -10,11 +11,25 @@ export function Book() {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
-    const phone = formData.get('phone') as string;
-    const company = formData.get('company') as string;
-    const message = formData.get('message') as string;
+    const name = (formData.get('name') as string) || '';
+    const email = (formData.get('email') as string) || '';
+    const phone = (formData.get('phone') as string) || '';
+    const company = (formData.get('company') as string) || '';
+    const message = (formData.get('message') as string) || '';
+
+    // Persist lead directly into storage for Admin section
+    leadStorage.saveLead({
+      name,
+      email,
+      phone,
+      company: company || 'Independent Inquiry',
+      serviceRequested: 'Consultation & ERP Evaluation',
+      message,
+      status: 'new',
+      priority: 'high',
+      source: 'website_booking',
+      notes: 'Submitted via /book consultation form.'
+    });
 
     const subject = `Consultation Request: ${company || name}`;
     const body = `Name: ${name}
