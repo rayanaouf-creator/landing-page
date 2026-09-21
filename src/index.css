@@ -1,1 +1,52 @@
 @import "tailwindcss";
+
+/* Custom Sleek Scrollbars */
+.custom-dark-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+}
+
+.custom-dark-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-dark-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-dark-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.custom-dark-scrollbar:hover::-webkit-scrollbar-thumb,
+.custom-dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(68, 172, 171, 0.6);
+}
+
+.custom-light-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.custom-light-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-light-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-light-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.custom-light-scrollbar:hover::-webkit-scrollbar-thumb,
+.custom-light-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(68, 172, 171, 0.6);
+}

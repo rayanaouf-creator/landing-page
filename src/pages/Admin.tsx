@@ -594,7 +594,7 @@ export function AdminPage() {
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Top & Navigation Section */}
-        <div className="p-5 flex-1 overflow-y-auto space-y-6">
+        <div className="p-5 flex-1 overflow-y-auto custom-dark-scrollbar space-y-6">
           {/* Logo & Brand Header */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-800">
             <Link to="/" className="flex items-center gap-3 group">
@@ -1053,7 +1053,7 @@ export function AdminPage() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-light-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -1296,7 +1296,7 @@ export function AdminPage() {
 
               {/* Form Content with Controlled Height & Internal Scroll */}
               <form onSubmit={handleSaveLead} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 min-h-0">
+                <div className="flex-1 overflow-y-auto custom-light-scrollbar px-5 py-4 space-y-3 min-h-0">
                   {/* Row 1: Company & Contact Person */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -1614,7 +1614,7 @@ export function AdminPage() {
                 </button>
               </div>
 
-              <div className="overflow-y-auto px-5 py-4 space-y-3.5 flex-1 min-h-0 text-sm">
+              <div className="overflow-y-auto custom-light-scrollbar px-5 py-4 space-y-3.5 flex-1 min-h-0 text-sm">
                 <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 text-xs sm:text-sm">
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Service</p>
