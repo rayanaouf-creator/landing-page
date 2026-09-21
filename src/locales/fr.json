@@ -107,6 +107,54 @@
       }
     }
   },
+  "testimonials": {
+    "subtitle": "Témoignages Clients",
+    "title1": "Recommandé par les Décideurs,",
+    "title2": "Éprouvé sur le Terrain",
+    "desc": "Découvrez comment des entreprises de la distribution, du commerce de gros et des équipements médicaux ont transformé leurs opérations avec JetNext.",
+    "verified_client": "Client Vérifié",
+    "metric_label": "Impact Clé",
+    "banner_title": "Prêt à obtenir des résultats similaires pour votre entreprise ?",
+    "banner_desc": "Consultez nos architectes logiciels & ERPNext pour une feuille de route numérique sur mesure.",
+    "items": {
+      "optilens": {
+        "client_name": "Karim Benali",
+        "client_role": "Directeur des Opérations & Logistique",
+        "company": "Optilens",
+        "industry": "Distribution Optique (14 Wilayas)",
+        "service": "Déploiement ERPNext Multi-Sociétés",
+        "metric": "+45% de Rapidité de Livraison",
+        "quote": "JetNext a totalement révolutionné notre réseau de distribution national sur 14 wilayas. Le passage de tableurs Excel dispersés à un ERPNext centralisé a éliminé les stocks dormants et apporté une visibilité en temps réel à notre direction."
+      },
+      "choptic": {
+        "client_name": "Nabil Meziani",
+        "client_role": "Directeur Général",
+        "company": "CH Optic",
+        "industry": "Commerce de Gros & Santé",
+        "service": "Plateforme B2B Sur Mesure",
+        "metric": "Zéro Écart d'Inventaire",
+        "quote": "Le logiciel sur mesure conçu par JetNext pour notre catalogue de gros a fluidifié la gestion de milliers de références optiques. Nos commerciaux et cliniques partenaires passent désormais leurs commandes en quelques secondes sans aucune erreur."
+      },
+      "lutech": {
+        "client_name": "Dr. Sofiane Haddad",
+        "client_role": "Responsable Matériel Technique",
+        "company": "Lutech",
+        "industry": "Équipements & Optique Ophtalmique",
+        "service": "Traçabilité Numéros de Série & Facturation",
+        "metric": "100% de Traçabilité Machines",
+        "quote": "Le suivi unitaire de nos machines ophtalmiques par numéro de série était essentiel pour nos garanties et notre SAV. JetNext a automatisé notre registre d'équipements et la facturation, épargnant des centaines d'heures administratives chaque mois."
+      },
+      "industria": {
+        "client_name": "Amel Boukhalfa",
+        "client_role": "Directrice Générale des Opérations",
+        "company": "Maghreb Precision Supply",
+        "industry": "Fournitures Industrielles & Fabrication",
+        "service": "Intégration ERPNext & Formation d'Équipe",
+        "metric": "100% d'Adoption en 3 Semaines",
+        "quote": "Au-delà d'une mise en œuvre technique irréprochable, les sessions de formation fournies par JetNext ont fait toute la différence. Ils ont formé nos équipes sur nos flux réels, assurant une adoption fluide et des gains de productivité immédiats."
+      }
+    }
+  },
   "team": {
     "subtitle": "Notre Équipe",
     "title1": "Les Esprits Derrière",
@@ -147,14 +195,79 @@
       }
     }
   },
+  "faq": {
+    "subtitle": "Foire Aux Questions",
+    "title1": "Tout Ce Que Vous Devez Savoir Sur",
+    "title2": "ERPNext & Nos Services",
+    "desc": "Des réponses claires à vos questions sur les délais de déploiement, la migration de données, la personnalisation, la formation et le support continu.",
+    "all_categories": "Toutes les questions",
+    "cat_erp": "ERPNext & Migration",
+    "cat_custom": "Modules & Sur Mesure",
+    "cat_support": "Hébergement & Support",
+    "cat_formation": "Formation & ISO",
+    "search_placeholder": "Rechercher une question (ex. délais, migration, hébergement, formation)...",
+    "no_results_title": "Aucune question correspondante trouvée",
+    "no_results_desc": "Essayez avec d'autres mots-clés ou contactez directement notre équipe.",
+    "still_questions_title": "Vous avez encore des questions sur votre projet ?",
+    "still_questions_desc": "Nos architectes ERP sont à votre écoute pour analyser vos flux et vous proposer une consultation sur mesure.",
+    "ask_btn": "Échanger avec un expert",
+    "items": {
+      "q1": {
+        "question": "Qu'est-ce qu'ERPNext et pourquoi le choisir plutôt qu'Excel ou des ERP propriétaires comme SAP et Odoo ?",
+        "answer": "ERPNext est un progiciel de gestion d'entreprise (ERP) open-source de premier plan, sans aucun frais récurrent de licence par utilisateur. Excel engendre des silos d'informations, des risques d'erreurs manuelles et manque de synchronisation multi-utilisateurs, tandis que les ERP propriétaires imposent des abonnements mensuels élevés qui pénalisent votre croissance. ERPNext garantit une souveraineté totale sur vos données, un nombre illimité d'utilisateurs et une plateforme centralisant comptabilité, ventes, stocks, production, RH et CRM.",
+        "category": "erp"
+      },
+      "q2": {
+        "question": "Combien de temps dure un déploiement ERPNext avec JetNext ?",
+        "answer": "Une implémentation standard prend généralement entre 3 et 8 semaines, selon la complexité de vos processus et les besoins d'adaptation. Nous suivons une méthodologie agile éprouvée en 4 étapes : 1) Audit initial et cadrage des flux, 2) Paramétrage et développement de modules spécifiques, 3) Nettoyage et migration sécurisée des données, et 4) Formation pratique des équipes suivie d'un accompagnement renforcé lors du démarrage effectif.",
+        "category": "erp"
+      },
+      "q3": {
+        "question": "Pouvez-vous migrer l'ensemble de nos données existantes depuis Excel ou d'anciens logiciels ?",
+        "answer": "Oui, la migration de données fait partie de notre cœur d'expertise. Notre équipe technique prend en charge l'extraction, la déduplication, la normalisation des schémas et l'import automatisé dans ERPNext. Nous migrons vos plans comptables, historiques d'écritures, répertoires clients/fournisseurs, catalogues produits complexes, suivis de lots/numéros de série et soldes de stock initiaux sans interrompre votre activité.",
+        "category": "erp"
+      },
+      "q4": {
+        "question": "Comment JetNext gère-t-il le développement de modules sur mesure et les intégrations ?",
+        "answer": "Au-delà des fonctionnalités natives d'ERPNext, JetNext conçoit des applications Frappe/Python sur mesure, des automatisations métier avancées, des connecteurs d'API REST et des interfaces web/mobiles modernes en React et React Native. Nous avons notamment développé des systèmes multi-sociétés pour la distribution régionale, des registres de suivi d'équipements par numéros de série et des portails B2B dédiés.",
+        "category": "custom"
+      },
+      "q5": {
+        "question": "Proposez-vous de la formation pour nos collaborateurs et un accompagnement au changement ?",
+        "answer": "Absolument. La rentabilité d'un ERP repose sur son adoption par les équipes. JetNext dispense des ateliers de formation interactifs personnalisés par département (finance, logistique, commercial, direction). Vos collaborateurs s'exercent sur un environnement de test dédié avec vos données réelles, appuyés par des fiches pratiques, des vidéos tutoriels et des procédures opérationnelles standard (SOP).",
+        "category": "formation"
+      },
+      "q6": {
+        "question": "Quelles sont vos solutions d'hébergement, de sauvegarde et d'installation sur site ?",
+        "answer": "Nous offrons des solutions d'infrastructure flexibles adaptées à vos exigences de sécurité. Notre hébergement cloud infogéré comprend des serveurs haute performance, des sauvegardes quotidiennes chiffrées hors-site, des certificats SSL, un engagement de disponibilité à 99,9% et des mises à jour de sécurité préventives. Pour les entreprises soumises à des contraintes réglementaires locales, nous assurons également le déploiement sur vos propres serveurs sur site (on-premise).",
+        "category": "support"
+      },
+      "q7": {
+        "question": "Quel support technique et quelle maintenance assurez-vous après la mise en production ?",
+        "answer": "Chaque mise en production bénéficie d'une période d'hyper-assistance suivie de contrats de maintenance évolutive et corrective. Notre accompagnement couvre la résolution prioritaire d'incidents, la mise à niveau des versions, l'optimisation des bases de données et un support réactif disponible par téléphone, e-mail et système de tickets.",
+        "category": "support"
+      },
+      "q8": {
+        "question": "Comment vos solutions ERP s'articulent-elles avec les exigences de la norme ISO 9001 ?",
+        "answer": "Grâce à notre partenariat officiel avec HCA Consulting, nous alignons directement vos flux de travail ERPNext sur les principes du management de la qualité ISO 9001. La gestion documentaire, la traçabilité des opérations, les flux de validation et le traitement des non-conformités sont intégrés nativement dans votre ERP, simplifiant grandement vos audits qualité.",
+        "category": "formation"
+      }
+    }
+  },
   "home": {
     "contact_title": "Commencez votre transformation numérique",
     "contact_desc": "Discutez de vos exigences, de vos flux de travail et de vos objectifs avec nos experts ERP. Construisons une base évolutive pour votre entreprise.",
     "contact_btn": "Réserver une consultation"
   },
   "footer": {
-    "desc": "Automatiser l'avenir, un module à la fois.",
-    "rights": "Tous droits réservés."
+    "desc": "Automatiser l'avenir, un module à la fois. Écosystèmes ERP sur mesure et solutions numériques performantes.",
+    "rights": "Tous droits réservés.",
+    "navigation": "Navigation",
+    "cto": "CTO",
+    "cto_role": "Directeur Technique (CTO)",
+    "main_company": "Société Principale",
+    "location": "Localisation / Carte",
+    "visit_site": "Site Officiel"
   },
   "book": {
     "title1": "Réserver une",

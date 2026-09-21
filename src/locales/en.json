@@ -107,6 +107,54 @@
       }
     }
   },
+  "testimonials": {
+    "subtitle": "Client Feedback",
+    "title1": "Trusted by Leaders,",
+    "title2": "Proven in the Field",
+    "desc": "Discover how businesses across distribution, wholesale, and medical equipment achieved operational excellence with JetNext.",
+    "verified_client": "Verified Client",
+    "metric_label": "Key Impact",
+    "banner_title": "Ready to achieve similar results for your enterprise?",
+    "banner_desc": "Consult with our ERPNext & software architects for a tailored digital roadmap.",
+    "items": {
+      "optilens": {
+        "client_name": "Karim Benali",
+        "client_role": "Operations & Logistics Director",
+        "company": "Optilens",
+        "industry": "Optical Distribution (14 Wilayas)",
+        "service": "ERPNext Multi-Company Setup",
+        "metric": "+45% Faster Fulfillment",
+        "quote": "JetNext completely revolutionized our national distribution network across 14 wilayas. Moving from fragmented spreadsheets to a centralized ERPNext system eliminated dead stock and gave our management real-time visibility across every regional hub."
+      },
+      "choptic": {
+        "client_name": "Nabil Meziani",
+        "client_role": "Managing Director",
+        "company": "CH Optic",
+        "industry": "Wholesale & Healthcare",
+        "service": "Custom B2B Order Platform",
+        "metric": "Zero Stock Discrepancies",
+        "quote": "The custom software JetNext designed for our wholesale catalog streamlined how we handle thousands of optical references. Our B2B sales reps and partner clinics now place and verify orders in seconds with zero inventory errors."
+      },
+      "lutech": {
+        "client_name": "Dr. Sofiane Haddad",
+        "client_role": "Technical Equipment Manager",
+        "company": "Lutech",
+        "industry": "Ophthalmic Machinery & Optics",
+        "service": "Serial Number & Billing Automation",
+        "metric": "100% Machine Traceability",
+        "quote": "Tracking precision ophthalmic machinery by serial number was crucial for our warranty compliance and customer support. JetNext automated our equipment registry and invoicing, saving our technical team hundreds of administrative hours monthly."
+      },
+      "industria": {
+        "client_name": "Amel Boukhalfa",
+        "client_role": "General Operations Manager",
+        "company": "Maghreb Precision Supply",
+        "industry": "Industrial Supply & Manufacturing",
+        "service": "ERPNext Integration & Team Formation",
+        "metric": "100% Team Adoption in 3 Weeks",
+        "quote": "Beyond exceptional technical delivery, JetNext's team formation sessions were game-changing. They trained our staff directly on our real business workflows, ensuring painless adoption and immediate productivity gains across all departments."
+      }
+    }
+  },
   "team": {
     "subtitle": "Our Team",
     "title1": "The Minds Behind",
@@ -147,14 +195,79 @@
       }
     }
   },
+  "faq": {
+    "subtitle": "Frequently Asked Questions",
+    "title1": "Everything You Need to Know About",
+    "title2": "ERPNext & Our Services",
+    "desc": "Clear answers to common questions about deployment timelines, data migration, customization, team formation, and ongoing support.",
+    "all_categories": "All Questions",
+    "cat_erp": "ERPNext & Migration",
+    "cat_custom": "Custom Modules & Tech",
+    "cat_support": "Hosting & Support",
+    "cat_formation": "Training & ISO",
+    "search_placeholder": "Search questions (e.g., timeline, migration, hosting, pricing)...",
+    "no_results_title": "No matching questions found",
+    "no_results_desc": "Try searching with different terms or reach out to our team directly.",
+    "still_questions_title": "Still have questions about your specific project?",
+    "still_questions_desc": "Our ERP architects are ready to evaluate your workflows and provide a tailored consultation.",
+    "ask_btn": "Speak with an Expert",
+    "items": {
+      "q1": {
+        "question": "What is ERPNext, and why choose it over Excel or proprietary ERPs like SAP and Odoo?",
+        "answer": "ERPNext is a world-class, 100% open-source enterprise resource planning system with zero recurring user license fees. Excel creates fragmented silos, manual data errors, and lacks multi-user synchronization, while proprietary ERPs impose expensive per-user monthly costs that penalize business growth. ERPNext gives your company complete software ownership, unlimited users, and a unified platform combining accounting, sales, inventory, manufacturing, HR, and CRM under one roof.",
+        "category": "erp"
+      },
+      "q2": {
+        "question": "How long does an ERPNext implementation typically take with JetNext?",
+        "answer": "A standard implementation typically takes between 3 to 8 weeks, depending on workflow complexity and customization depth. We follow a proven 4-phase agile methodology: 1) Initial audit & gap analysis, 2) System configuration & bespoke module engineering, 3) Secure data cleaning and migration, and 4) Hands-on team training followed by dedicated go-live supervision.",
+        "category": "erp"
+      },
+      "q3": {
+        "question": "Can you migrate all our historical data from Excel or legacy systems?",
+        "answer": "Yes, seamless data migration is one of our primary core competencies. Our technical team handles data extraction, deduplication, schema normalization, and automated import into ERPNext. We migrate chart of accounts, historical transactions, customer and vendor registers, multi-level product catalogs, batch/serial records, and opening inventory balances without interrupting your daily business.",
+        "category": "erp"
+      },
+      "q4": {
+        "question": "How does JetNext handle custom module development and integrations?",
+        "answer": "Beyond standard out-of-the-box features, JetNext specializes in developing custom Frappe/Python backend apps, automated business logic, third-party REST API integrations, and modern React/React Native frontend interfaces. We have engineered custom solutions including regional multi-company distribution systems, equipment serial-tracking registries, and specialized B2B ordering portals.",
+        "category": "custom"
+      },
+      "q5": {
+        "question": "Do you provide team training and adoption support for our staff?",
+        "answer": "Absolutely. Software ROI depends entirely on staff adoption. JetNext delivers interactive formation workshops tailored to each department (finance, logistics, sales, management). We train your employees on dedicated sandbox environments with your actual business workflows, accompanied by customized cheat-sheets, recorded video tutorials, and Standard Operating Procedures (SOPs).",
+        "category": "formation"
+      },
+      "q6": {
+        "question": "What cloud hosting, backup, and on-premise options are available?",
+        "answer": "We offer flexible enterprise hosting tailored to your operational requirements. Our managed cloud hosting includes high-speed SSD servers, automated daily encrypted off-site backups, SSL certificates, 99.9% uptime guarantee, and proactive security patches. If your internal compliance requires on-premise infrastructure, our engineers deploy and configure the system directly on your local servers.",
+        "category": "support"
+      },
+      "q7": {
+        "question": "What post-launch maintenance, SLAs, and technical support do you provide?",
+        "answer": "Every deployment includes post-launch hypercare, followed by flexible ongoing maintenance agreements. Our support includes priority bug resolution, version updates, database optimization, routine performance health checks, and responsive support channels via phone, email, and ticketing.",
+        "category": "support"
+      },
+      "q8": {
+        "question": "How do your ERP solutions integrate with ISO 9001 Quality Management standards?",
+        "answer": "Through our official partnership with HCA Consulting, we align your digital processes directly with ISO 9001 quality management principles. Your quality procedures, document approval workflows, audit trails, and non-conformance tracking are built natively into your ERPNext instance, making quality audits seamless and continuous.",
+        "category": "formation"
+      }
+    }
+  },
   "home": {
     "contact_title": "Start your digital transformation",
     "contact_desc": "Discuss your requirements, workflows, and objectives with our ERP experts. Let's build a scalable foundation for your business.",
     "contact_btn": "Book a Consultation"
   },
   "footer": {
-    "desc": "Automating the future, one module at a time.",
-    "rights": "All rights reserved."
+    "desc": "Automating the future, one module at a time. Tailored ERP ecosystems and high-performance digital solutions.",
+    "rights": "All rights reserved.",
+    "navigation": "Navigation",
+    "cto": "CTO",
+    "cto_role": "Chief Technology Officer",
+    "main_company": "Main Company",
+    "location": "Location / Maps",
+    "visit_site": "Official Website"
   },
   "book": {
     "title1": "Book a",

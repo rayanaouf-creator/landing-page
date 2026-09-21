@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Layers, Coins, Settings, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { FAQ } from '../components/FAQ';
 
 export function ERPNextPage() {
   const { t } = useTranslation();
@@ -102,6 +103,10 @@ export function ERPNextPage() {
             className="w-full max-w-5xl mx-auto object-contain rounded-2xl"
           />
         </motion.div>
+
+        <div className="mt-16">
+          <FAQ />
+        </div>
 
         <motion.div 
           initial={{ opacity: 0, y: 20 }}

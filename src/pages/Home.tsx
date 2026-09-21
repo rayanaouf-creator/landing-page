@@ -3,8 +3,9 @@ import { Partners } from '../components/Partners';
 import { Comparison } from '../components/Comparison';
 import { Services } from '../components/Services';
 import { Modules } from '../components/Modules';
-
+import { Testimonials } from '../components/Testimonials';
 import { Team } from '../components/Team';
+import { FAQ } from '../components/FAQ';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -17,8 +18,9 @@ export function Home() {
       <Comparison />
       <Services />
       <Modules />
-      
+      <Testimonials />
       <Team />
+      <FAQ />
       <section id="contact" className="relative isolate bg-[#1b6b6a] py-24 sm:py-32 overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(#ffffff22_1px,transparent_1px)] [background-size:16px_16px] opacity-30"></div>
         

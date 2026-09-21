@@ -1,13 +1,13 @@
 import { motion } from 'motion/react';
 import { Calendar, Clock, ArrowRight, Building2, User, Mail, MessageSquare, Phone } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export function Book() {
   const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
