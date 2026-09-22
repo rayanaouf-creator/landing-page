@@ -10,6 +10,7 @@ import {
   Edit3, 
   Mail, 
   Phone, 
+  PhoneCall, 
   Building2, 
   User, 
   Calendar, 
@@ -42,14 +43,19 @@ import {
   Tag,
   UserPlus,
   LifeBuoy,
-  UserCheck
+  UserCheck,
+  FolderGit2
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project } from '../types';
 import { leadStorage } from '../services/leadStorage';
 import { customerStorage } from '../services/customerStorage';
 import { claimStorage } from '../services/claimStorage';
+import { opportunityStorage } from '../services/opportunityStorage';
+import { projectStorage } from '../services/projectStorage';
 import { CustomerView } from '../components/admin/CustomerView';
 import { ClaimView } from '../components/admin/ClaimView';
+import { OpportunityView } from '../components/admin/OpportunityView';
+import { ProjectView } from '../components/admin/ProjectView';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string }> = {
   new: { label: 'New Lead', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
@@ -71,6 +77,26 @@ export const EMERGENCY_CONFIG: Record<EmergencyLevel, { label: string; shortLabe
   high: { label: 'Prioritary (< 1 mo)', shortLabel: 'High Urgency', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500' },
   medium: { label: 'Planned (1-3 mos)', shortLabel: '1-3 Months', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
   low: { label: 'Exploratory', shortLabel: 'Exploratory', color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-200', dot: 'bg-slate-400' }
+};
+
+export const SOURCE_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  'NetExpo-1': { label: 'NetExpo-1', bg: 'bg-purple-50', color: 'text-purple-700', border: 'border-purple-200' },
+  netexpo_1: { label: 'NetExpo-1', bg: 'bg-purple-50', color: 'text-purple-700', border: 'border-purple-200' },
+  'EcselExpo-5': { label: 'EcselExpo-5', bg: 'bg-amber-50', color: 'text-amber-700', border: 'border-amber-200' },
+  ecselexpo_5: { label: 'EcselExpo-5', bg: 'bg-amber-50', color: 'text-amber-700', border: 'border-amber-200' },
+  website_booking: { label: 'Website', bg: 'bg-sky-50', color: 'text-sky-700', border: 'border-sky-200' },
+  direct_entry: { label: 'Direct', bg: 'bg-slate-100', color: 'text-slate-700', border: 'border-slate-200' },
+  referral: { label: 'Referral', bg: 'bg-emerald-50', color: 'text-emerald-700', border: 'border-emerald-200' },
+  phone: { label: 'Phone', bg: 'bg-indigo-50', color: 'text-indigo-700', border: 'border-indigo-200' }
+};
+
+export const getSourceBadge = (source: string) => {
+  return SOURCE_CONFIG[source] || {
+    label: source.replace('_', ' '),
+    bg: 'bg-slate-100',
+    color: 'text-slate-700',
+    border: 'border-slate-200'
+  };
 };
 
 export const INDUSTRY_PRESETS = [
@@ -112,6 +138,17 @@ export const JOB_TITLE_PRESETS = [
   "Autre / Other"
 ];
 
+export const SERVICE_PRESETS = [
+  'ERPNext Implementation',
+  'Supply Chain & Warehouse Barcoding',
+  'Algerian Accounting & Financial Localization (SCF)',
+  'Manufacturing & Production Routing (BOM/MRP)',
+  'HR & Algerian Payroll Localization (CNAS, IRG)',
+  'Custom Frappe Development & API Integrations',
+  'ERPNext Version Upgrade & Data Migration',
+  'Enterprise SLA Support & Frappe Cloud Hosting'
+];
+
 export function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return (
@@ -134,19 +171,27 @@ export function AdminPage() {
     );
   });
 
-  // Active CRM Tab: 'customer' | 'lead' | 'claim'
-  const [activeTab, setActiveTab] = useState<'customer' | 'lead' | 'claim'>('customer');
+  // Active CRM Tab: 'lead' | 'opportunity' | 'customer' | 'project' | 'claim'
+  const [activeTab, setActiveTab] = useState<'lead' | 'opportunity' | 'customer' | 'project' | 'claim'>('lead');
 
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
 
-  // Sub-filters for Customer and Claim
+  // Sub-filters for Customer, Opportunity, Project, and Claim
   const [customerStatusFilter, setCustomerStatusFilter] = useState<string>('all');
+  const [oppStageFilter, setOppStageFilter] = useState<string>('all');
+  const [projectStatusFilter, setProjectStatusFilter] = useState<string>('all');
   const [claimStatusFilter, setClaimStatusFilter] = useState<string>('all');
 
-  // Modals for Customer & Claim from sidebar
+  // Modals for entities from sidebar or quick actions
   const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
+  const [isAddOppModalOpen, setIsAddOppModalOpen] = useState(false);
+  const [initialCustomerForOpp, setInitialCustomerForOpp] = useState<Customer | null>(null);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [initialCustomerForProject, setInitialCustomerForProject] = useState<Customer | null>(null);
   const [isAddClaimModalOpen, setIsAddClaimModalOpen] = useState(false);
   const [initialCustomerForClaim, setInitialCustomerForClaim] = useState<Customer | null>(null);
 
@@ -154,7 +199,16 @@ export function AdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [emergencyFilter, setEmergencyFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'company' | 'value_desc'>('date_desc');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<
+    | 'date_desc' 
+    | 'date_asc' 
+    | 'company' 
+    | 'status_new_first' 
+    | 'status_contacted_first' 
+    | 'status_discussion_first' 
+    | 'status_desc'
+  >('status_new_first');
 
   // Modals state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -170,6 +224,7 @@ export function AdminPage() {
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formPhone, setFormPhone] = useState('');
+  const [formAdditionalPhones, setFormAdditionalPhones] = useState<string[]>([]);
   const [formCompany, setFormCompany] = useState('');
   const [formJobTitle, setFormJobTitle] = useState('Directeur Général / CEO / Owner');
   const [formLocation, setFormLocation] = useState('Alger');
@@ -180,14 +235,30 @@ export function AdminPage() {
   const [formPriority, setFormPriority] = useState<LeadPriority>('high');
   const [formSource, setFormSource] = useState<LeadSource>('direct_entry');
   const [formNotes, setFormNotes] = useState('');
-  const [formValue, setFormValue] = useState<number | ''>('');
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadLeads();
-      loadCustomers();
-      loadClaims();
-    }
+    if (!isAuthenticated) return;
+
+    loadLeads();
+    loadOpportunities();
+    loadCustomers();
+    loadProjects();
+    loadClaims();
+
+    // Real-time synchronization subscriptions to Firebase Firestore collections
+    const unsubLeads = leadStorage.subscribe((items) => setLeads(items));
+    const unsubOpps = opportunityStorage.subscribe((items) => setOpportunities(items));
+    const unsubCusts = customerStorage.subscribe((items) => setCustomers(items));
+    const unsubProjs = projectStorage.subscribe((items) => setProjects(items));
+    const unsubClaims = claimStorage.subscribe((items) => setClaims(items));
+
+    return () => {
+      unsubLeads();
+      unsubOpps();
+      unsubCusts();
+      unsubProjs();
+      unsubClaims();
+    };
   }, [isAuthenticated]);
 
   const loadLeads = () => {
@@ -195,9 +266,19 @@ export function AdminPage() {
     setLeads(list);
   };
 
+  const loadOpportunities = () => {
+    const list = opportunityStorage.getOpportunities();
+    setOpportunities(list);
+  };
+
   const loadCustomers = () => {
     const list = customerStorage.getCustomers();
     setCustomers(list);
+  };
+
+  const loadProjects = () => {
+    const list = projectStorage.getProjects();
+    setProjects(list);
   };
 
   const loadClaims = () => {
@@ -212,6 +293,18 @@ export function AdminPage() {
     loadCustomers();
     showToast(`Converted "${lead.company}" into an active Customer account!`);
     setActiveTab('customer');
+  };
+
+  const handleCreateOpportunityForCustomer = (cust: Customer) => {
+    setInitialCustomerForOpp(cust);
+    setIsAddOppModalOpen(true);
+    setActiveTab('opportunity');
+  };
+
+  const handleCreateProjectForCustomer = (cust: Customer) => {
+    setInitialCustomerForProject(cust);
+    setIsAddProjectModalOpen(true);
+    setActiveTab('project');
   };
 
   const handleFileClaimForCustomer = (cust: Customer) => {
@@ -307,6 +400,7 @@ export function AdminPage() {
     setFormName('');
     setFormEmail('');
     setFormPhone('');
+    setFormAdditionalPhones([]);
     setFormCompany('');
     setFormJobTitle('Directeur Général / CEO / Owner');
     setFormLocation('Alger');
@@ -317,7 +411,6 @@ export function AdminPage() {
     setFormPriority('high');
     setFormSource('direct_entry');
     setFormNotes('');
-    setFormValue('');
     setIsFormModalOpen(true);
   };
 
@@ -325,7 +418,8 @@ export function AdminPage() {
     setEditingLead(lead);
     setFormName(lead.name);
     setFormEmail(lead.email);
-    setFormPhone(lead.phone);
+    setFormPhone(lead.phone || '');
+    setFormAdditionalPhones(lead.additionalPhones ? [...lead.additionalPhones] : []);
     setFormCompany(lead.company);
     setFormJobTitle(lead.jobTitle || 'Directeur Général / CEO / Owner');
     setFormLocation(lead.location || 'Alger');
@@ -336,7 +430,6 @@ export function AdminPage() {
     setFormPriority(lead.priority);
     setFormSource(lead.source);
     setFormNotes(lead.notes || lead.message || '');
-    setFormValue(lead.estimatedValueDZD || '');
     setIsFormModalOpen(true);
   };
 
@@ -352,6 +445,7 @@ export function AdminPage() {
         name: formName,
         email: formEmail,
         phone: formPhone,
+        additionalPhones: formAdditionalPhones.map(p => p.trim()).filter(Boolean),
         company: formCompany,
         jobTitle: formJobTitle,
         location: formLocation,
@@ -361,8 +455,7 @@ export function AdminPage() {
         status: formStatus,
         priority: formPriority,
         source: formSource,
-        notes: formNotes,
-        estimatedValueDZD: formValue === '' ? undefined : Number(formValue)
+        notes: formNotes
       });
       showToast(`Lead "${formCompany}" updated successfully.`);
     } else {
@@ -370,6 +463,7 @@ export function AdminPage() {
         name: formName,
         email: formEmail,
         phone: formPhone,
+        additionalPhones: formAdditionalPhones.map(p => p.trim()).filter(Boolean),
         company: formCompany,
         jobTitle: formJobTitle,
         location: formLocation,
@@ -379,8 +473,7 @@ export function AdminPage() {
         status: formStatus,
         priority: formPriority,
         source: formSource,
-        notes: formNotes,
-        estimatedValueDZD: formValue === '' ? undefined : Number(formValue)
+        notes: formNotes
       });
       showToast(`New lead for "${formCompany}" saved.`);
     }
@@ -439,9 +532,8 @@ export function AdminPage() {
     const newCount = leads.filter(l => l.status === 'new').length;
     const active = leads.filter(l => l.status === 'in_discussion' || l.status === 'proposal_sent').length;
     const converted = leads.filter(l => l.status === 'converted').length;
-    const totalPipelineDZD = leads.reduce((acc, curr) => acc + (curr.estimatedValueDZD || 0), 0);
 
-    return { total, newCount, active, converted, totalPipelineDZD };
+    return { total, newCount, active, converted };
   }, [leads]);
 
   const openClaimsCount = useMemo(() => {
@@ -455,6 +547,12 @@ export function AdminPage() {
         const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
         const matchesPriority = priorityFilter === 'all' || lead.priority === priorityFilter;
         const matchesEmergency = emergencyFilter === 'all' || (lead.emergencyLevel || 'medium') === emergencyFilter;
+        const matchesSource =
+          sourceFilter === 'all' ||
+          lead.source === sourceFilter ||
+          (sourceFilter === 'NetExpo-1' && (lead.source === 'NetExpo-1' || lead.source === 'netexpo_1')) ||
+          (sourceFilter === 'EcselExpo-5' && (lead.source === 'EcselExpo-5' || lead.source === 'ecselexpo_5'));
+
         const q = searchQuery.toLowerCase().trim();
         const matchesSearch = !q || 
           lead.name.toLowerCase().includes(q) ||
@@ -465,12 +563,70 @@ export function AdminPage() {
           (lead.emergencyLevel && lead.emergencyLevel.toLowerCase().includes(q)) ||
           lead.email.toLowerCase().includes(q) ||
           lead.phone.toLowerCase().includes(q) ||
+          (lead.additionalPhones && lead.additionalPhones.some(p => p.toLowerCase().includes(q))) ||
           (lead.notes && lead.notes.toLowerCase().includes(q)) ||
+          (lead.source && lead.source.toLowerCase().includes(q)) ||
           (lead.serviceRequested && lead.serviceRequested.toLowerCase().includes(q));
 
-        return matchesStatus && matchesPriority && matchesEmergency && matchesSearch;
+        return matchesStatus && matchesPriority && matchesEmergency && matchesSource && matchesSearch;
       })
       .sort((a, b) => {
+        if (sortBy === 'status_new_first') {
+          const rank: Record<string, number> = {
+            new: 1,
+            contacted: 2,
+            in_discussion: 3,
+            proposal_sent: 4,
+            converted: 5,
+            lost: 6
+          };
+          const rA = rank[a.status] || 99;
+          const rB = rank[b.status] || 99;
+          if (rA !== rB) return rA - rB;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        if (sortBy === 'status_contacted_first') {
+          const rank: Record<string, number> = {
+            contacted: 1,
+            new: 2,
+            in_discussion: 3,
+            proposal_sent: 4,
+            converted: 5,
+            lost: 6
+          };
+          const rA = rank[a.status] || 99;
+          const rB = rank[b.status] || 99;
+          if (rA !== rB) return rA - rB;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        if (sortBy === 'status_discussion_first') {
+          const rank: Record<string, number> = {
+            in_discussion: 1,
+            proposal_sent: 2,
+            contacted: 3,
+            new: 4,
+            converted: 5,
+            lost: 6
+          };
+          const rA = rank[a.status] || 99;
+          const rB = rank[b.status] || 99;
+          if (rA !== rB) return rA - rB;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        if (sortBy === 'status_desc') {
+          const rank: Record<string, number> = {
+            converted: 1,
+            proposal_sent: 2,
+            in_discussion: 3,
+            contacted: 4,
+            new: 5,
+            lost: 6
+          };
+          const rA = rank[a.status] || 99;
+          const rB = rank[b.status] || 99;
+          if (rA !== rB) return rA - rB;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
         if (sortBy === 'date_desc') {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         }
@@ -480,12 +636,9 @@ export function AdminPage() {
         if (sortBy === 'company') {
           return a.company.localeCompare(b.company);
         }
-        if (sortBy === 'value_desc') {
-          return (b.estimatedValueDZD || 0) - (a.estimatedValueDZD || 0);
-        }
         return 0;
       });
-  }, [leads, statusFilter, priorityFilter, emergencyFilter, searchQuery, sortBy]);
+  }, [leads, statusFilter, priorityFilter, emergencyFilter, sourceFilter, searchQuery, sortBy]);
 
   // If not authenticated, render Login Screen
   if (!isAuthenticated) {
@@ -672,37 +825,13 @@ export function AdminPage() {
             </button>
           </div>
 
-          {/* PRIMARY NAVIGATION: Customer, Lead, and Claim */}
+          {/* PRIMARY NAVIGATION: Lead, Opportunity, Customer, Project, Claim */}
           <div className="space-y-1.5">
             <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
               CRM Modules
             </p>
 
-            {/* 1. Customer */}
-            <button
-              id="admin-sidebar-nav-customer"
-              onClick={() => {
-                setActiveTab('customer');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'customer'
-                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Building2 className={`h-4 w-4 ${activeTab === 'customer' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
-                <span className="text-sm">Customer</span>
-              </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'customer' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {customers.length}
-              </span>
-            </button>
-
-            {/* 2. Lead */}
+            {/* 1. Lead */}
             <button
               id="admin-sidebar-nav-lead"
               onClick={() => {
@@ -726,7 +855,79 @@ export function AdminPage() {
               </span>
             </button>
 
-            {/* 3. Claim */}
+            {/* 2. Opportunity */}
+            <button
+              id="admin-sidebar-nav-opportunity"
+              onClick={() => {
+                setActiveTab('opportunity');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'opportunity'
+                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <TrendingUp className={`h-4 w-4 ${activeTab === 'opportunity' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                <span className="text-sm">Opportunity</span>
+              </div>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'opportunity' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {opportunities.length}
+              </span>
+            </button>
+
+            {/* 3. Customer */}
+            <button
+              id="admin-sidebar-nav-customer"
+              onClick={() => {
+                setActiveTab('customer');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'customer'
+                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Building2 className={`h-4 w-4 ${activeTab === 'customer' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                <span className="text-sm">Customer</span>
+              </div>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'customer' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {customers.length}
+              </span>
+            </button>
+
+            {/* 4. Project */}
+            <button
+              id="admin-sidebar-nav-project"
+              onClick={() => {
+                setActiveTab('project');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'project'
+                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <FolderGit2 className={`h-4 w-4 ${activeTab === 'project' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                <span className="text-sm">Project</span>
+              </div>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'project' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {projects.length}
+              </span>
+            </button>
+
+            {/* 5. Claim */}
             <button
               id="admin-sidebar-nav-claim"
               onClick={() => {
@@ -756,6 +957,137 @@ export function AdminPage() {
           </div>
 
           {/* DYNAMIC CONTEXTUAL MODULE ACTIONS & VIEWS */}
+          {activeTab === 'opportunity' && (
+            <div className="space-y-4 pt-3 border-t border-slate-800">
+              <div>
+                <button
+                  id="admin-sidebar-add-opp-btn"
+                  onClick={() => {
+                    setInitialCustomerForOpp(null);
+                    setIsAddOppModalOpen(true);
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-2.5 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
+                >
+                  <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  <span>+ New Opportunity</span>
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Deal Stages
+                </p>
+                {[
+                  { id: 'all', label: 'All Deals', count: opportunities.length },
+                  { id: 'qualification', label: 'Qualification', count: opportunities.filter(o => o.stage === 'qualification').length, dot: 'bg-amber-400' },
+                  { id: 'proposal', label: 'Proposal Sent', count: opportunities.filter(o => o.stage === 'proposal').length, dot: 'bg-blue-400' },
+                  { id: 'negotiation', label: 'Negotiation', count: opportunities.filter(o => o.stage === 'negotiation').length, dot: 'bg-purple-400' },
+                  { id: 'closed_won', label: 'Closed Won', count: opportunities.filter(o => o.stage === 'closed_won').length, dot: 'bg-emerald-400' }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setOppStageFilter(item.id);
+                      setIsSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      oppStageFilter === item.id
+                        ? 'bg-slate-800 text-white font-bold ring-1 ring-slate-700'
+                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {item.dot && <span className={`h-2 w-2 rounded-full ${item.dot}`} />}
+                      <span>{item.label}</span>
+                    </div>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                      {item.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Deal Tools
+                </p>
+                <button
+                  onClick={() => opportunityStorage.exportCSV()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                  <span>Export Deals (CSV)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'project' && (
+            <div className="space-y-4 pt-3 border-t border-slate-800">
+              <div>
+                <button
+                  id="admin-sidebar-add-project-btn"
+                  onClick={() => {
+                    setInitialCustomerForProject(null);
+                    setIsAddProjectModalOpen(true);
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-2.5 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
+                >
+                  <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  <span>+ New Project</span>
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Project Status
+                </p>
+                {[
+                  { id: 'all', label: 'All Projects', count: projects.length },
+                  { id: 'in_progress', label: 'In Progress', count: projects.filter(p => p.status === 'in_progress').length, dot: 'bg-purple-400' },
+                  { id: 'planning', label: 'Planning & Scope', count: projects.filter(p => p.status === 'planning').length, dot: 'bg-blue-400' },
+                  { id: 'completed', label: 'Completed', count: projects.filter(p => p.status === 'completed').length, dot: 'bg-emerald-400' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setProjectStatusFilter(item.id);
+                      setIsSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      projectStatusFilter === item.id
+                        ? 'bg-slate-800 text-white font-bold ring-1 ring-slate-700'
+                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {item.dot && <span className={`h-2 w-2 rounded-full ${item.dot}`} />}
+                      <span>{item.label}</span>
+                    </div>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                      {item.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Project Tools
+                </p>
+                <button
+                  onClick={() => projectStorage.exportCSV()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                  <span>Export Projects (CSV)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'customer' && (
             <div className="space-y-4 pt-3 border-t border-slate-800">
               {/* Add Customer Button */}
@@ -780,9 +1112,9 @@ export function AdminPage() {
                 </p>
                 {[
                   { id: 'all', label: 'All Accounts', count: customers.length },
-                  { id: 'active', label: 'Active Contracts', count: customers.filter(c => c.status === 'active').length, dot: 'bg-emerald-400' },
-                  { id: 'onboarding', label: 'In Onboarding', count: customers.filter(c => c.status === 'onboarding').length, dot: 'bg-blue-400' },
-                  { id: 'suspended', label: 'Suspended / Churned', count: customers.filter(c => c.status === 'suspended' || c.status === 'churned').length, dot: 'bg-slate-500' },
+                  { id: 'active', label: 'Active Clients', count: customers.filter(c => c.status === 'active').length, dot: 'bg-emerald-400' },
+                  { id: 'prospect', label: 'Prospect Accounts', count: customers.filter(c => c.status === 'prospect').length, dot: 'bg-blue-400' },
+                  { id: 'inactive', label: 'Inactive / Dormant', count: customers.filter(c => c.status === 'inactive').length, dot: 'bg-slate-500' },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -1134,10 +1466,46 @@ export function AdminPage() {
             onRefresh={loadCustomers}
             showToast={showToast}
             onFileClaimForCustomer={handleFileClaimForCustomer}
+            onCreateOpportunityForCustomer={handleCreateOpportunityForCustomer}
+            onCreateProjectForCustomer={handleCreateProjectForCustomer}
             isAddModalOpen={isAddCustomerModalOpen}
             onCloseAddModal={() => setIsAddCustomerModalOpen(false)}
             statusFilter={customerStatusFilter}
             onStatusFilterChange={setCustomerStatusFilter}
+          />
+        )}
+
+        {activeTab === 'opportunity' && (
+          <OpportunityView
+            opportunities={opportunities}
+            customers={customers}
+            onRefresh={loadOpportunities}
+            showToast={showToast}
+            isAddModalOpen={isAddOppModalOpen}
+            onCloseAddModal={() => {
+              setIsAddOppModalOpen(false);
+              setInitialCustomerForOpp(null);
+            }}
+            initialCustomer={initialCustomerForOpp}
+            stageFilter={oppStageFilter}
+            onStageFilterChange={setOppStageFilter}
+          />
+        )}
+
+        {activeTab === 'project' && (
+          <ProjectView
+            projects={projects}
+            customers={customers}
+            onRefresh={loadProjects}
+            showToast={showToast}
+            isAddModalOpen={isAddProjectModalOpen}
+            onCloseAddModal={() => {
+              setIsAddProjectModalOpen(false);
+              setInitialCustomerForProject(null);
+            }}
+            initialCustomer={initialCustomerForProject}
+            statusFilter={projectStatusFilter}
+            onStatusFilterChange={setProjectStatusFilter}
           />
         )}
 
@@ -1163,9 +1531,13 @@ export function AdminPage() {
             {/* Workspace Top Header (Clean replacement of old topbar) */}
             <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-md bg-[#e6f4f4] px-2.5 py-0.5 text-xs font-bold text-[#1b6b6a]">
                 Lead Pipeline
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20" title="All operations persist in Firebase Firestore cloud database">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Firebase Firestore
               </span>
               <span className="text-xs text-slate-400 font-medium">
                 {statusFilter === 'all' ? 'All Inquiries' : `Filter: ${statusFilter}`}
@@ -1189,7 +1561,7 @@ export function AdminPage() {
         </div>
 
         {/* Metrics Grid */}
-        <div className="mt-8 grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Leads</p>
             <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">{metrics.total}</p>
@@ -1212,14 +1584,6 @@ export function AdminPage() {
             <p className="text-xs font-bold uppercase tracking-wider text-indigo-700">Converted Clients</p>
             <p className="mt-2 text-2xl sm:text-3xl font-black text-indigo-600">{metrics.converted}</p>
             <p className="mt-1 text-xs text-slate-400">Won enterprise contracts</p>
-          </div>
-
-          <div className="col-span-2 lg:col-span-1 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-5 shadow-xs text-white">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#a5e0e0]">Pipeline Volume</p>
-            <p className="mt-2 text-xl sm:text-2xl font-black text-white">
-              {metrics.totalPipelineDZD.toLocaleString('fr-FR')} <span className="text-xs font-normal text-slate-300">DZD</span>
-            </p>
-            <p className="mt-1 text-xs text-slate-400">Estimated deal potentials</p>
           </div>
         </div>
 
@@ -1249,17 +1613,20 @@ export function AdminPage() {
 
             {/* Sort Dropdown */}
             <div className="flex items-center gap-2 shrink-0">
-              <ArrowUpDown className="h-4 w-4 text-slate-400" />
+              <span className="text-xs font-bold text-slate-500">Order by:</span>
               <select
                 id="admin-sort-select"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-[#44ACAB]"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-[#44ACAB] font-medium"
               >
-                <option value="date_desc">Newest First</option>
-                <option value="date_asc">Oldest First</option>
+                <option value="status_new_first">Status / Type: New Inquiries First</option>
+                <option value="status_contacted_first">Status / Type: Contacted First</option>
+                <option value="status_discussion_first">Status / Type: In Discussion First</option>
+                <option value="status_desc">Status / Type: Won / Converted First</option>
+                <option value="date_desc">Date: Newest First</option>
+                <option value="date_asc">Date: Oldest First</option>
                 <option value="company">Company Name (A-Z)</option>
-                <option value="value_desc">Highest Value</option>
               </select>
             </div>
           </div>
@@ -1323,6 +1690,24 @@ export function AdminPage() {
                   </button>
                 ))}
               </div>
+
+              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+                <span className="text-xs font-bold text-slate-500">Source:</span>
+                <select
+                  id="admin-filter-source"
+                  value={sourceFilter}
+                  onChange={(e) => setSourceFilter(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:border-[#44ACAB] font-medium"
+                >
+                  <option value="all">All Sources</option>
+                  <option value="NetExpo-1">NetExpo-1</option>
+                  <option value="EcselExpo-5">EcselExpo-5</option>
+                  <option value="website_booking">Website Form</option>
+                  <option value="direct_entry">Direct / Internal</option>
+                  <option value="referral">Referral</option>
+                  <option value="phone">Phone</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -1371,9 +1756,22 @@ export function AdminPage() {
                     <th className="px-3 py-3.5">Contact & Function</th>
                     <th className="px-3 py-3.5">Urgency</th>
                     <th className="px-3 py-3.5">Requested Solution</th>
-                    <th className="px-3 py-3.5">Status</th>
+                    <th 
+                      className="px-3 py-3.5 cursor-pointer hover:bg-slate-100 transition-colors select-none group"
+                      onClick={() => {
+                        if (sortBy === 'status_new_first') setSortBy('status_contacted_first');
+                        else if (sortBy === 'status_contacted_first') setSortBy('status_discussion_first');
+                        else if (sortBy === 'status_discussion_first') setSortBy('status_desc');
+                        else setSortBy('status_new_first');
+                      }}
+                      title="Click to toggle ordering by Status / Type (New, Contacted, In Discussion, Converted)"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className={sortBy.startsWith('status_') ? 'text-[#1b6b6a] font-black' : ''}>Status / Type</span>
+                        <ArrowUpDown className={`h-3 w-3 ${sortBy.startsWith('status_') ? 'text-[#1b6b6a]' : 'text-slate-400 group-hover:text-slate-700'}`} />
+                      </div>
+                    </th>
                     <th className="px-3 py-3.5">Priority</th>
-                    <th className="px-3 py-3.5">Est. Value</th>
                     <th className="px-3 py-3.5">Created</th>
                     <th className="py-3.5 pl-3 pr-6 text-right">Actions</th>
                   </tr>
@@ -1393,11 +1791,14 @@ export function AdminPage() {
                         <td className="py-4 pl-6 pr-3">
                           <div className="font-bold text-slate-900 flex items-center gap-2">
                             <span>{lead.company}</span>
-                            {lead.source === 'website_booking' && (
-                              <span className="rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 border border-sky-200">
-                                Web
-                              </span>
-                            )}
+                            {(() => {
+                              const badge = getSourceBadge(lead.source);
+                              return (
+                                <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold border ${badge.bg} ${badge.color} ${badge.border}`}>
+                                  {badge.label}
+                                </span>
+                              );
+                            })()}
                           </div>
                           
                           <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -1458,8 +1859,8 @@ export function AdminPage() {
                               <div className="flex items-center gap-1.5 text-xs text-slate-700">
                                 <a 
                                   href={`tel:${lead.phone}`}
-                                  className="hover:text-[#44ACAB] transition-colors flex items-center gap-1"
-                                  title="Call Phone"
+                                  className="hover:text-[#44ACAB] transition-colors flex items-center gap-1 font-medium"
+                                  title="Call Primary Phone"
                                 >
                                   <Phone className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                                   <span>{lead.phone}</span>
@@ -1467,7 +1868,7 @@ export function AdminPage() {
                                 <button
                                   onClick={() => handleCopy(lead.phone, `tel-${lead.id}`)}
                                   className="text-slate-400 hover:text-slate-600 ml-0.5"
-                                  title="Copy Phone"
+                                  title="Copy Primary Phone"
                                 >
                                   {copiedId === `tel-${lead.id}` ? (
                                     <Check className="h-3 w-3 text-emerald-600" />
@@ -1477,6 +1878,35 @@ export function AdminPage() {
                                 </button>
                               </div>
                             ) : null}
+
+                            {/* Additional Numbers */}
+                            {lead.additionalPhones && lead.additionalPhones.length > 0 && (
+                              <div className="space-y-0.5 pt-0.5">
+                                {lead.additionalPhones.map((num, idx) => (
+                                  <div key={idx} className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                    <a 
+                                      href={`tel:${num}`}
+                                      className="hover:text-[#44ACAB] transition-colors flex items-center gap-1"
+                                      title={`Call alternate #${idx + 1}`}
+                                    >
+                                      <PhoneCall className="h-3 w-3 text-[#44ACAB] shrink-0" />
+                                      <span>{num}</span>
+                                    </a>
+                                    <button
+                                      onClick={() => handleCopy(num, `tel-${lead.id}-${idx}`)}
+                                      className="text-slate-400 hover:text-slate-600"
+                                      title="Copy Number"
+                                    >
+                                      {copiedId === `tel-${lead.id}-${idx}` ? (
+                                        <Check className="h-2.5 w-2.5 text-emerald-600" />
+                                      ) : (
+                                        <Copy className="h-2.5 w-2.5" />
+                                      )}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </td>
 
@@ -1517,17 +1947,6 @@ export function AdminPage() {
                             <span className={`h-1.5 w-1.5 rounded-full ${priorityCfg.dot}`}></span>
                             {priorityCfg.label}
                           </span>
-                        </td>
-
-                        {/* Estimated Value */}
-                        <td className="px-3 py-4">
-                          {lead.estimatedValueDZD ? (
-                            <span className="font-semibold text-slate-900 text-xs">
-                              {lead.estimatedValueDZD.toLocaleString('fr-FR')} DZD
-                            </span>
-                          ) : (
-                            <span className="text-xs text-slate-400">Pending</span>
-                          )}
                         </td>
 
                         {/* Created Date */}
@@ -1710,7 +2129,7 @@ export function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Row 3: Email & Phone */}
+                  {/* Row 3: Email & Primary Phone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
@@ -1727,9 +2146,19 @@ export function AdminPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                        Phone Number
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                          Primary Phone Number
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setFormAdditionalPhones(prev => [...prev, ''])}
+                          className="text-[11px] text-[#44ACAB] hover:text-[#328887] font-bold inline-flex items-center gap-1 transition-colors"
+                        >
+                          <Plus className="h-3 w-3" />
+                          <span>+ Add Another Num</span>
+                        </button>
+                      </div>
                       <input
                         id="lead-form-phone"
                         type="tel"
@@ -1740,6 +2169,51 @@ export function AdminPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Additional Phone Numbers (if any added) */}
+                  {formAdditionalPhones.length > 0 && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                          <PhoneCall className="h-3.5 w-3.5 text-[#44ACAB]" />
+                          Additional Phone Numbers ({formAdditionalPhones.length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setFormAdditionalPhones(prev => [...prev, ''])}
+                          className="text-[11px] font-bold text-[#44ACAB] hover:underline inline-flex items-center gap-1"
+                        >
+                          <Plus className="h-3 w-3" />
+                          Add another
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {formAdditionalPhones.map((extraNum, idx) => (
+                          <div key={idx} className="flex items-center gap-1.5">
+                            <input
+                              type="tel"
+                              value={extraNum}
+                              onChange={(e) => {
+                                const next = [...formAdditionalPhones];
+                                next[idx] = e.target.value;
+                                setFormAdditionalPhones(next);
+                              }}
+                              placeholder={`Secondary num #${idx + 1} (e.g. 021... or 0661...)`}
+                              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] focus:ring-1 focus:ring-[#44ACAB] outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setFormAdditionalPhones(prev => prev.filter((_, i) => i !== idx))}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors shrink-0"
+                              title="Remove this number"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Row 4: Industry & Service Requested */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1780,22 +2254,8 @@ export function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Row 5: Pipeline metrics (Value, Status, Priority) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                        Est. Value (DZD)
-                      </label>
-                      <input
-                        id="lead-form-value"
-                        type="number"
-                        value={formValue}
-                        onChange={(e) => setFormValue(e.target.value === '' ? '' : Number(e.target.value))}
-                        placeholder="e.g. 1500000"
-                        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs sm:text-sm focus:border-[#44ACAB] outline-none"
-                      />
-                    </div>
-
+                  {/* Row 5: Status & Priority */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
                         Status
@@ -1842,9 +2302,11 @@ export function AdminPage() {
                         id="lead-form-source"
                         value={formSource}
                         onChange={(e) => setFormSource(e.target.value as LeadSource)}
-                        className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm bg-white"
+                        className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm bg-white font-medium"
                       >
                         <option value="direct_entry">Direct / Internal</option>
+                        <option value="NetExpo-1">NetExpo-1 (Exhibition)</option>
+                        <option value="EcselExpo-5">EcselExpo-5 (Exhibition)</option>
                         <option value="website_booking">Website Form</option>
                         <option value="referral">Client Referral</option>
                         <option value="phone">Phone Inquiry</option>
@@ -1966,16 +2428,17 @@ export function AdminPage() {
                     <p className="font-semibold text-slate-800 mt-0.5 capitalize">{viewingLead.priority}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pipeline Value</p>
-                    <p className="font-semibold text-slate-800 mt-0.5">
-                      {viewingLead.estimatedValueDZD ? `${viewingLead.estimatedValueDZD.toLocaleString('fr-FR')} DZD` : 'To be estimated'}
-                    </p>
-                  </div>
-                  <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Acquisition Source</p>
-                    <p className="font-semibold text-slate-800 mt-0.5 capitalize">
-                      {viewingLead.source.replace('_', ' ')}
-                    </p>
+                    <div className="mt-0.5">
+                      {(() => {
+                        const badge = getSourceBadge(viewingLead.source);
+                        return (
+                          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold border ${badge.bg} ${badge.color} ${badge.border}`}>
+                            {badge.label}
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inquiry Date</p>
@@ -2001,11 +2464,23 @@ export function AdminPage() {
                       <a
                         href={`tel:${viewingLead.phone}`}
                         className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#44ACAB] hover:text-[#44ACAB]"
+                        title="Primary Phone"
                       >
                         <Phone className="h-3.5 w-3.5 text-emerald-600" />
-                        <span>{viewingLead.phone}</span>
+                        <span>{viewingLead.phone} (Primary)</span>
                       </a>
                     )}
+                    {viewingLead.additionalPhones?.map((extraPhone, idx) => (
+                      <a
+                        key={idx}
+                        href={`tel:${extraPhone}`}
+                        className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#44ACAB] hover:text-[#44ACAB]"
+                        title={`Alternate Phone #${idx + 1}`}
+                      >
+                        <PhoneCall className="h-3.5 w-3.5 text-[#44ACAB]" />
+                        <span>{extraPhone}</span>
+                      </a>
+                    ))}
                   </div>
                 </div>
 

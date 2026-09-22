@@ -1,6 +1,6 @@
 export type LeadStatus = 'new' | 'contacted' | 'in_discussion' | 'proposal_sent' | 'converted' | 'lost';
 export type LeadPriority = 'high' | 'medium' | 'low';
-export type LeadSource = 'website_booking' | 'direct_entry' | 'referral' | 'phone';
+export type LeadSource = 'website_booking' | 'direct_entry' | 'referral' | 'phone' | 'NetExpo-1' | 'EcselExpo-5' | 'netexpo_1' | 'ecselexpo_5';
 export type EmergencyLevel = 'immediate' | 'high' | 'medium' | 'low';
 
 export interface Lead {
@@ -8,6 +8,7 @@ export interface Lead {
   name: string;
   email: string;
   phone: string;
+  additionalPhones?: string[];    // Additional / secondary contact numbers (mobile, WhatsApp, fixe)
   company: string;
   jobTitle?: string;              // Post or function (e.g., CEO, IT Director, CFO)
   location?: string;              // City / Wilaya / Region (e.g., Alger, Oran)
@@ -25,8 +26,7 @@ export interface Lead {
 }
 
 // ── CUSTOMER DEFINITIONS ─────────────────────────────────────────────
-export type CustomerStatus = 'active' | 'onboarding' | 'paused' | 'churned';
-export type CustomerTier = 'enterprise' | 'growth' | 'standard';
+export type CustomerStatus = 'active' | 'prospect' | 'inactive';
 
 export interface Customer {
   id: string;
@@ -34,15 +34,56 @@ export interface Customer {
   name: string;                  // Primary contact person
   email: string;
   phone: string;
+  additionalPhones?: string[];
   jobTitle?: string;
   location?: string;
   industry?: string;
   status: CustomerStatus;
-  tier: CustomerTier;
-  activeService: string;         // e.g. "ERPNext Enterprise Implementation", "ISO 9001 Continuous Compliance"
-  contractValueDZD?: number;     // Annual or project contract value
-  mrrDZD?: number;               // Recurring maintenance/support SLA
-  startDate: string;             // Date contract started
+  website?: string;
+  taxId?: string;                // NIF / NIS / RC
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── OPPORTUNITY DEFINITIONS ──────────────────────────────────────────
+export type OpportunityStage = 'qualification' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
+
+export interface Opportunity {
+  id: string;
+  title: string;                 // Deal name / scope
+  customerId?: string;           // Linked Customer ID if selected
+  customerName: string;          // Company name
+  contactPerson: string;
+  email: string;
+  phone?: string;
+  stage: OpportunityStage;
+  expectedValueDZD: number;      // Value in DZD
+  probability: number;           // 0 to 100 %
+  expectedCloseDate: string;
+  serviceInterest: string;
+  assignedTo?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── PROJECT DEFINITIONS ──────────────────────────────────────────────
+export type ProjectStatus = 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
+
+export interface Project {
+  id: string;
+  projectName: string;
+  customerId?: string;
+  customerName: string;
+  status: ProjectStatus;
+  budgetDZD: number;
+  monthlySupportDZD?: number;    // Monthly support SLA
+  startDate: string;
+  targetEndDate?: string;
+  progress: number;              // 0 to 100%
+  projectManager?: string;
+  keyDeliverables?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;

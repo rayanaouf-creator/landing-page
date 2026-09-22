@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Calendar, Clock, ArrowRight, Building2, User, Mail, MessageSquare, Phone, MapPin, Briefcase, Factory, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Building2, User, Mail, MessageSquare, Phone, PhoneCall, MapPin, Briefcase, Factory, AlertCircle } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { leadStorage } from '../services/leadStorage';
@@ -15,6 +15,7 @@ export function Book() {
     const name = (formData.get('name') as string) || '';
     const email = (formData.get('email') as string) || '';
     const phone = (formData.get('phone') as string) || '';
+    const secondaryPhone = (formData.get('secondaryPhone') as string)?.trim() || '';
     const company = (formData.get('company') as string) || '';
     const jobTitle = (formData.get('jobTitle') as string) || '';
     const location = (formData.get('location') as string) || '';
@@ -27,6 +28,7 @@ export function Book() {
       name,
       email,
       phone,
+      additionalPhones: secondaryPhone ? [secondaryPhone] : [],
       company: company || 'Independent Inquiry',
       jobTitle,
       location,
@@ -37,7 +39,7 @@ export function Book() {
       status: 'new',
       priority: emergencyLevel === 'immediate' ? 'high' : emergencyLevel === 'high' ? 'high' : 'medium',
       source: 'website_booking',
-      notes: `Location: ${location || 'N/A'} | Industry: ${industry || 'N/A'} | Post: ${jobTitle || 'N/A'} | Urgency: ${emergencyLevel}`
+      notes: `Location: ${location || 'N/A'} | Industry: ${industry || 'N/A'} | Post: ${jobTitle || 'N/A'} | Urgency: ${emergencyLevel}${secondaryPhone ? ` | Alt Phone: ${secondaryPhone}` : ''}`
     });
 
     const subject = `Consultation Request: ${company || name}`;
@@ -48,8 +50,8 @@ Location: ${location}
 Industry: ${industry}
 Emergency Level: ${emergencyLevel}
 Email: ${email}
-Phone: ${phone}
-
+Primary Phone: ${phone}
+${secondaryPhone ? `Secondary Phone: ${secondaryPhone}\n` : ''}
 Project Details:
 ${message}`;
 
@@ -143,9 +145,9 @@ ${message}`;
                   </div>
                 </div>
 
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-1">
                   <label htmlFor="phone" className="block text-sm font-semibold leading-6 text-slate-900">
-                    Phone Number
+                    Phone Number (Primary)
                   </label>
                   <div className="relative mt-2.5">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -157,6 +159,27 @@ ${message}`;
                       id="phone"
                       className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all"
                       placeholder={t('book.form.phone_ph')}
+                    />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-1">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="secondaryPhone" className="block text-sm font-semibold leading-6 text-slate-900">
+                      Alternate Phone / WhatsApp
+                    </label>
+                    <span className="text-xs text-slate-400">Optional</span>
+                  </div>
+                  <div className="relative mt-2.5">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <PhoneCall className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <input
+                      type="tel"
+                      name="secondaryPhone"
+                      id="secondaryPhone"
+                      className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all"
+                      placeholder="+213 21... or 0661..."
                     />
                   </div>
                 </div>

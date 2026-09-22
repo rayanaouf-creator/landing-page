@@ -90,10 +90,10 @@
         "industry": "Contact Lens Wholesaler",
         "desc": "A prominent wholesaler providing contact lenses and optical products to retailers and clinics.",
         "delivered": "What we delivered: ",
-        "solution": "We developed custom software to streamline their wholesale operations, managing complex B2B orders and providing real-time inventory tracking for their extensive product catalog.",
-        "h1": "Custom software development",
+        "solution": "We deployed our proprietary Joptic-Pro SaaS software to streamline their wholesale operations, manage complex B2B orders, and provide real-time inventory tracking for their extensive product catalog.",
+        "h1": "Joptic-Pro SaaS Software Deployment",
         "h2": "B2B order management",
-        "h3": "Wholesale inventory tracking"
+        "h3": "Real-time wholesale inventory tracking"
       },
       "essilor": {
         "name": "Lutech",
@@ -118,7 +118,7 @@
     "banner_desc": "Consult with our ERPNext & software architects for a tailored digital roadmap.",
     "items": {
       "optilens": {
-        "client_name": "Karim Benali",
+        "client_name": "Laraba Oussama",
         "client_role": "Operations & Logistics Director",
         "company": "Optilens",
         "industry": "Optical Distribution (14 Wilayas)",
@@ -127,13 +127,13 @@
         "quote": "JetNext completely revolutionized our national distribution network across 14 wilayas. Moving from fragmented spreadsheets to a centralized ERPNext system eliminated dead stock and gave our management real-time visibility across every regional hub."
       },
       "choptic": {
-        "client_name": "Nabil Meziani",
+        "client_name": "Youcef",
         "client_role": "Managing Director",
         "company": "CH Optic",
         "industry": "Wholesale & Healthcare",
-        "service": "Custom B2B Order Platform",
-        "metric": "Zero Stock Discrepancies",
-        "quote": "The custom software JetNext designed for our wholesale catalog streamlined how we handle thousands of optical references. Our B2B sales reps and partner clinics now place and verify orders in seconds with zero inventory errors."
+        "service": "Joptic-Pro SaaS Software",
+        "metric": "-70% Order Processing Time",
+        "quote": "Adopting the Joptic-Pro SaaS software engineered by JetNext transformed our wholesale optical distribution. Managing thousands of optical references and processing B2B orders for our partner clinics is now handled in real time with total fluidity and massive time savings."
       },
       "lutech": {
         "client_name": "Dr. Sofiane Haddad",

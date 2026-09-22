@@ -90,10 +90,10 @@
         "industry": "Grossiste en Lentilles de Contact",
         "desc": "Un grossiste de premier plan fournissant des lentilles de contact et des produits optiques aux détaillants et cliniques.",
         "delivered": "Ce que nous avons livré : ",
-        "solution": "Nous avons développé un logiciel sur mesure pour rationaliser leurs opérations de vente en gros, gérer les commandes B2B complexes et offrir un suivi des stocks en temps réel pour leur vaste catalogue de produits.",
-        "h1": "Développement de logiciel sur mesure",
+        "solution": "Nous avons déployé notre logiciel SaaS propriétaire Joptic-Pro pour rationaliser l'ensemble de leurs opérations de vente en gros, automatiser les commandes B2B complexes et offrir un suivi des stocks en temps réel pour leur vaste catalogue optique.",
+        "h1": "Déploiement du logiciel SaaS Joptic-Pro",
         "h2": "Gestion des commandes B2B",
-        "h3": "Suivi des stocks de gros"
+        "h3": "Suivi des stocks de gros en temps réel"
       },
       "essilor": {
         "name": "Lutech",
@@ -118,7 +118,7 @@
     "banner_desc": "Consultez nos architectes logiciels & ERPNext pour une feuille de route numérique sur mesure.",
     "items": {
       "optilens": {
-        "client_name": "Karim Benali",
+        "client_name": "Laraba Oussama",
         "client_role": "Directeur des Opérations & Logistique",
         "company": "Optilens",
         "industry": "Distribution Optique (14 Wilayas)",
@@ -127,13 +127,13 @@
         "quote": "JetNext a totalement révolutionné notre réseau de distribution national sur 14 wilayas. Le passage de tableurs Excel dispersés à un ERPNext centralisé a éliminé les stocks dormants et apporté une visibilité en temps réel à notre direction."
       },
       "choptic": {
-        "client_name": "Nabil Meziani",
+        "client_name": "Youcef",
         "client_role": "Directeur Général",
         "company": "CH Optic",
         "industry": "Commerce de Gros & Santé",
-        "service": "Plateforme B2B Sur Mesure",
-        "metric": "Zéro Écart d'Inventaire",
-        "quote": "Le logiciel sur mesure conçu par JetNext pour notre catalogue de gros a fluidifié la gestion de milliers de références optiques. Nos commerciaux et cliniques partenaires passent désormais leurs commandes en quelques secondes sans aucune erreur."
+        "service": "Logiciel SaaS Joptic-Pro",
+        "metric": "-70% de Temps de Traitement",
+        "quote": "L'adoption du logiciel SaaS Joptic-Pro conçu par JetNext a révolutionné notre gestion de gros. Nos milliers de références optiques et les commandes B2B de nos cliniques partenaires se gèrent désormais en temps réel avec une fluidité totale et un gain de temps considérable."
       },
       "lutech": {
         "client_name": "Dr. Sofiane Haddad",

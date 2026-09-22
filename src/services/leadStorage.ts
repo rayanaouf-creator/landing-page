@@ -1,76 +1,160 @@
 import { Lead, LeadStatus, LeadPriority } from '../types';
+import { db, COLLECTIONS } from './firebase';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot 
+} from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_leads_database_v1';
-
 const INITIAL_SEEDED_LEADS: Lead[] = [];
+
+type LeadListener = (leads: Lead[]) => void;
+const listeners: Set<LeadListener> = new Set();
+let memoryLeads: Lead[] = [];
+let isInitialized = false;
+
+// Read local mirror first so UI is instant
+function loadLocalMirror(): Lead[] {
+  try {
+    const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
+    if (!data) return [];
+    const parsed: Lead[] = JSON.parse(data);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(l => l.id !== 'lead-1' && l.id !== 'lead-2' && l.id !== 'lead-3');
+  } catch {
+    return [];
+  }
+}
+
+memoryLeads = loadLocalMirror();
+
+// Setup real-time Firestore listener
+function initFirestoreSync() {
+  if (isInitialized || typeof window === 'undefined') return;
+  isInitialized = true;
+
+  try {
+    const colRef = collection(db, COLLECTIONS.LEADS);
+    onSnapshot(colRef, (snapshot) => {
+      const remoteLeads: Lead[] = [];
+      snapshot.forEach((d) => {
+        remoteLeads.push(d.data() as Lead);
+      });
+
+      // Sort by createdAt descending
+      remoteLeads.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+      // If Firestore is empty but we have local leads, migrate them to Firestore
+      if (remoteLeads.length === 0 && memoryLeads.length > 0) {
+        memoryLeads.forEach(lead => {
+          setDoc(doc(db, COLLECTIONS.LEADS, lead.id), lead).catch(err => {
+            console.error('Error migrating lead to Firestore:', err);
+          });
+        });
+      } else {
+        memoryLeads = remoteLeads;
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteLeads));
+        } catch {}
+        listeners.forEach(fn => fn(memoryLeads));
+      }
+    }, (error) => {
+      console.warn('Firestore leads snapshot listener warning:', error);
+    });
+  } catch (err) {
+    console.error('Failed to init Firestore sync for leads:', err);
+  }
+}
+
+initFirestoreSync();
 
 export const leadStorage = {
   getLeads(): Lead[] {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      if (!data) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-        return [];
-      }
-      const parsed: Lead[] = JSON.parse(data);
-      if (!Array.isArray(parsed)) return [];
+    return [...memoryLeads];
+  },
 
-      // Clean out any previously cached fake test leads (lead-1, lead-2, lead-3)
-      const cleaned = parsed.filter(
-        (l) => l.id !== 'lead-1' && l.id !== 'lead-2' && l.id !== 'lead-3'
-      );
-      if (cleaned.length !== parsed.length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
-      }
-      return cleaned;
-    } catch (err) {
-      console.error('Error reading leads from localStorage', err);
-      return [];
-    }
+  subscribe(callback: LeadListener): () => void {
+    listeners.add(callback);
+    callback([...memoryLeads]);
+    return () => listeners.delete(callback);
   },
 
   saveLead(leadInput: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Lead {
-    const leads = this.getLeads();
     const now = new Date().toISOString();
-    
     const newLead: Lead = {
       ...leadInput,
-      id: leadInput.id || `lead-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      id: leadInput.id || `lead-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       createdAt: now,
       updatedAt: now
     };
 
-    const updatedList = [newLead, ...leads];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
+    // Update memory & local mirror immediately
+    memoryLeads = [newLead, ...memoryLeads.filter(l => l.id !== newLead.id)];
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryLeads));
+    } catch {}
+    listeners.forEach(fn => fn(memoryLeads));
+
+    // Persist to Firebase Firestore
+    setDoc(doc(db, COLLECTIONS.LEADS, newLead.id), newLead).catch(err => {
+      console.error('Firestore saveLead error:', err);
+    });
+
     return newLead;
   },
 
   updateLead(id: string, updates: Partial<Lead>): Lead | null {
-    const leads = this.getLeads();
-    const index = leads.findIndex((l) => l.id === id);
+    const index = memoryLeads.findIndex((l) => l.id === id);
     if (index === -1) return null;
 
     const updatedLead: Lead = {
-      ...leads[index],
+      ...memoryLeads[index],
       ...updates,
       updatedAt: new Date().toISOString()
     };
 
-    leads[index] = updatedLead;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+    memoryLeads[index] = updatedLead;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryLeads));
+    } catch {}
+    listeners.forEach(fn => fn(memoryLeads));
+
+    // Update in Firebase Firestore
+    updateDoc(doc(db, COLLECTIONS.LEADS, id), updates as any).catch(err => {
+      console.error('Firestore updateLead error:', err);
+    });
+
     return updatedLead;
   },
 
   deleteLead(id: string): boolean {
-    const leads = this.getLeads();
-    const filtered = leads.filter((l) => l.id !== id);
-    if (filtered.length === leads.length) return false;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    const prevLength = memoryLeads.length;
+    memoryLeads = memoryLeads.filter((l) => l.id !== id);
+    if (memoryLeads.length === prevLength) return false;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryLeads));
+    } catch {}
+    listeners.forEach(fn => fn(memoryLeads));
+
+    // Delete in Firebase Firestore
+    deleteDoc(doc(db, COLLECTIONS.LEADS, id)).catch(err => {
+      console.error('Firestore deleteLead error:', err);
+    });
+
     return true;
   },
 
   resetToInitial(): Lead[] {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_SEEDED_LEADS));
+    memoryLeads = [...INITIAL_SEEDED_LEADS];
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_SEEDED_LEADS));
+    } catch {}
+    listeners.forEach(fn => fn(memoryLeads));
     return INITIAL_SEEDED_LEADS;
   },
 
@@ -88,9 +172,9 @@ export const leadStorage = {
       'Email', 
       'Phone', 
       'Service', 
+      'Acquisition Source',
       'Status', 
       'Priority', 
-      'Est Value (DZD)', 
       'Notes'
     ];
     const rows = leads.map(l => [
@@ -103,11 +187,11 @@ export const leadStorage = {
       `"${(l.industry || '').replace(/"/g, '""')}"`,
       `"${(l.emergencyLevel || '').replace(/"/g, '""')}"`,
       `"${(l.email || '').replace(/"/g, '""')}"`,
-      `"${(l.phone || '').replace(/"/g, '""')}"`,
+      `"${([l.phone, ...(l.additionalPhones || [])].filter(Boolean).join(' | ')).replace(/"/g, '""')}"`,
       `"${(l.serviceRequested || '').replace(/"/g, '""')}"`,
+      `"${(l.source || '').replace(/"/g, '""')}"`,
       `"${l.status}"`,
       `"${l.priority}"`,
-      `"${l.estimatedValueDZD || 0}"`,
       `"${(l.notes || l.message || '').replace(/"/g, '""')}"`
     ]);
 
@@ -140,7 +224,12 @@ export const leadStorage = {
     try {
       const parsed = JSON.parse(jsonString);
       if (Array.isArray(parsed)) {
+        memoryLeads = parsed;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        listeners.forEach(fn => fn(memoryLeads));
+        parsed.forEach(lead => {
+          setDoc(doc(db, COLLECTIONS.LEADS, lead.id), lead).catch(console.error);
+        });
         return true;
       }
       return false;

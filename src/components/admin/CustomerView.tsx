@@ -8,34 +8,25 @@ import {
   Phone, 
   MapPin, 
   Briefcase, 
-  Calendar, 
-  DollarSign, 
   Trash2, 
   Edit, 
   Eye, 
   X, 
   CheckCircle2, 
-  AlertCircle, 
-  Layers,
-  ArrowUpRight,
-  ShieldCheck,
-  LifeBuoy
+  Globe,
+  FileText,
+  TrendingUp,
+  FolderGit2,
+  AlertCircle
 } from 'lucide-react';
-import { Customer, CustomerStatus, CustomerTier } from '../../types';
+import { Customer, CustomerStatus } from '../../types';
 import { customerStorage } from '../../services/customerStorage';
 import { LOCATION_PRESETS, INDUSTRY_PRESETS, JOB_TITLE_PRESETS } from '../../pages/Admin';
 
 const STATUS_CONFIG: Record<CustomerStatus, { label: string; color: string; bg: string; border: string }> = {
-  active: { label: 'Active Contract', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-  onboarding: { label: 'In Onboarding', color: 'text-teal-700', bg: 'bg-teal-50', border: 'border-teal-200' },
-  paused: { label: 'Suspended / Paused', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
-  churned: { label: 'Completed / Churned', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' }
-};
-
-const TIER_CONFIG: Record<CustomerTier, { label: string; color: string; bg: string; border: string }> = {
-  enterprise: { label: 'Enterprise Tier', color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200' },
-  growth: { label: 'Growth Tier', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
-  standard: { label: 'Standard Tier', color: 'text-slate-700', bg: 'bg-slate-100', border: 'border-slate-200' }
+  active: { label: 'Active Client', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+  prospect: { label: 'Prospect / In Discussion', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
+  inactive: { label: 'Inactive / Dormant', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' }
 };
 
 interface CustomerViewProps {
@@ -43,6 +34,8 @@ interface CustomerViewProps {
   onRefresh: () => void;
   showToast: (msg: string) => void;
   onFileClaimForCustomer?: (customer: Customer) => void;
+  onCreateOpportunityForCustomer?: (customer: Customer) => void;
+  onCreateProjectForCustomer?: (customer: Customer) => void;
   isAddModalOpen?: boolean;
   onCloseAddModal?: () => void;
   statusFilter?: string;
@@ -54,6 +47,8 @@ export function CustomerView({
   onRefresh,
   showToast,
   onFileClaimForCustomer,
+  onCreateOpportunityForCustomer,
+  onCreateProjectForCustomer,
   isAddModalOpen = false,
   onCloseAddModal,
   statusFilter = 'all',
@@ -61,7 +56,7 @@ export function CustomerView({
 }: CustomerViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [localStatusFilter, setLocalStatusFilter] = useState(statusFilter);
-  const [tierFilter, setTierFilter] = useState<string>('all');
+  const [industryFilter, setIndustryFilter] = useState<string>('all');
   
   // Sync if parent updates filter
   const currentStatusFilter = onStatusFilterChange ? statusFilter : localStatusFilter;
@@ -76,7 +71,7 @@ export function CustomerView({
   const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
 
-  // Form inputs
+  // Form inputs (purely customer account fields - no contract, no cost, no monthly support)
   const [company, setCompany] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -85,11 +80,8 @@ export function CustomerView({
   const [location, setLocation] = useState('Alger');
   const [industry, setIndustry] = useState('Fabrication & Production Industrielle');
   const [status, setStatusValue] = useState<CustomerStatus>('active');
-  const [tier, setTier] = useState<CustomerTier>('growth');
-  const [activeService, setActiveService] = useState('ERPNext Implementation');
-  const [contractValueDZD, setContractValueDZD] = useState<number | ''>(2500000);
-  const [mrrDZD, setMrrDZD] = useState<number | ''>(100000);
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [website, setWebsite] = useState('');
+  const [taxId, setTaxId] = useState('');
   const [notes, setNotes] = useState('');
 
   const openAddModal = () => {
@@ -102,11 +94,8 @@ export function CustomerView({
     setLocation('Alger');
     setIndustry('Fabrication & Production Industrielle');
     setStatusValue('active');
-    setTier('growth');
-    setActiveService('ERPNext Implementation');
-    setContractValueDZD(2500000);
-    setMrrDZD(100000);
-    setStartDate(new Date().toISOString().slice(0, 10));
+    setWebsite('');
+    setTaxId('');
     setNotes('');
     setIsFormOpen(true);
   };
@@ -121,11 +110,8 @@ export function CustomerView({
     setLocation(c.location || 'Alger');
     setIndustry(c.industry || 'Fabrication & Production Industrielle');
     setStatusValue(c.status);
-    setTier(c.tier);
-    setActiveService(c.activeService);
-    setContractValueDZD(c.contractValueDZD !== undefined ? c.contractValueDZD : '');
-    setMrrDZD(c.mrrDZD !== undefined ? c.mrrDZD : '');
-    setStartDate(c.startDate || new Date().toISOString().slice(0, 10));
+    setWebsite(c.website || '');
+    setTaxId(c.taxId || '');
     setNotes(c.notes || '');
     setIsFormOpen(true);
   };
@@ -146,11 +132,8 @@ export function CustomerView({
       location,
       industry,
       status,
-      tier,
-      activeService,
-      contractValueDZD: contractValueDZD === '' ? 0 : Number(contractValueDZD),
-      mrrDZD: mrrDZD === '' ? 0 : Number(mrrDZD),
-      startDate,
+      website: website.trim(),
+      taxId: taxId.trim(),
       notes: notes.trim()
     };
 
@@ -159,7 +142,7 @@ export function CustomerView({
       showToast(`Updated customer "${company}"`);
     } else {
       customerStorage.saveCustomer(payload);
-      showToast(`Added new customer "${company}"`);
+      showToast(`Added customer "${company}"`);
     }
 
     setIsFormOpen(false);
@@ -175,70 +158,73 @@ export function CustomerView({
     onRefresh();
   };
 
-  const handleQuickStatusChange = (id: string, newStatus: CustomerStatus) => {
-    customerStorage.updateCustomer(id, { status: newStatus });
-    showToast(`Status updated to ${STATUS_CONFIG[newStatus].label}`);
-    onRefresh();
-  };
-
-  // Filtered customers
+  // Filtered customer list
   const filteredCustomers = useMemo(() => {
-    return customers.filter(c => {
+    return customers.filter((c) => {
+      // Status filter
+      if (currentStatusFilter !== 'all' && c.status !== currentStatusFilter) {
+        return false;
+      }
+      // Industry filter
+      if (industryFilter !== 'all' && c.industry !== industryFilter) {
+        return false;
+      }
       // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchText = `${c.company} ${c.name} ${c.email} ${c.phone} ${c.location} ${c.industry} ${c.activeService}`.toLowerCase();
-        if (!matchText.includes(q)) return false;
+        const matchesCompany = c.company.toLowerCase().includes(q);
+        const matchesName = c.name.toLowerCase().includes(q);
+        const matchesEmail = c.email.toLowerCase().includes(q);
+        const matchesPhone = c.phone.toLowerCase().includes(q);
+        const matchesLocation = c.location?.toLowerCase().includes(q);
+        const matchesIndustry = c.industry?.toLowerCase().includes(q);
+        const matchesTaxId = c.taxId?.toLowerCase().includes(q);
+        return matchesCompany || matchesName || matchesEmail || matchesPhone || matchesLocation || matchesIndustry || Boolean(matchesTaxId);
       }
-      // Status
-      if (currentStatusFilter !== 'all' && c.status !== currentStatusFilter) return false;
-      // Tier
-      if (tierFilter !== 'all' && c.tier !== tierFilter) return false;
       return true;
     });
-  }, [customers, searchQuery, currentStatusFilter, tierFilter]);
+  }, [customers, currentStatusFilter, industryFilter, searchQuery]);
 
-  // Statistics
-  const totalValue = customers.reduce((sum, c) => sum + (c.contractValueDZD || 0), 0);
-  const totalMrr = customers.reduce((sum, c) => sum + (c.mrrDZD || 0), 0);
-  const activeCount = customers.filter(c => c.status === 'active').length;
-  const onboardingCount = customers.filter(c => c.status === 'onboarding').length;
+  // Aggregate stats
+  const activeCount = useMemo(() => customers.filter(c => c.status === 'active').length, [customers]);
+  const prospectCount = useMemo(() => customers.filter(c => c.status === 'prospect').length, [customers]);
+  const inactiveCount = useMemo(() => customers.filter(c => c.status === 'inactive').length, [customers]);
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Top Banner / Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-md bg-[#e6f4f4] px-2.5 py-0.5 text-xs font-bold text-[#1b6b6a]">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-[#44ACAB]/10 text-[#44ACAB]">
+              <Building2 className="h-3.5 w-3.5" />
               Customer Directory
             </span>
-            <span className="text-xs text-slate-400 font-medium">
-              {filteredCustomers.length} of {customers.length} Accounts
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20" title="All operations persist in Firebase Firestore cloud database">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Firebase Firestore
             </span>
+            <span className="text-xs text-slate-400 font-medium">CRM Accounts & Companies</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-            Customer Accounts
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Active ERPNext deployments, ISO 9001 certifications & retained SLAs
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">Enterprise Customer Accounts</h2>
+          <p className="text-xs sm:text-sm text-slate-500">
+            Client company registry, executive contacts, industry segmentation, and account status.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2">
           <button
-            id="admin-export-customers-btn"
             onClick={() => customerStorage.exportCSV()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-all"
+            title="Export all customers to CSV"
           >
             <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
             <span>Export CSV</span>
           </button>
 
           <button
-            id="admin-add-customer-btn"
             onClick={openAddModal}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#44ACAB] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#389695] transition-all"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#44ACAB] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#389695] transition-all"
           >
             <Plus className="h-4 w-4" />
             <span>Add Customer</span>
@@ -246,54 +232,50 @@ export function CustomerView({
         </div>
       </div>
 
-      {/* KPI Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* Metric Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Accounts</span>
-            <div className="p-2 rounded-xl bg-slate-100 text-slate-700">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Accounts</span>
+            <div className="p-2 rounded-xl bg-slate-100 text-slate-600">
               <Building2 className="h-4 w-4" />
             </div>
           </div>
           <p className="mt-2 text-2xl font-black text-slate-900">{customers.length}</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Active enterprise roster</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">Registered enterprises</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Active Contracts</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Active Clients</span>
             <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
               <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
           <p className="mt-2 text-2xl font-black text-emerald-700">{activeCount}</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Under live operational SLA</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">Active business relationships</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-600">In Onboarding</span>
-            <div className="p-2 rounded-xl bg-teal-50 text-teal-600">
-              <Layers className="h-4 w-4" />
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Prospect Accounts</span>
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+              <TrendingUp className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-black text-teal-700">{onboardingCount}</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Implementation phase</p>
+          <p className="mt-2 text-2xl font-black text-blue-700">{prospectCount}</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">Pre-sales & discussions</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-600">Monthly Recurring SLA</span>
-            <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
-              <DollarSign className="h-4 w-4" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Inactive / Dormant</span>
+            <div className="p-2 rounded-xl bg-slate-100 text-slate-500">
+              <AlertCircle className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-black text-purple-700">
-            {totalMrr.toLocaleString()} <span className="text-xs font-semibold text-slate-400">DZD/mo</span>
-          </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">
-            Total Pipeline: {totalValue.toLocaleString()} DZD
-          </p>
+          <p className="mt-2 text-2xl font-black text-slate-700">{inactiveCount}</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">Archived or paused</p>
         </div>
       </div>
 
@@ -305,7 +287,7 @@ export function CustomerView({
             <input
               id="admin-customers-search"
               type="text"
-              placeholder="Search company, contact person, email, city, industry..."
+              placeholder="Search company, contact, email, wilaya, industry, tax ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 transition-all outline-hidden"
@@ -321,8 +303,8 @@ export function CustomerView({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Status filter tabs */}
-            <div className="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+            {/* Status Tabs */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-medium">
               <button
                 onClick={() => setStatus('all')}
                 className={`px-3 py-1.5 rounded-lg transition-all ${
@@ -340,25 +322,33 @@ export function CustomerView({
                 Active ({activeCount})
               </button>
               <button
-                onClick={() => setStatus('onboarding')}
+                onClick={() => setStatus('prospect')}
                 className={`px-3 py-1.5 rounded-lg transition-all ${
-                  currentStatusFilter === 'onboarding' ? 'bg-teal-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                  currentStatusFilter === 'prospect' ? 'bg-blue-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Onboarding ({onboardingCount})
+                Prospect ({prospectCount})
+              </button>
+              <button
+                onClick={() => setStatus('inactive')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  currentStatusFilter === 'inactive' ? 'bg-slate-700 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Inactive ({inactiveCount})
               </button>
             </div>
 
-            {/* Tier filter */}
+            {/* Industry Filter */}
             <select
-              value={tierFilter}
-              onChange={(e) => setTierFilter(e.target.value)}
+              value={industryFilter}
+              onChange={(e) => setIndustryFilter(e.target.value)}
               className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 focus:bg-white focus:border-[#44ACAB] outline-hidden"
             >
-              <option value="all">All Tiers</option>
-              <option value="enterprise">Enterprise Tier</option>
-              <option value="growth">Growth Tier</option>
-              <option value="standard">Standard Tier</option>
+              <option value="all">All Industries</option>
+              {INDUSTRY_PRESETS.map((ind) => (
+                <option key={ind} value={ind}>{ind}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -371,17 +361,17 @@ export function CustomerView({
             <Building2 className="mx-auto h-12 w-12 text-slate-300" />
             <h3 className="mt-3 text-base font-bold text-slate-900">No customer accounts found</h3>
             <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
-              {searchQuery || currentStatusFilter !== 'all' || tierFilter !== 'all'
+              {searchQuery || currentStatusFilter !== 'all' || industryFilter !== 'all'
                 ? 'Try adjusting your search criteria or resetting filters.'
                 : 'Get started by creating your first client account or converting a Won lead.'}
             </p>
             <div className="mt-4 flex items-center justify-center gap-2">
-              {(searchQuery || currentStatusFilter !== 'all' || tierFilter !== 'all') && (
+              {(searchQuery || currentStatusFilter !== 'all' || industryFilter !== 'all') && (
                 <button
                   onClick={() => {
                     setSearchQuery('');
                     setStatus('all');
-                    setTierFilter('all');
+                    setIndustryFilter('all');
                   }}
                   className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
                 >
@@ -401,22 +391,21 @@ export function CustomerView({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="py-3.5 px-4">Company & Tier</th>
+                  <th className="py-3.5 px-4">Company</th>
                   <th className="py-3.5 px-4">Primary Contact</th>
-                  <th className="py-3.5 px-4">Service & Location</th>
-                  <th className="py-3.5 px-4">Contract / MRR</th>
-                  <th className="py-3.5 px-4">Account Status</th>
+                  <th className="py-3.5 px-4">Location / Wilaya</th>
+                  <th className="py-3.5 px-4">Industry Sector</th>
+                  <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                 {filteredCustomers.map((c) => {
                   const statusInfo = STATUS_CONFIG[c.status] || STATUS_CONFIG.active;
-                  const tierInfo = TIER_CONFIG[c.tier] || TIER_CONFIG.growth;
 
                   return (
                     <tr key={c.id} className="hover:bg-slate-50/60 transition-colors group">
-                      {/* Company & Tier */}
+                      {/* Company */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-start gap-2.5">
                           <div className="h-9 w-9 shrink-0 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-white font-bold flex items-center justify-center text-xs shadow-xs">
@@ -425,11 +414,23 @@ export function CustomerView({
                           <div>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-slate-900 text-sm">{c.company}</span>
-                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${tierInfo.bg} ${tierInfo.color} ${tierInfo.border}`}>
-                                {tierInfo.label}
-                              </span>
+                              {c.taxId && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
+                                  NIF: {c.taxId}
+                                </span>
+                              )}
                             </div>
-                            <p className="text-[11px] text-slate-400 mt-0.5">{c.industry || 'Enterprise'}</p>
+                            {c.website && (
+                              <a 
+                                href={c.website.startsWith('http') ? c.website : `https://${c.website}`} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-[11px] text-[#44ACAB] hover:underline flex items-center gap-1 mt-0.5"
+                              >
+                                <Globe className="h-3 w-3" />
+                                <span>{c.website.replace(/^https?:\/\//, '')}</span>
+                              </a>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -437,8 +438,8 @@ export function CustomerView({
                       {/* Contact */}
                       <td className="py-3.5 px-4">
                         <p className="font-bold text-slate-900">{c.name}</p>
-                        <p className="text-[11px] text-slate-500">{c.jobTitle || 'Representative'}</p>
-                        <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
+                        <p className="text-[11px] text-slate-500">{c.jobTitle || 'Executive Contact'}</p>
+                        <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 flex-wrap">
                           <a href={`mailto:${c.email}`} className="hover:text-[#44ACAB] flex items-center gap-1">
                             <Mail className="h-3 w-3 text-slate-400" />
                             <span>{c.email}</span>
@@ -452,71 +453,82 @@ export function CustomerView({
                         </div>
                       </td>
 
-                      {/* Service & Location */}
+                      {/* Location */}
                       <td className="py-3.5 px-4">
-                        <p className="font-medium text-slate-800">{c.activeService}</p>
-                        <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500">
-                          <MapPin className="h-3 w-3 text-slate-400" />
-                          <span>{c.location || 'Algeria'}</span>
-                          <span className="text-slate-300">•</span>
-                          <span>Since {c.startDate ? new Date(c.startDate).toLocaleDateString() : 'N/A'}</span>
+                        <div className="flex items-center gap-1.5 text-slate-700">
+                          <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span className="font-medium">{c.location || 'Algérie'}</span>
                         </div>
                       </td>
 
-                      {/* Contract / MRR */}
+                      {/* Industry */}
                       <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900">
-                          {c.contractValueDZD ? `${c.contractValueDZD.toLocaleString()} DZD` : '—'}
-                        </p>
-                        <p className="text-[11px] text-purple-700 font-semibold mt-0.5">
-                          {c.mrrDZD ? `${c.mrrDZD.toLocaleString()} DZD / mo` : 'No recurring SLA'}
-                        </p>
+                        <div className="flex items-center gap-1.5 text-slate-700">
+                          <Briefcase className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate max-w-[180px]">{c.industry || 'Entreprise'}</span>
+                        </div>
                       </td>
 
-                      {/* Status with quick switcher */}
+                      {/* Status */}
                       <td className="py-3.5 px-4">
-                        <select
-                          value={c.status}
-                          onChange={(e) => handleQuickStatusChange(c.id, e.target.value as CustomerStatus)}
-                          className={`text-[11px] font-bold py-1 px-2 rounded-lg border cursor-pointer outline-hidden ${statusInfo.bg} ${statusInfo.color} ${statusInfo.border}`}
-                        >
-                          <option value="active">Active Contract</option>
-                          <option value="onboarding">In Onboarding</option>
-                          <option value="paused">Suspended / Paused</option>
-                          <option value="churned">Completed / Churned</option>
-                        </select>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${statusInfo.bg} ${statusInfo.color} ${statusInfo.border}`}>
+                          {statusInfo.label}
+                        </span>
                       </td>
 
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {onCreateOpportunityForCustomer && (
+                            <button
+                              onClick={() => onCreateOpportunityForCustomer(c)}
+                              className="rounded-lg p-1.5 text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                              title="Create New Opportunity / Deal for this customer"
+                            >
+                              <TrendingUp className="h-4 w-4" />
+                            </button>
+                          )}
+
+                          {onCreateProjectForCustomer && (
+                            <button
+                              onClick={() => onCreateProjectForCustomer(c)}
+                              className="rounded-lg p-1.5 text-slate-500 hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                              title="Start Project for this customer"
+                            >
+                              <FolderGit2 className="h-4 w-4" />
+                            </button>
+                          )}
+
                           {onFileClaimForCustomer && (
                             <button
                               onClick={() => onFileClaimForCustomer(c)}
-                              className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                              title="File Claim / Support Ticket for this customer"
+                              className="rounded-lg p-1.5 text-slate-500 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                              title="File Claim / Ticket for this customer"
                             >
-                              <LifeBuoy className="h-4 w-4" />
+                              <FileText className="h-4 w-4" />
                             </button>
                           )}
+
                           <button
                             onClick={() => setViewingCustomer(c)}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="View Account Profile"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                            title="View Full Profile"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
+
                           <button
                             onClick={() => openEditModal(c)}
-                            className="p-1.5 text-slate-400 hover:text-[#44ACAB] hover:bg-teal-50 rounded-lg transition-colors"
-                            title="Edit Account Details"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                            title="Edit Customer"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
+
                           <button
                             onClick={() => setCustomerToDelete(c)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                            title="Delete Account"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                            title="Delete Customer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -531,232 +543,198 @@ export function CustomerView({
         )}
       </div>
 
-      {/* ADD / EDIT CUSTOMER MODAL */}
+      {/* CREATE / EDIT CUSTOMER MODAL */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-[#44ACAB]/15 text-[#1b6b6a]">
-                  <Building2 className="h-5 w-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="relative w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-[#44ACAB]/10 text-[#44ACAB] flex items-center justify-center font-bold">
+                  <Building2 className="h-4 w-4" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    {editingCustomer ? 'Edit Customer Account' : 'Register New Customer Account'}
+                    {editingCustomer ? 'Edit Customer Profile' : 'Register New Customer Account'}
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    Client credentials, service agreement details, and SLA parameters
-                  </p>
+                  <p className="text-xs text-slate-500">Corporate client profile and contact details</p>
                 </div>
               </div>
               <button
-                onClick={() => setIsFormOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
+                onClick={() => {
+                  setIsFormOpen(false);
+                  if (onCloseAddModal) onCloseAddModal();
+                }}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSaveCustomer} className="flex-1 overflow-y-auto custom-light-scrollbar px-6 py-5 space-y-4">
-              {/* Row 1: Company & Contact Person */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
+            {/* Modal Body */}
+            <form onSubmit={handleSaveCustomer} className="p-6 overflow-y-auto custom-light-scrollbar space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Company Name */}
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">Company / Enterprise Name *</label>
                   <input
                     type="text"
                     required
+                    placeholder="e.g. SARL Maghreb Plastique & Câblerie"
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
-                    placeholder="e.g. Cevital Agro, Biopharm, Condor..."
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
                   />
                 </div>
+
+                {/* Primary Contact Name */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Primary Contact Person *</label>
                   <input
                     type="text"
                     required
+                    placeholder="e.g. Dr. Karim Benali"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. M. Karim Hadj"
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
                   />
                 </div>
-              </div>
 
-              {/* Row 2: Email & Phone */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Job Title / Role */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Job Title / Function</label>
+                  <select
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
+                  >
+                    {JOB_TITLE_PRESETS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Email */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Email Address *</label>
                   <input
                     type="email"
                     required
+                    placeholder="contact@company-dz.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="contact@company.dz"
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
                   />
                 </div>
+
+                {/* Phone */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
                   <input
                     type="tel"
+                    placeholder="+213 550 XX XX XX"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+213 550 00 00 00"
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
                   />
                 </div>
-              </div>
 
-              {/* Row 3: Role, Location & Industry */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                {/* Wilaya / Location */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Role / Function</label>
-                  <select
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
-                  >
-                    {JOB_TITLE_PRESETS.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Location / Wilaya</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Wilaya / Location</label>
                   <select
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
                   >
                     {LOCATION_PRESETS.map((loc) => (
                       <option key={loc} value={loc}>{loc}</option>
                     ))}
                   </select>
                 </div>
+
+                {/* Industry Sector */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Industry Sector</label>
                   <select
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
                   >
                     {INDUSTRY_PRESETS.map((ind) => (
                       <option key={ind} value={ind}>{ind}</option>
                     ))}
                   </select>
                 </div>
-              </div>
 
-              {/* Row 4: Status, Tier & Active Service */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                {/* Account Status */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Contract Status</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Account Status</label>
                   <select
                     value={status}
                     onChange={(e) => setStatusValue(e.target.value as CustomerStatus)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
                   >
-                    <option value="active">Active Contract</option>
-                    <option value="onboarding">In Onboarding</option>
-                    <option value="paused">Suspended / Paused</option>
-                    <option value="churned">Completed / Churned</option>
+                    <option value="active">Active Client</option>
+                    <option value="prospect">Prospect / In Discussion</option>
+                    <option value="inactive">Inactive / Dormant</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Account Tier</label>
-                  <select
-                    value={tier}
-                    onChange={(e) => setTier(e.target.value as CustomerTier)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
-                  >
-                    <option value="enterprise">Enterprise Tier</option>
-                    <option value="growth">Growth Tier</option>
-                    <option value="standard">Standard Tier</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Active Service</label>
-                  <select
-                    value={activeService}
-                    onChange={(e) => setActiveService(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
-                  >
-                    <option value="ERPNext Implementation">ERPNext Implementation</option>
-                    <option value="ERPNext Pharma Suite & ISO 9001:2015">ERPNext Pharma & ISO 9001</option>
-                    <option value="ISO 9001 Certification & Audit">ISO 9001 Certification & Audit</option>
-                    <option value="Annual SLA Support & Hosting">Annual SLA Support & Hosting</option>
-                    <option value="Frappe Custom Development">Frappe Custom Development</option>
-                  </select>
-                </div>
-              </div>
 
-              {/* Row 5: Financials & Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                {/* Website */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Contract Value (DZD)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Website URL (optional)</label>
                   <input
-                    type="number"
-                    min="0"
-                    step="50000"
-                    value={contractValueDZD}
-                    onChange={(e) => setContractValueDZD(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="2500000"
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
+                    type="text"
+                    placeholder="https://company.dz"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Monthly Support (MRR DZD)</label>
+
+                {/* Tax ID / NIF */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Tax ID / NIF / RC (optional)</label>
                   <input
-                    type="number"
-                    min="0"
-                    step="10000"
-                    value={mrrDZD}
-                    onChange={(e) => setMrrDZD(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="120000"
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
+                    type="text"
+                    placeholder="e.g. NIF 001916010000000"
+                    value={taxId}
+                    onChange={(e) => setTaxId(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Engagement Start Date</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
+
+                {/* Notes */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Internal Notes & Corporate Details</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Key executive contacts, branches, decision maker preferences, background context..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden resize-none"
                   />
                 </div>
               </div>
 
-              {/* Notes */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Customer Account Notes</label>
-                <textarea
-                  rows={2}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Key project goals, SLA terms, server credentials link, key account stakeholders..."
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 focus:border-[#44ACAB] outline-hidden"
-                />
-              </div>
-
-              {/* Footer */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+              {/* Submit Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsFormOpen(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    if (onCloseAddModal) onCloseAddModal();
+                  }}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#44ACAB] px-5 py-2 text-xs font-bold text-white hover:bg-[#389695] shadow-xs"
+                  className="rounded-xl bg-[#44ACAB] px-5 py-2 text-xs font-bold text-white hover:bg-[#389695] transition-colors"
                 >
-                  {editingCustomer ? 'Update Account' : 'Save Customer'}
+                  {editingCustomer ? 'Save Changes' : 'Create Customer'}
                 </button>
               </div>
             </form>
@@ -764,125 +742,148 @@ export function CustomerView({
         </div>
       )}
 
-      {/* VIEW CUSTOMER PROFILE DRAWER / MODAL */}
+      {/* VIEW CUSTOMER DETAIL DRAWER */}
       {viewingCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
               <div className="flex items-center gap-2.5">
-                <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-black flex items-center justify-center text-sm">
+                <div className="h-9 w-9 rounded-xl bg-slate-900 text-white font-black flex items-center justify-center text-xs">
                   {viewingCustomer.company.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">{viewingCustomer.company}</h3>
-                  <p className="text-xs text-slate-500">{viewingCustomer.industry || 'Client Enterprise'}</p>
+                  <p className="text-xs text-slate-500">{viewingCustomer.industry || 'Corporate Account'}</p>
                 </div>
               </div>
               <button
                 onClick={() => setViewingCustomer(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto custom-light-scrollbar space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Account Tier</p>
-                  <p className="font-bold text-purple-700 mt-0.5 capitalize">{viewingCustomer.tier} Tier</p>
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-light-scrollbar">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Account Status</span>
+                  <p className="font-bold text-slate-800 capitalize mt-0.5">{viewingCustomer.status}</p>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</p>
-                  <p className="font-bold text-emerald-700 mt-0.5 capitalize">{viewingCustomer.status}</p>
+                <div className="p-3 rounded-xl bg-slate-50">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Location</span>
+                  <p className="font-bold text-slate-800 mt-0.5">{viewingCustomer.location || 'Algérie'}</p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Primary Contact</p>
-                <div className="p-3.5 rounded-xl border border-slate-100 bg-white space-y-1.5">
-                  <p className="font-bold text-slate-900 text-sm">{viewingCustomer.name}</p>
-                  <p className="text-slate-500">{viewingCustomer.jobTitle || 'Executive'}</p>
-                  <div className="flex flex-col gap-1 pt-1 text-slate-600">
-                    <a href={`mailto:${viewingCustomer.email}`} className="flex items-center gap-2 hover:text-[#44ACAB]">
-                      <Mail className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{viewingCustomer.email}</span>
+              <div className="p-4 rounded-xl border border-slate-100 space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Primary Contact</h4>
+                <p className="text-sm font-bold text-slate-900">{viewingCustomer.name}</p>
+                <p className="text-xs text-slate-500">{viewingCustomer.jobTitle || 'Executive Contact'}</p>
+                <div className="flex flex-col gap-1 text-xs pt-1">
+                  <a href={`mailto:${viewingCustomer.email}`} className="text-[#44ACAB] hover:underline flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    <span>{viewingCustomer.email}</span>
+                  </a>
+                  {viewingCustomer.phone && (
+                    <a href={`tel:${viewingCustomer.phone}`} className="text-slate-700 hover:underline flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-slate-400" />
+                      <span>{viewingCustomer.phone}</span>
                     </a>
-                    {viewingCustomer.phone && (
-                      <a href={`tel:${viewingCustomer.phone}`} className="flex items-center gap-2 hover:text-[#44ACAB]">
-                        <Phone className="h-3.5 w-3.5 text-slate-400" />
-                        <span>{viewingCustomer.phone}</span>
-                      </a>
-                    )}
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{viewingCustomer.location || 'Algeria'}</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Commercial Contract</p>
-                <div className="p-3.5 rounded-xl border border-slate-100 bg-white space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Service:</span>
-                    <span className="font-bold text-slate-900">{viewingCustomer.activeService}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Contract Value:</span>
-                    <span className="font-bold text-slate-900">
-                      {viewingCustomer.contractValueDZD ? `${viewingCustomer.contractValueDZD.toLocaleString()} DZD` : 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Monthly Support SLA:</span>
-                    <span className="font-bold text-purple-700">
-                      {viewingCustomer.mrrDZD ? `${viewingCustomer.mrrDZD.toLocaleString()} DZD/mo` : 'None'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Engagement Date:</span>
-                    <span className="font-medium text-slate-700">
-                      {viewingCustomer.startDate ? new Date(viewingCustomer.startDate).toLocaleDateString() : 'N/A'}
-                    </span>
-                  </div>
+              {(viewingCustomer.website || viewingCustomer.taxId) && (
+                <div className="p-4 rounded-xl border border-slate-100 space-y-2 text-xs">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Administrative Information</h4>
+                  {viewingCustomer.website && (
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="h-3.5 w-3.5 text-slate-400" />
+                      <a href={viewingCustomer.website.startsWith('http') ? viewingCustomer.website : `https://${viewingCustomer.website}`} target="_blank" rel="noreferrer" className="text-[#44ACAB] hover:underline">
+                        {viewingCustomer.website}
+                      </a>
+                    </div>
+                  )}
+                  {viewingCustomer.taxId && (
+                    <p className="text-slate-600">
+                      <span className="font-semibold text-slate-800">Tax ID / NIF:</span> {viewingCustomer.taxId}
+                    </p>
+                  )}
                 </div>
-              </div>
+              )}
 
               {viewingCustomer.notes && (
-                <div className="space-y-1">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Internal Account Notes</p>
-                  <p className="p-3 rounded-xl bg-slate-50 text-slate-700 leading-relaxed">
-                    {viewingCustomer.notes}
-                  </p>
+                <div className="p-4 rounded-xl bg-slate-50 text-xs">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Internal Notes</span>
+                  <p className="text-slate-700 whitespace-pre-wrap">{viewingCustomer.notes}</p>
                 </div>
               )}
+
+              {/* Quick Actions for this customer */}
+              <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2">
+                {onCreateOpportunityForCustomer && (
+                  <button
+                    onClick={() => {
+                      const c = viewingCustomer;
+                      setViewingCustomer(null);
+                      onCreateOpportunityForCustomer(c);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold transition-colors"
+                  >
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    <span>+ New Opportunity</span>
+                  </button>
+                )}
+
+                {onCreateProjectForCustomer && (
+                  <button
+                    onClick={() => {
+                      const c = viewingCustomer;
+                      setViewingCustomer(null);
+                      onCreateProjectForCustomer(c);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-bold transition-colors"
+                  >
+                    <FolderGit2 className="h-3.5 w-3.5" />
+                    <span>+ Start Project</span>
+                  </button>
+                )}
+
+                {onFileClaimForCustomer && (
+                  <button
+                    onClick={() => {
+                      const c = viewingCustomer;
+                      setViewingCustomer(null);
+                      onFileClaimForCustomer(c);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-bold transition-colors"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    <span>+ File Claim</span>
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2">
-              {onFileClaimForCustomer && (
-                <button
-                  onClick={() => {
-                    const cust = viewingCustomer;
-                    setViewingCustomer(null);
-                    onFileClaimForCustomer(cust);
-                  }}
-                  className="rounded-xl border border-amber-300 bg-amber-50 text-amber-800 px-3.5 py-2 text-xs font-bold hover:bg-amber-100 flex items-center gap-1.5"
-                >
-                  <LifeBuoy className="h-3.5 w-3.5" />
-                  <span>File Support Ticket / Claim</span>
-                </button>
-              )}
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
               <button
                 onClick={() => {
-                  const cust = viewingCustomer;
+                  const c = viewingCustomer;
                   setViewingCustomer(null);
-                  openEditModal(cust);
+                  openEditModal(c);
                 }}
-                className="rounded-xl bg-[#44ACAB] text-white px-4 py-2 text-xs font-bold hover:bg-[#389695]"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#44ACAB] hover:underline"
               >
-                Edit Account
+                <Edit className="h-3.5 w-3.5" />
+                <span>Edit Profile</span>
+              </button>
+
+              <button
+                onClick={() => setViewingCustomer(null)}
+                className="rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
+              >
+                Close
               </button>
             </div>
           </div>
@@ -891,18 +892,14 @@ export function CustomerView({
 
       {/* DELETE CONFIRMATION MODAL */}
       {customerToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center gap-3 text-rose-600">
-              <div className="p-2 rounded-xl bg-rose-50">
-                <AlertCircle className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Delete Customer Account?</h3>
-            </div>
-            <p className="mt-3 text-xs text-slate-600 leading-relaxed">
-              Are you sure you want to delete <span className="font-bold text-slate-900">"{customerToDelete.company}"</span>? This will permanently remove their records from your CRM database.
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100">
+            <h3 className="text-base font-bold text-slate-900">Delete Customer Account</h3>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Are you sure you want to delete <span className="font-bold text-slate-900">"{customerToDelete.company}"</span>? 
+              This will remove the customer directory record.
             </p>
-            <div className="mt-5 flex items-center justify-end gap-2.5">
+            <div className="mt-5 flex items-center justify-end gap-2">
               <button
                 onClick={() => setCustomerToDelete(null)}
                 className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
@@ -911,9 +908,9 @@ export function CustomerView({
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 shadow-xs"
+                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700"
               >
-                Confirm Delete
+                Delete Account
               </button>
             </div>
           </div>

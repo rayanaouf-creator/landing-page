@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "Prospective clients and consultations submitted via website or registered by staff",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "additionalPhones": { "type": "array", "items": { "type": "string" } },
+        "company": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "location": { "type": "string" },
+        "industry": { "type": "string" },
+        "emergencyLevel": { "type": "string" },
+        "serviceRequested": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string" },
+        "priority": { "type": "string" },
+        "source": { "type": "string" },
+        "notes": { "type": "string" },
+        "estimatedValueDZD": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "email", "phone", "company", "serviceRequested", "status", "priority", "source"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Converted enterprise accounts and client directory",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "company": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "additionalPhones": { "type": "array", "items": { "type": "string" } },
+        "jobTitle": { "type": "string" },
+        "location": { "type": "string" },
+        "industry": { "type": "string" },
+        "status": { "type": "string" },
+        "website": { "type": "string" },
+        "taxId": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["company", "name", "email", "phone", "status"]
+    },
+    "Opportunity": {
+      "title": "Opportunity",
+      "description": "Commercial pipeline deals and revenue projections in DZD",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "stage": { "type": "string" },
+        "expectedValueDZD": { "type": "number" },
+        "probability": { "type": "number" },
+        "expectedCloseDate": { "type": "string" },
+        "serviceInterest": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "customerName", "contactPerson", "email", "stage", "expectedValueDZD", "probability"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Active, ongoing, and completed software & ERP implementation projects",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectName": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "status": { "type": "string" },
+        "budgetDZD": { "type": "number" },
+        "monthlySupportDZD": { "type": "number" },
+        "startDate": { "type": "string" },
+        "targetEndDate": { "type": "string" },
+        "progress": { "type": "number" },
+        "projectManager": { "type": "string" },
+        "keyDeliverables": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["projectName", "customerName", "status", "budgetDZD", "startDate", "progress"]
+    },
+    "Claim": {
+      "title": "Claim",
+      "description": "Client support tickets, bug reports, and ISO 9001 CAPA complaints",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "claimNumber": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "severity": { "type": "string" },
+        "status": { "type": "string" },
+        "description": { "type": "string" },
+        "correctiveAction": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "resolvedAt": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["claimNumber", "customerName", "contactPerson", "email", "title", "category", "severity", "status", "description"]
+    }
+  },
+  "firestore": {
+    "/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "description": "Lead and booking inquiries submitted through the website or admin panel."
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Accounts and customer directory."
+    },
+    "/opportunities/{opportunityId}": {
+      "schema": { "$ref": "#/entities/Opportunity" },
+      "description": "Commercial pipeline deals and sales opportunities."
+    },
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Client ERP and custom software projects."
+    },
+    "/claims/{claimId}": {
+      "schema": { "$ref": "#/entities/Claim" },
+      "description": "Customer claims, incident tickets, and ISO corrective actions."
+    }
+  }
+}

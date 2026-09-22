@@ -1,42 +1,87 @@
 import { Claim, ClaimCategory, ClaimSeverity, ClaimStatus } from '../types';
+import { db, COLLECTIONS } from './firebase';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot 
+} from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_claims_database_v2';
-const LEGACY_STORAGE_KEY = 'jetnext_claims_database_v1';
 const FAKE_CLAIM_IDS = ['clm-1', 'clm-2', 'clm-3'];
+
+type ClaimListener = (claims: Claim[]) => void;
+const listeners: Set<ClaimListener> = new Set();
+let memoryClaims: Claim[] = [];
+let isInitialized = false;
+
+function loadLocalMirror(): Claim[] {
+  try {
+    const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
+    if (!data) return [];
+    const parsed: Claim[] = JSON.parse(data);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(c => !FAKE_CLAIM_IDS.includes(c.id));
+  } catch {
+    return [];
+  }
+}
+
+memoryClaims = loadLocalMirror();
+
+function initFirestoreSync() {
+  if (isInitialized || typeof window === 'undefined') return;
+  isInitialized = true;
+
+  try {
+    const colRef = collection(db, COLLECTIONS.CLAIMS);
+    onSnapshot(colRef, (snapshot) => {
+      const remoteClaims: Claim[] = [];
+      snapshot.forEach((d) => {
+        remoteClaims.push(d.data() as Claim);
+      });
+
+      remoteClaims.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+      if (remoteClaims.length === 0 && memoryClaims.length > 0) {
+        memoryClaims.forEach(c => {
+          setDoc(doc(db, COLLECTIONS.CLAIMS, c.id), c).catch(err => {
+            console.error('Error migrating claim to Firestore:', err);
+          });
+        });
+      } else {
+        memoryClaims = remoteClaims;
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteClaims));
+        } catch {}
+        listeners.forEach(fn => fn(memoryClaims));
+      }
+    }, (error) => {
+      console.warn('Firestore claims snapshot listener warning:', error);
+    });
+  } catch (err) {
+    console.error('Failed to init Firestore sync for claims:', err);
+  }
+}
+
+initFirestoreSync();
 
 export const claimStorage = {
   getClaims(): Claim[] {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        if (localStorage.getItem(LEGACY_STORAGE_KEY)) {
-          localStorage.removeItem(LEGACY_STORAGE_KEY);
-        }
-      }
+    return [...memoryClaims];
+  },
 
-      const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
-      if (!data) {
-        return [];
-      }
-      const parsed: Claim[] = JSON.parse(data);
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-      // Filter out any fake seed records
-      const clean = parsed.filter(c => !FAKE_CLAIM_IDS.includes(c.id));
-      if (clean.length !== parsed.length && typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
-      }
-      return clean;
-    } catch (err) {
-      console.error('Error reading claims from localStorage', err);
-      return [];
-    }
+  subscribe(callback: ClaimListener): () => void {
+    listeners.add(callback);
+    callback([...memoryClaims]);
+    return () => listeners.delete(callback);
   },
 
   saveClaim(input: Omit<Claim, 'id' | 'claimNumber' | 'createdAt' | 'updatedAt'> & { id?: string; claimNumber?: string }): Claim {
-    const list = this.getClaims();
     const now = new Date().toISOString();
-    const nextNum = list.length + 1;
+    const nextNum = memoryClaims.length + 1;
     const formattedNum = `CLM-2026-${String(nextNum).padStart(3, '0')}`;
 
     const newClaim: Claim = {
@@ -47,17 +92,24 @@ export const claimStorage = {
       updatedAt: now
     };
 
-    const updated = [newClaim, ...list];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    memoryClaims = [newClaim, ...memoryClaims.filter(c => c.id !== newClaim.id)];
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryClaims));
+    } catch {}
+    listeners.forEach(fn => fn(memoryClaims));
+
+    setDoc(doc(db, COLLECTIONS.CLAIMS, newClaim.id), newClaim).catch(err => {
+      console.error('Firestore saveClaim error:', err);
+    });
+
     return newClaim;
   },
 
   updateClaim(id: string, updates: Partial<Claim>): Claim | null {
-    const list = this.getClaims();
-    const idx = list.findIndex(c => c.id === id);
+    const idx = memoryClaims.findIndex(c => c.id === id);
     if (idx === -1) return null;
 
-    const current = list[idx];
+    const current = memoryClaims[idx];
     let resolvedAt = current.resolvedAt;
     if (updates.status === 'resolved' || updates.status === 'closed') {
       if (!resolvedAt) resolvedAt = new Date().toISOString();
@@ -72,16 +124,33 @@ export const claimStorage = {
       updatedAt: new Date().toISOString()
     };
 
-    list[idx] = updated;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    memoryClaims[idx] = updated;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryClaims));
+    } catch {}
+    listeners.forEach(fn => fn(memoryClaims));
+
+    updateDoc(doc(db, COLLECTIONS.CLAIMS, id), updates as any).catch(err => {
+      console.error('Firestore updateClaim error:', err);
+    });
+
     return updated;
   },
 
   deleteClaim(id: string): boolean {
-    const list = this.getClaims();
-    const filtered = list.filter(c => c.id !== id);
-    if (filtered.length === list.length) return false;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    const prevLen = memoryClaims.length;
+    memoryClaims = memoryClaims.filter(c => c.id !== id);
+    if (memoryClaims.length === prevLen) return false;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryClaims));
+    } catch {}
+    listeners.forEach(fn => fn(memoryClaims));
+
+    deleteDoc(doc(db, COLLECTIONS.CLAIMS, id)).catch(err => {
+      console.error('Firestore deleteClaim error:', err);
+    });
+
     return true;
   },
 

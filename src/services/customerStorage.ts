@@ -1,42 +1,86 @@
 import { Customer, Lead } from '../types';
+import { db, COLLECTIONS } from './firebase';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot 
+} from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_customers_database_v2';
-const LEGACY_STORAGE_KEY = 'jetnext_customers_database_v1';
 const FAKE_CUSTOMER_IDS = ['cust-101', 'cust-102', 'cust-103'];
+
+type CustomerListener = (customers: Customer[]) => void;
+const listeners: Set<CustomerListener> = new Set();
+let memoryCustomers: Customer[] = [];
+let isInitialized = false;
+
+function loadLocalMirror(): Customer[] {
+  try {
+    const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
+    if (!data) return [];
+    const parsed: Customer[] = JSON.parse(data);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(c => !FAKE_CUSTOMER_IDS.includes(c.id));
+  } catch {
+    return [];
+  }
+}
+
+memoryCustomers = loadLocalMirror();
+
+function initFirestoreSync() {
+  if (isInitialized || typeof window === 'undefined') return;
+  isInitialized = true;
+
+  try {
+    const colRef = collection(db, COLLECTIONS.CUSTOMERS);
+    onSnapshot(colRef, (snapshot) => {
+      const remoteCustomers: Customer[] = [];
+      snapshot.forEach((d) => {
+        remoteCustomers.push(d.data() as Customer);
+      });
+
+      remoteCustomers.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+      if (remoteCustomers.length === 0 && memoryCustomers.length > 0) {
+        memoryCustomers.forEach(c => {
+          setDoc(doc(db, COLLECTIONS.CUSTOMERS, c.id), c).catch(err => {
+            console.error('Error migrating customer to Firestore:', err);
+          });
+        });
+      } else {
+        memoryCustomers = remoteCustomers;
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteCustomers));
+        } catch {}
+        listeners.forEach(fn => fn(memoryCustomers));
+      }
+    }, (error) => {
+      console.warn('Firestore customers snapshot listener warning:', error);
+    });
+  } catch (err) {
+    console.error('Failed to init Firestore sync for customers:', err);
+  }
+}
+
+initFirestoreSync();
 
 export const customerStorage = {
   getCustomers(): Customer[] {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        if (localStorage.getItem(LEGACY_STORAGE_KEY)) {
-          localStorage.removeItem(LEGACY_STORAGE_KEY);
-        }
-      }
+    return [...memoryCustomers];
+  },
 
-      const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
-      if (!data) {
-        return [];
-      }
-      const parsed: Customer[] = JSON.parse(data);
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-      // Remove any fake seed records
-      const clean = parsed.filter(c => !FAKE_CUSTOMER_IDS.includes(c.id));
-      if (clean.length !== parsed.length && typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
-      }
-      return clean;
-    } catch (err) {
-      console.error('Error reading customers from localStorage', err);
-      return [];
-    }
+  subscribe(callback: CustomerListener): () => void {
+    listeners.add(callback);
+    callback([...memoryCustomers]);
+    return () => listeners.delete(callback);
   },
 
   saveCustomer(input: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Customer {
-    const list = this.getCustomers();
     const now = new Date().toISOString();
-
     const newCustomer: Customer = {
       ...input,
       id: input.id || `cust-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -44,8 +88,16 @@ export const customerStorage = {
       updatedAt: now
     };
 
-    const updated = [newCustomer, ...list];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    memoryCustomers = [newCustomer, ...memoryCustomers.filter(c => c.id !== newCustomer.id)];
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCustomers));
+    } catch {}
+    listeners.forEach(fn => fn(memoryCustomers));
+
+    setDoc(doc(db, COLLECTIONS.CUSTOMERS, newCustomer.id), newCustomer).catch(err => {
+      console.error('Firestore saveCustomer error:', err);
+    });
+
     return newCustomer;
   },
 
@@ -55,40 +107,52 @@ export const customerStorage = {
       name: lead.name,
       email: lead.email,
       phone: lead.phone,
+      additionalPhones: lead.additionalPhones || [],
       jobTitle: lead.jobTitle || 'Lead / Executive',
       location: lead.location || 'Alger',
       industry: lead.industry || 'Services professionnels & IT',
-      status: 'onboarding',
-      tier: (lead.estimatedValueDZD && lead.estimatedValueDZD > 3000000) ? 'enterprise' : 'growth',
-      activeService: lead.serviceRequested || 'ERPNext Implementation',
-      contractValueDZD: lead.estimatedValueDZD || 2500000,
-      mrrDZD: Math.round((lead.estimatedValueDZD || 2500000) * 0.05),
-      startDate: new Date().toISOString().slice(0, 10),
+      status: 'active',
       notes: `Converted from Sales Lead #${lead.id}. Origin: ${lead.source}. Initial notes: ${lead.notes || lead.message || 'None'}`
     });
   },
 
   updateCustomer(id: string, updates: Partial<Customer>): Customer | null {
-    const list = this.getCustomers();
-    const idx = list.findIndex(c => c.id === id);
+    const idx = memoryCustomers.findIndex(c => c.id === id);
     if (idx === -1) return null;
 
     const updated: Customer = {
-      ...list[idx],
+      ...memoryCustomers[idx],
       ...updates,
       updatedAt: new Date().toISOString()
     };
 
-    list[idx] = updated;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    memoryCustomers[idx] = updated;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCustomers));
+    } catch {}
+    listeners.forEach(fn => fn(memoryCustomers));
+
+    updateDoc(doc(db, COLLECTIONS.CUSTOMERS, id), updates as any).catch(err => {
+      console.error('Firestore updateCustomer error:', err);
+    });
+
     return updated;
   },
 
   deleteCustomer(id: string): boolean {
-    const list = this.getCustomers();
-    const filtered = list.filter(c => c.id !== id);
-    if (filtered.length === list.length) return false;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    const prevLen = memoryCustomers.length;
+    memoryCustomers = memoryCustomers.filter(c => c.id !== id);
+    if (memoryCustomers.length === prevLen) return false;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCustomers));
+    } catch {}
+    listeners.forEach(fn => fn(memoryCustomers));
+
+    deleteDoc(doc(db, COLLECTIONS.CUSTOMERS, id)).catch(err => {
+      console.error('Firestore deleteCustomer error:', err);
+    });
+
     return true;
   },
 
@@ -104,11 +168,8 @@ export const customerStorage = {
       'Location',
       'Industry',
       'Status',
-      'Tier',
-      'Active Service',
-      'Contract Value (DZD)',
-      'Monthly Support (DZD)',
-      'Start Date',
+      'Website',
+      'Tax ID (NIF/RC)',
       'Notes'
     ];
 
@@ -122,11 +183,8 @@ export const customerStorage = {
       `"${(c.location || '').replace(/"/g, '""')}"`,
       `"${(c.industry || '').replace(/"/g, '""')}"`,
       `"${c.status}"`,
-      `"${c.tier}"`,
-      `"${(c.activeService || '').replace(/"/g, '""')}"`,
-      `"${c.contractValueDZD || 0}"`,
-      `"${c.mrrDZD || 0}"`,
-      `"${c.startDate}"`,
+      `"${(c.website || '').replace(/"/g, '""')}"`,
+      `"${(c.taxId || '').replace(/"/g, '""')}"`,
       `"${(c.notes || '').replace(/"/g, '""')}"`
     ]);
 

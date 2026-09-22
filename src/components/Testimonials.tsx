@@ -46,7 +46,7 @@ export function Testimonials() {
       service: t('testimonials.items.optilens.service'),
       metric: t('testimonials.items.optilens.metric'),
       quote: t('testimonials.items.optilens.quote'),
-      initials: 'KB',
+      initials: 'LO',
       color: 'bg-emerald-600'
     },
     {
@@ -58,7 +58,7 @@ export function Testimonials() {
       service: t('testimonials.items.choptic.service'),
       metric: t('testimonials.items.choptic.metric'),
       quote: t('testimonials.items.choptic.quote'),
-      initials: 'NM',
+      initials: 'Y',
       color: 'bg-blue-600'
     },
     {
