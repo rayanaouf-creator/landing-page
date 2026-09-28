@@ -22,6 +22,8 @@
         "priority": { "type": "string" },
         "source": { "type": "string" },
         "notes": { "type": "string" },
+        "contactedAt": { "type": "string" },
+        "contactMethod": { "type": "string" },
         "estimatedValueDZD": { "type": "number" },
         "opportunityId": { "type": "string" },
         "createdAt": { "type": "string" },
@@ -148,6 +150,28 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["name", "industry", "description", "solution", "published"]
+    },
+    "AppUser": {
+      "title": "AppUser",
+      "description": "System users with assigned roles and access permissions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "sales_manager", "sales_rep", "support_agent", "project_manager", "viewer"] },
+        "status": { "type": "string", "enum": ["active", "inactive", "suspended"] },
+        "department": { "type": "string" },
+        "title": { "type": "string" },
+        "phone": { "type": "string" },
+        "notes": { "type": "string" },
+        "lastLoginAt": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "email", "role", "status"]
     }
   },
   "firestore": {
@@ -174,6 +198,10 @@
     "/work_projects/{projectId}": {
       "schema": { "$ref": "#/entities/WorkProject" },
       "description": "Portfolio work and client case studies displayed on the public site."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/AppUser" },
+      "description": "Internal CRM users, staff, and their assigned roles and permissions."
     }
   }
 }

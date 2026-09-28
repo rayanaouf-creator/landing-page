@@ -44,20 +44,25 @@ import {
   UserPlus,
   LifeBuoy,
   UserCheck,
-  FolderGit2
+  FolderGit2,
+  BarChart3,
+  Users
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser } from '../types';
 import { leadStorage } from '../services/leadStorage';
 import { customerStorage } from '../services/customerStorage';
 import { claimStorage } from '../services/claimStorage';
 import { opportunityStorage } from '../services/opportunityStorage';
 import { projectStorage } from '../services/projectStorage';
 import { workStorage } from '../services/workStorage';
+import { userStorage } from '../services/userStorage';
 import { CustomerView } from '../components/admin/CustomerView';
 import { ClaimView } from '../components/admin/ClaimView';
 import { OpportunityView } from '../components/admin/OpportunityView';
 import { ProjectView } from '../components/admin/ProjectView';
 import { WorkView } from '../components/admin/WorkView';
+import { UsersView } from '../components/admin/UsersView';
+import { DailyContactGraph } from '../components/admin/DailyContactGraph';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string }> = {
   new: { label: 'New Lead', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
@@ -173,8 +178,8 @@ export function AdminPage() {
     );
   });
 
-  // Active CRM Tab: 'lead' | 'opportunity' | 'customer' | 'project' | 'claim' | 'work'
-  const [activeTab, setActiveTab] = useState<'lead' | 'opportunity' | 'customer' | 'project' | 'claim' | 'work'>('lead');
+  // Active CRM Tab: 'lead' | 'opportunity' | 'customer' | 'project' | 'claim' | 'work' | 'users'
+  const [activeTab, setActiveTab] = useState<'lead' | 'opportunity' | 'customer' | 'project' | 'claim' | 'work' | 'users'>('lead');
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -182,6 +187,7 @@ export function AdminPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [workProjects, setWorkProjects] = useState<WorkProject[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
 
   // Sub-filters for Customer, Opportunity, Project, and Claim
   const [customerStatusFilter, setCustomerStatusFilter] = useState<string>('all');
@@ -223,6 +229,7 @@ export function AdminPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [showContactGraph, setShowContactGraph] = useState(true);
 
   // Form input state
   const [formName, setFormName] = useState('');
@@ -249,6 +256,7 @@ export function AdminPage() {
     loadProjects();
     loadClaims();
     loadWorkProjects();
+    loadUsers();
 
     // Real-time synchronization subscriptions to Firebase Firestore collections
     const unsubLeads = leadStorage.subscribe((items) => setLeads(items));
@@ -257,6 +265,7 @@ export function AdminPage() {
     const unsubProjs = projectStorage.subscribe((items) => setProjects(items));
     const unsubClaims = claimStorage.subscribe((items) => setClaims(items));
     const unsubWork = workStorage.subscribe((items) => setWorkProjects(items));
+    const unsubUsers = userStorage.subscribe((items) => setUsers(items));
 
     return () => {
       unsubLeads();
@@ -265,8 +274,14 @@ export function AdminPage() {
       unsubProjs();
       unsubClaims();
       unsubWork();
+      unsubUsers();
     };
   }, [isAuthenticated]);
+
+  const loadUsers = () => {
+    const list = userStorage.getUsers();
+    setUsers(list);
+  };
 
   const loadWorkProjects = () => {
     const list = workStorage.getProjects();
@@ -530,12 +545,38 @@ export function AdminPage() {
   };
 
   const handleQuickStatusChange = (id: string, newStatus: LeadStatus) => {
-    leadStorage.updateLead(id, { status: newStatus });
+    const updates: Partial<Lead> = { status: newStatus };
+    if (newStatus !== 'new') {
+      const existing = leads.find(l => l.id === id);
+      if (!existing?.contactedAt) {
+        updates.contactedAt = new Date().toISOString();
+      }
+    }
+    leadStorage.updateLead(id, updates);
     loadLeads();
     if (viewingLead?.id === id) {
-      setViewingLead(prev => prev ? { ...prev, status: newStatus } : null);
+      setViewingLead(prev => prev ? { ...prev, ...updates } : null);
     }
     showToast(`Status updated to ${STATUS_CONFIG[newStatus].label}.`);
+  };
+
+  const handleLogContact = (id: string, method: string = 'phone') => {
+    const existing = leads.find(l => l.id === id);
+    if (!existing) return;
+    const nowIso = new Date().toISOString();
+    const updates: Partial<Lead> = {
+      contactedAt: nowIso,
+      contactMethod: method
+    };
+    if (existing.status === 'new') {
+      updates.status = 'contacted';
+    }
+    leadStorage.updateLead(id, updates);
+    loadLeads();
+    if (viewingLead?.id === id) {
+      setViewingLead(prev => prev ? { ...prev, ...updates } : null);
+    }
+    showToast(`Logged contact with ${existing.company || existing.name} via ${method}.`);
   };
 
   const handleCopy = (text: string, id: string) => {
@@ -1014,6 +1055,30 @@ export function AdminPage() {
                 {workProjects.length}
               </span>
             </button>
+
+            {/* 7. Users & Roles */}
+            <button
+              id="admin-sidebar-nav-users"
+              onClick={() => {
+                setActiveTab('users');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'users'
+                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Users className={`h-4 w-4 ${activeTab === 'users' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                <span className="text-sm">Users</span>
+              </div>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'users' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {users.length}
+              </span>
+            </button>
           </div>
 
           {/* DYNAMIC CONTEXTUAL MODULE ACTIONS & VIEWS */}
@@ -1234,138 +1299,6 @@ export function AdminPage() {
                 </button>
               </div>
 
-              {/* Pipeline Stage Views */}
-              <div className="space-y-1">
-                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Pipeline Views
-                </p>
-                <button
-                  id="admin-filter-all-btn"
-                  onClick={() => {
-                    setStatusFilter('all');
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    statusFilter === 'all' 
-                      ? 'bg-slate-800 text-white font-bold ring-1 ring-slate-700' 
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <LayoutDashboard className="h-4 w-4" />
-                    <span>All Inquiries</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
-                    {leads.length}
-                  </span>
-                </button>
-
-                <button
-                  id="admin-filter-new-btn"
-                  onClick={() => {
-                    setStatusFilter('new');
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                    statusFilter === 'new' 
-                      ? 'bg-emerald-950/80 text-emerald-300 ring-1 ring-emerald-500/40 font-bold' 
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                    <span>New Inquiries</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400">
-                    {leads.filter(l => l.status === 'new').length}
-                  </span>
-                </button>
-
-                <button
-                  id="admin-filter-indiscussion-btn"
-                  onClick={() => {
-                    setStatusFilter('in_discussion');
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                    statusFilter === 'in_discussion' 
-                      ? 'bg-teal-950/80 text-teal-300 ring-1 ring-teal-500/40 font-bold' 
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="h-2 w-2 rounded-full bg-teal-400" />
-                    <span>In Discussion</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-teal-400">
-                    {leads.filter(l => l.status === 'in_discussion').length}
-                  </span>
-                </button>
-
-                <button
-                  id="admin-filter-proposals-btn"
-                  onClick={() => {
-                    setStatusFilter('proposal_sent');
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                    statusFilter === 'proposal_sent' 
-                      ? 'bg-purple-950/80 text-purple-300 ring-1 ring-purple-500/40 font-bold' 
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="h-2 w-2 rounded-full bg-purple-400" />
-                    <span>Proposal Sent</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-purple-400">
-                    {leads.filter(l => l.status === 'proposal_sent').length}
-                  </span>
-                </button>
-
-                <button
-                  id="admin-filter-converted-btn"
-                  onClick={() => {
-                    setStatusFilter('converted');
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                    statusFilter === 'converted' 
-                      ? 'bg-emerald-900/60 text-emerald-200 ring-1 ring-emerald-400/40 font-bold' 
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-300" />
-                    <span>Won / Converted</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-300">
-                    {leads.filter(l => l.status === 'converted').length}
-                  </span>
-                </button>
-
-                <button
-                  id="admin-filter-lost-btn"
-                  onClick={() => {
-                    setStatusFilter('lost');
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                    statusFilter === 'lost' 
-                      ? 'bg-slate-800 text-white font-bold' 
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="h-2 w-2 rounded-full bg-slate-500" />
-                    <span>Lost / Closed</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
-                    {leads.filter(l => l.status === 'lost').length}
-                  </span>
-                </button>
-              </div>
-
               {/* Data Tools */}
               <div className="pt-2 border-t border-slate-800 space-y-1">
                 <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
@@ -1465,6 +1398,71 @@ export function AdminPage() {
                 >
                   <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
                   <span>Export Claims (CSV)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'users' && (
+            <div className="space-y-4 pt-3 border-t border-slate-800">
+              <div>
+                <button
+                  id="admin-sidebar-add-user-btn"
+                  onClick={() => {
+                    const addBtn = document.getElementById('admin-create-user-btn');
+                    if (addBtn) addBtn.click();
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-2.5 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
+                >
+                  <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  <span>+ Add New User</span>
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Role Distribution
+                </p>
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 space-y-1.5 text-xs text-slate-300">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Total Users</span>
+                    <span className="font-bold text-white">{users.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-purple-300">Admins</span>
+                    <span className="font-bold text-purple-400">{users.filter(u => u.role === 'admin').length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-300">Sales Mgr</span>
+                    <span className="font-bold text-blue-400">{users.filter(u => u.role === 'sales_manager').length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-teal-300">Sales Reps</span>
+                    <span className="font-bold text-teal-400">{users.filter(u => u.role === 'sales_rep').length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-amber-300">Support</span>
+                    <span className="font-bold text-amber-400">{users.filter(u => u.role === 'support_agent').length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-cyan-300">Project Mgr</span>
+                    <span className="font-bold text-cyan-400">{users.filter(u => u.role === 'project_manager').length}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  User Tools
+                </p>
+                <button
+                  id="admin-sidebar-export-users-csv"
+                  onClick={() => userStorage.exportCSV()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                  <span>Export Users (CSV)</span>
                 </button>
               </div>
             </div>
@@ -1597,6 +1595,14 @@ export function AdminPage() {
           />
         )}
 
+        {activeTab === 'users' && (
+          <UsersView
+            users={users}
+            onRefresh={loadUsers}
+            showToast={showToast}
+          />
+        )}
+
         {activeTab === 'lead' && (
           <div>
             {/* Workspace Top Header (Clean replacement of old topbar) */}
@@ -1620,6 +1626,18 @@ export function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setShowContactGraph(prev => !prev)}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs ${
+                showContactGraph 
+                  ? 'border-[#44ACAB]/40 bg-[#e6f4f4] text-[#1b6b6a]' 
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+              title="Toggle daily contact analytics graph"
+            >
+              <BarChart3 className="h-4 w-4 text-[#44ACAB]" />
+              <span>{showContactGraph ? 'Hide Contact Graph' : 'Daily Contact Graph'}</span>
+            </button>
             <button
               id="admin-main-new-lead-btn"
               onClick={handleOpenAddModal}
@@ -1657,6 +1675,17 @@ export function AdminPage() {
             <p className="mt-1 text-xs text-slate-400">Won enterprise contracts</p>
           </div>
         </div>
+
+        {/* Daily Contact Activity Graph */}
+        {showContactGraph && (
+          <div className="mt-8">
+            <DailyContactGraph
+              leads={leads}
+              onSelectLead={(lead) => setViewingLead(lead)}
+              onQuickContact={(leadId, method) => handleLogContact(leadId, method)}
+            />
+          </div>
+        )}
 
         {/* Filter & Search Bar */}
         <div className="mt-8 rounded-2xl bg-white p-4 sm:p-5 shadow-xs ring-1 ring-slate-200 space-y-4">
@@ -2038,6 +2067,14 @@ export function AdminPage() {
                         {/* Actions */}
                         <td className="py-4 pl-3 pr-6 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              id={`admin-log-contact-${lead.id}`}
+                              onClick={() => handleLogContact(lead.id, 'phone')}
+                              className="rounded-lg p-1.5 text-slate-500 hover:bg-[#e6f4f4] hover:text-[#1b6b6a] transition-colors"
+                              title="Log phone call / mark contacted today"
+                            >
+                              <PhoneCall className="h-4 w-4" />
+                            </button>
                             <button
                               id={`admin-view-lead-${lead.id}`}
                               onClick={() => setViewingLead(lead)}
@@ -2566,6 +2603,32 @@ export function AdminPage() {
                         <span>{extraPhone}</span>
                       </a>
                     ))}
+                  </div>
+                </div>
+
+                {/* Contact Tracking Status & Log Call Action */}
+                <div className="rounded-xl p-3.5 bg-slate-50 border border-slate-200 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <span className="font-bold text-slate-700 block">Contact Activity Tracking:</span>
+                    {viewingLead.contactedAt ? (
+                      <p className="text-emerald-700 mt-0.5 font-medium flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <span>Contacted on <strong>{new Date(viewingLead.contactedAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong> {viewingLead.contactMethod ? `via ${viewingLead.contactMethod}` : ''}</span>
+                      </p>
+                    ) : (
+                      <p className="text-amber-600 mt-0.5 font-medium">
+                        {viewingLead.status === 'new' ? 'Not yet marked as contacted' : `Status: ${viewingLead.status}`}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleLogContact(viewingLead.id, 'phone')}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#44ACAB] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#328887] shadow-xs transition-all"
+                    >
+                      <PhoneCall className="h-3.5 w-3.5" />
+                      <span>{viewingLead.contactedAt ? 'Log New Call Today' : 'Log Call / Contact Today'}</span>
+                    </button>
                   </div>
                 </div>
 

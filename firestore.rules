@@ -31,6 +31,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Users and roles directory
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
     // Connection test doc
     match /test/{docId} {
       allow read, write: if true;

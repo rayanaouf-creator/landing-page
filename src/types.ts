@@ -22,6 +22,8 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
   notes?: string;
+  contactedAt?: string;           // ISO timestamp of when the lead was contacted
+  contactMethod?: string;         // 'phone' | 'email' | 'whatsapp' | 'meeting' | 'other'
   estimatedValueDZD?: number;
   opportunityId?: string;         // Linked Opportunity ID once converted/created
 }
@@ -138,6 +140,34 @@ export interface WorkProject {
   logoLetter?: string;           // Initial letter or monogram
   published: boolean;            // Controls visibility in public Our Work section
   order: number;                 // Sort order (lower numbers display first)
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── USER MANAGEMENT & ROLE DEFINITIONS ──────────────────────────────
+export type UserRole = 
+  | 'admin'
+  | 'sales_manager'
+  | 'sales_rep'
+  | 'support_agent'
+  | 'project_manager'
+  | 'viewer';
+
+export type UserStatus = 'active' | 'inactive' | 'suspended';
+
+export interface AppUser {
+  id: string;
+  name: string;
+  username?: string;             // System login username (e.g. @rayan.aouf)
+  password?: string;             // Account password
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  department?: string;           // e.g. "Executive", "Sales & BD", "Support", "Engineering"
+  title?: string;                // e.g. "Director of Operations", "Account Executive"
+  phone?: string;
+  notes?: string;
+  lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
 }
