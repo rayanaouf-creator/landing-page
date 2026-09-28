@@ -1,11 +1,36 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, TrendingUp, Package, MapPin, Code, Server, Barcode, Users, Receipt, Building2, BarChart, ArrowRight, X } from 'lucide-react';
+import { 
+  CheckCircle2, 
+  TrendingUp, 
+  ArrowRight, 
+  X, 
+  Briefcase, 
+  ExternalLink,
+  Layers,
+  Sparkles,
+  Building2,
+  Calendar
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { WorkProject } from '../types';
+import { workStorage, DEFAULT_WORK_PROJECTS } from '../services/workStorage';
 
 export function ProofOfWork() {
   const { t } = useTranslation();
-  const [selectedProject, setSelectedProject] = useState<any | null>(null);
+  const [projects, setProjects] = useState<WorkProject[]>(() => workStorage.getPublishedProjects());
+  const [selectedProject, setSelectedProject] = useState<WorkProject | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+
+  // Real-time synchronization to live work projects managed from admin
+  useEffect(() => {
+    const unsub = workStorage.subscribe((allItems) => {
+      const published = allItems.filter(p => p.published);
+      setProjects(published.length > 0 ? published : DEFAULT_WORK_PROJECTS);
+    });
+    return () => unsub();
+  }, []);
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -19,91 +44,133 @@ export function ProofOfWork() {
     };
   }, [selectedProject]);
 
-  const projects = [
-    {
-      name: t('proof.projects.optilens.name'),
-      industry: t('proof.projects.optilens.industry'),
-      description: t('proof.projects.optilens.desc'),
-      solution: t('proof.projects.optilens.solution'),
-      delivered: t('proof.projects.optilens.delivered'),
-      highlights: [
-        { text: t('proof.projects.optilens.h1'), icon: TrendingUp },
-        { text: t('proof.projects.optilens.h2'), icon: MapPin },
-        { text: t('proof.projects.optilens.h3'), icon: Package },
-        { text: t('proof.projects.optilens.h4'), icon: BarChart },
-        { text: t('proof.projects.optilens.h5'), icon: Building2 },
-      ]
-    },
-    {
-      name: t('proof.projects.choptic.name'),
-      industry: t('proof.projects.choptic.industry'),
-      description: t('proof.projects.choptic.desc'),
-      solution: t('proof.projects.choptic.solution'),
-      delivered: t('proof.projects.choptic.delivered'),
-      highlights: [
-        { text: t('proof.projects.choptic.h1'), icon: Code },
-        { text: t('proof.projects.choptic.h2'), icon: Server },
-        { text: t('proof.projects.choptic.h3'), icon: Package },
-      ]
-    },
-    {
-      name: t('proof.projects.essilor.name'),
-      industry: t('proof.projects.essilor.industry'),
-      description: t('proof.projects.essilor.desc'),
-      solution: t('proof.projects.essilor.solution'),
-      delivered: t('proof.projects.essilor.delivered'),
-      highlights: [
-        { text: t('proof.projects.essilor.h1'), icon: Barcode },
-        { text: t('proof.projects.essilor.h2'), icon: Users },
-        { text: t('proof.projects.essilor.h3'), icon: Receipt },
-      ]
-    }
-  ];
+  // Extract dynamic categories from projects
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    projects.forEach(p => {
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set);
+  }, [projects]);
+
+  const filteredProjects = useMemo(() => {
+    if (activeCategory === 'all') return projects;
+    return projects.filter(p => p.category === activeCategory);
+  }, [projects, activeCategory]);
 
   return (
-    <section id="proof-of-work" className="bg-white py-24 sm:py-32 relative">
+    <section id="work" className="bg-white py-24 sm:py-32 relative scroll-mt-20">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        {/* Section Header */}
         <div className="mx-auto max-w-2xl lg:text-center mb-16">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-[#44ACAB]">{t('proof.subtitle')}</h2>
-          <p className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-            {t('proof.title1')} <span className="text-[#44ACAB]">{t('proof.title2')}</span>
-          </p>
+          <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#44ACAB] uppercase mb-3">
+            <Briefcase className="h-4 w-4" />
+            <span>{t('proof.subtitle', { defaultValue: 'Our Work & Case Studies' })}</span>
+          </div>
+          <h2 className="mt-2 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+            {t('proof.title1', { defaultValue: 'Success' })}{' '}
+            <span className="text-[#44ACAB]">{t('proof.title2', { defaultValue: 'Stories & Deployments' })}</span>
+          </h2>
           <p className="mt-6 text-lg leading-relaxed text-slate-600 font-medium">
-            {t('proof.desc')}
+            {t('proof.desc', { defaultValue: 'Explore how we engineer, deploy, and scale enterprise ERP systems and bespoke digital platforms for leading companies across Algeria.' })}
           </p>
+
+          {/* Dynamic Category Filter Controls (Anti-slop compliant segmented buttons) */}
+          {categories.length > 0 && (
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-2 p-1.5 bg-slate-100/80 rounded-2xl max-w-xl mx-auto ring-1 ring-slate-200/50">
+              <button
+                onClick={() => setActiveCategory('all')}
+                className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                  activeCategory === 'all'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                All Projects ({projects.length})
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                    activeCategory === cat
+                      ? 'bg-white text-[#1b6b6a] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         
+        {/* Case Studies Grid */}
         <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {projects.map((project, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProjects.map((project, index) => (
               <motion.div
-                key={project.name}
-                initial={{ opacity: 0, y: 30 }}
+                key={project.id || project.name}
+                initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.45, delay: index * 0.1 }}
                 onClick={() => setSelectedProject(project)}
-                className="group relative cursor-pointer overflow-hidden rounded-[2rem] bg-slate-50 ring-1 ring-slate-100 shadow-lg shadow-slate-200/40 p-8 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 hover:ring-[#44ACAB]/30 transition-all duration-300 h-full"
+                className="group relative cursor-pointer overflow-hidden rounded-[2rem] bg-slate-50 ring-1 ring-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1.5 hover:ring-[#44ACAB]/40 transition-all duration-300 p-8 flex flex-col justify-between h-full"
               >
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#155a59] to-[#44ACAB] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                {/* Top Gradient line */}
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#155a59] via-[#1b6b6a] to-[#44ACAB] opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-[#e6f4f4] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#44ACAB] mb-6">
-                    <span>{project.industry}</span>
+                  {/* Category & Industry */}
+                  <div className="flex items-center justify-between gap-2 mb-6">
+                    <span className="text-xs font-bold text-[#1b6b6a] uppercase tracking-wider">
+                      {project.industry}
+                    </span>
+                    {project.category && (
+                      <span className="text-[11px] font-semibold text-slate-400">
+                        {project.category}
+                      </span>
+                    )}
                   </div>
                   
-                  <div className="h-16 w-16 rounded-[1.5rem] bg-white shadow-md flex items-center justify-center mb-6 ring-1 ring-slate-100 group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-3xl font-black text-[#44ACAB]">{project.name.charAt(0)}</span>
+                  {/* Monogram Logo */}
+                  <div className="h-16 w-16 rounded-[1.5rem] bg-white shadow-md flex items-center justify-center mb-6 ring-1 ring-slate-100 group-hover:scale-105 transition-transform duration-300">
+                    <span className="text-3xl font-black text-[#44ACAB]">
+                      {project.logoLetter || project.name.charAt(0)}
+                    </span>
                   </div>
 
-                  <h3 className="text-2xl font-extrabold text-slate-900 mb-3 group-hover:text-[#44ACAB] transition-colors">{project.name}</h3>
-                  <p className="text-slate-600 leading-relaxed font-medium line-clamp-3">
+                  {/* Title & Description */}
+                  <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-[#1b6b6a] transition-colors">
+                    {project.name}
+                  </h3>
+                  <p className="text-slate-600 leading-relaxed font-medium text-sm line-clamp-3 mb-6">
                     {project.description}
                   </p>
+
+                  {/* Impact Metric if available */}
+                  {project.metricValue && (
+                    <div className="p-3.5 rounded-2xl bg-white ring-1 ring-slate-200/70 shadow-xs flex items-center gap-3 mb-4">
+                      <div className="h-9 w-9 rounded-xl bg-[#e6f4f4] flex items-center justify-center text-[#1b6b6a] shrink-0">
+                        <TrendingUp className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-extrabold text-[#1b6b6a] block">
+                          {project.metricValue}
+                        </span>
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          {project.metricLabel || 'Key Measurable Impact'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
-                <div className="mt-8 flex items-center gap-2 text-[#44ACAB] font-bold group-hover:gap-3 transition-all">
-                  See full details <ArrowRight className="h-5 w-5" />
+                {/* Footer link */}
+                <div className="mt-6 pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs font-bold text-[#44ACAB] group-hover:text-[#1b6b6a] transition-colors">
+                  <span>See full case study</span>
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </motion.div>
             ))}
@@ -111,7 +178,7 @@ export function ProofOfWork() {
         </div>
       </div>
 
-      {/* Modal Overlay */}
+      {/* Case Study Details Modal */}
       <AnimatePresence>
         {selectedProject && (
           <>
@@ -120,25 +187,37 @@ export function ProofOfWork() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedProject(null)}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100]"
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100]"
             />
             <div className="fixed inset-0 overflow-y-auto z-[101] pointer-events-none flex items-center justify-center px-4 py-8 sm:px-6">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl ring-1 ring-slate-100 pointer-events-auto overflow-hidden relative flex flex-col max-h-[90vh]"
+                className="w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl ring-1 ring-slate-200 pointer-events-auto overflow-hidden relative flex flex-col max-h-[90vh]"
               >
                 {/* Modal Header */}
-                <div className="flex items-center justify-between p-6 sm:p-8 border-b border-slate-100 bg-slate-50/50">
+                <div className="flex items-center justify-between p-6 sm:p-8 border-b border-slate-100 bg-slate-50/70">
                   <div className="flex items-center gap-4">
-                     <div className="h-14 w-14 rounded-[1.25rem] bg-white shadow-sm flex items-center justify-center ring-1 ring-slate-200">
-                        <span className="text-2xl font-black text-[#44ACAB]">{selectedProject.name.charAt(0)}</span>
-                     </div>
-                     <div>
-                       <h3 className="text-2xl font-extrabold text-slate-900">{selectedProject.name}</h3>
-                       <p className="text-sm font-semibold text-[#44ACAB] uppercase tracking-wider">{selectedProject.industry}</p>
-                     </div>
+                    <div className="h-16 w-16 rounded-2xl bg-white shadow-sm flex items-center justify-center ring-1 ring-slate-200">
+                      <span className="text-3xl font-black text-[#44ACAB]">
+                        {selectedProject.logoLetter || selectedProject.name.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        <span className="text-[#1b6b6a]">{selectedProject.industry}</span>
+                        {selectedProject.category && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span>{selectedProject.category}</span>
+                          </>
+                        )}
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                        {selectedProject.name}
+                      </h3>
+                    </div>
                   </div>
                   <button 
                     onClick={() => setSelectedProject(null)}
@@ -149,42 +228,87 @@ export function ProofOfWork() {
                 </div>
 
                 {/* Modal Body */}
-                <div className="p-6 sm:p-10 overflow-y-auto">
-                  <div className="lg:flex lg:gap-16">
-                    <div className="lg:w-1/2">
-                      <p className="text-lg text-slate-700 leading-relaxed font-medium mb-6">
+                <div className="p-6 sm:p-10 overflow-y-auto space-y-8">
+                  {/* Context and Solution */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                        Client Overview & Challenge
+                      </h4>
+                      <p className="text-base text-slate-700 leading-relaxed font-medium mb-6">
                         {selectedProject.description}
                       </p>
-                      <div className="bg-slate-50 rounded-2xl p-6 ring-1 ring-slate-100 mb-8 lg:mb-0">
-                        <p className="text-slate-700 leading-relaxed font-medium">
-                          <strong className="text-slate-900 font-bold block text-lg mb-2">{selectedProject.delivered}</strong>
+
+                      <div className="bg-[#e6f4f4]/40 rounded-2xl p-6 ring-1 ring-[#44ACAB]/20">
+                        <strong className="text-[#1b6b6a] font-bold block text-sm uppercase tracking-wide mb-2">
+                          {selectedProject.delivered || 'What we delivered:'}
+                        </strong>
+                        <p className="text-slate-700 leading-relaxed text-sm font-medium">
                           {selectedProject.solution}
                         </p>
                       </div>
                     </div>
                     
-                    <div className="lg:w-1/2">
-                      <h4 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-[#44ACAB]" />
-                        Key Implementations
+                    {/* Key Implementations List */}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-[#44ACAB]" />
+                        <span>Key Implementations & Deliverables</span>
                       </h4>
-                      <ul className="space-y-4">
-                        {selectedProject.highlights.map((highlight: any, i: number) => (
-                          <li key={i} className="flex items-center gap-4 text-slate-700 font-medium bg-white p-3 rounded-xl ring-1 ring-slate-100 shadow-sm">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f0fbfb] text-[#44ACAB]">
-                               <highlight.icon className="h-5 w-5" />
-                            </div>
-                            {highlight.text}
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="mt-8 flex justify-end">
-                        <div className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-slate-500">
-                          <img src="https://cdn.simpleicons.org/erpnext/0089FF" alt="ERPNext" className="h-4 w-4 opacity-70" />
-                          ERPNext Solution
+
+                      {selectedProject.highlights && selectedProject.highlights.length > 0 ? (
+                        <ul className="space-y-3">
+                          {selectedProject.highlights.map((highlight: string, i: number) => (
+                            <li key={i} className="flex items-start gap-3.5 text-xs text-slate-700 font-medium bg-slate-50 p-3.5 rounded-xl ring-1 ring-slate-100">
+                              <CheckCircle2 className="h-4 w-4 text-[#44ACAB] shrink-0 mt-0.5" />
+                              <span className="leading-relaxed">{highlight}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-slate-500 italic">No specific highlights listed.</p>
+                      )}
+
+                      {/* Measurable Impact Metric */}
+                      {selectedProject.metricValue && (
+                        <div className="mt-6 p-4 rounded-2xl bg-white border border-slate-200 flex items-center gap-4 shadow-sm">
+                          <div className="h-12 w-12 rounded-xl bg-[#e6f4f4] flex items-center justify-center text-[#1b6b6a] shrink-0">
+                            <TrendingUp className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-extrabold text-[#1b6b6a] uppercase tracking-wide block">
+                              {selectedProject.metricValue}
+                            </span>
+                            <span className="text-xs text-slate-600 font-medium">
+                              {selectedProject.metricLabel || 'Operational Metric Achieved'}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-xs text-slate-500 font-medium">
+                    Verified Deployment by JetNext Enterprise Engineering
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setSelectedProject(null)}
+                      className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900"
+                    >
+                      Close
+                    </button>
+                    <Link
+                      to={`/book?project=${encodeURIComponent(selectedProject.name)}`}
+                      onClick={() => setSelectedProject(null)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#44ACAB] px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#328887] transition-all"
+                    >
+                      <span>Discuss a Similar Project</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
                   </div>
                 </div>
               </motion.div>

@@ -12,13 +12,15 @@ import {
   Play, 
   Pause,
   Building2,
-  ArrowRight
+  ArrowRight,
+  Phone
 } from 'lucide-react';
 
 interface TestimonialData {
   id: string;
   name: string;
   role: string;
+  phone?: string;
   company: string;
   industry: string;
   service: string;
@@ -41,6 +43,7 @@ export function Testimonials() {
       id: 'optilens',
       name: t('testimonials.items.optilens.client_name'),
       role: t('testimonials.items.optilens.client_role'),
+      phone: t('testimonials.items.optilens.phone', { defaultValue: '0552511446' }),
       company: t('testimonials.items.optilens.company'),
       industry: t('testimonials.items.optilens.industry'),
       service: t('testimonials.items.optilens.service'),
@@ -70,7 +73,7 @@ export function Testimonials() {
       service: t('testimonials.items.lutech.service'),
       metric: t('testimonials.items.lutech.metric'),
       quote: t('testimonials.items.lutech.quote'),
-      initials: 'SH',
+      initials: 'R',
       color: 'bg-teal-600'
     },
     {
@@ -283,8 +286,18 @@ export function Testimonials() {
                       {current.initials}
                     </div>
                     <div>
-                      <div className="text-base font-bold text-slate-900">
-                        {current.name}
+                      <div className="text-base font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                        <span>{current.name}</span>
+                        {current.phone && (
+                          <a
+                            href={`tel:${current.phone}`}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1b6b6a] bg-[#e6f4f4] hover:bg-[#d5eeee] px-2.5 py-0.5 rounded-full transition-colors"
+                            title={`Call ${current.name} (${current.phone})`}
+                          >
+                            <Phone className="h-3 w-3" />
+                            <span>{current.phone}</span>
+                          </a>
+                        )}
                       </div>
                       <div className="text-sm text-slate-500">
                         {current.role} &bull; <span className="font-semibold text-slate-700">{current.company}</span>

@@ -23,6 +23,7 @@
         "source": { "type": "string" },
         "notes": { "type": "string" },
         "estimatedValueDZD": { "type": "number" },
+        "opportunityId": { "type": "string" },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }
       },
@@ -70,6 +71,7 @@
         "serviceInterest": { "type": "string" },
         "assignedTo": { "type": "string" },
         "notes": { "type": "string" },
+        "leadId": { "type": "string" },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }
       },
@@ -122,6 +124,30 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["claimNumber", "customerName", "contactPerson", "email", "title", "category", "severity", "status", "description"]
+    },
+    "WorkProject": {
+      "title": "WorkProject",
+      "description": "Public portfolio case studies and deliverables managed and fulfilled from the admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "industry": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "solution": { "type": "string" },
+        "delivered": { "type": "string" },
+        "highlights": { "type": "array", "items": { "type": "string" } },
+        "metricValue": { "type": "string" },
+        "metricLabel": { "type": "string" },
+        "clientWebsite": { "type": "string" },
+        "logoLetter": { "type": "string" },
+        "published": { "type": "boolean" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "industry", "description", "solution", "published"]
     }
   },
   "firestore": {
@@ -144,6 +170,10 @@
     "/claims/{claimId}": {
       "schema": { "$ref": "#/entities/Claim" },
       "description": "Customer claims, incident tickets, and ISO corrective actions."
+    },
+    "/work_projects/{projectId}": {
+      "schema": { "$ref": "#/entities/WorkProject" },
+      "description": "Portfolio work and client case studies displayed on the public site."
     }
   }
 }

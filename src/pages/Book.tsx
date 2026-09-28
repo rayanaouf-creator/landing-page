@@ -1,13 +1,25 @@
 import { motion } from 'motion/react';
-import { Calendar, Clock, ArrowRight, Building2, User, Mail, MessageSquare, Phone, PhoneCall, MapPin, Briefcase, Factory, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Building2, User, Mail, MessageSquare, Phone, PhoneCall, MapPin, Briefcase, Factory, AlertCircle, Boxes } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { leadStorage } from '../services/leadStorage';
 import { EmergencyLevel } from '../types';
 
 export function Book() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const saasParam = searchParams.get('saas');
   const [submitted, setSubmitted] = useState(false);
+
+  const saasNames: Record<string, string> = {
+    joptic: 'Joptic-Pro (Optical B2B Wholesale)',
+    optisync: 'OptiDistro Hub (14-Wilaya Supply Chain)',
+    lutrack: 'LuTrack GMAO (Serialized Machinery)',
+    jetflow: 'JetFlow B2B (Customer Self-Service Portal)'
+  };
+
+  const selectedSaasName = saasParam ? saasNames[saasParam] || 'Proprietary SaaS' : null;
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -106,6 +118,15 @@ ${message}`;
               onSubmit={handleSubmit} 
               className="bg-white p-8 sm:p-10 rounded-[2rem] shadow-xl shadow-slate-200/50 ring-1 ring-slate-100"
             >
+              {selectedSaasName && (
+                <div className="mb-8 p-4 rounded-xl bg-[#e6f4f4] border border-[#44ACAB]/30 flex items-center gap-3 text-xs text-[#155a59]">
+                  <Boxes className="h-5 w-5 text-[#44ACAB] shrink-0" />
+                  <div>
+                    <span className="font-bold block">Live SaaS Demo Request:</span>
+                    <span>You are requesting a tailored demonstration of <strong>{selectedSaasName}</strong>.</span>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label htmlFor="name" className="block text-sm font-semibold leading-6 text-slate-900">
@@ -322,6 +343,7 @@ ${message}`;
                       id="message"
                       rows={4}
                       required
+                      defaultValue={selectedSaasName ? `Hello, we are interested in a live walkthrough of ${selectedSaasName}. We would like to explore how it can be adapted to our current operations.` : ''}
                       className="block w-full rounded-xl border-0 px-3.5 py-3 pl-11 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#44ACAB] sm:text-sm sm:leading-6 transition-all"
                       placeholder={t('book.form.details_ph')}
                     />

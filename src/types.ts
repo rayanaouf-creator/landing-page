@@ -23,6 +23,7 @@ export interface Lead {
   updatedAt: string;
   notes?: string;
   estimatedValueDZD?: number;
+  opportunityId?: string;         // Linked Opportunity ID once converted/created
 }
 
 // ── CUSTOMER DEFINITIONS ─────────────────────────────────────────────
@@ -64,6 +65,7 @@ export interface Opportunity {
   serviceInterest: string;
   assignedTo?: string;
   notes?: string;
+  leadId?: string;               // Linked Lead ID if originated from lead
   createdAt: string;
   updatedAt: string;
 }
@@ -116,6 +118,26 @@ export interface Claim {
   correctiveAction?: string;     // ISO 9001 Corrective and Preventive Action (CAPA)
   assignedTo?: string;           // Consultant or engineer assigned
   resolvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── OUR WORK / PORTFOLIO PROJECT DEFINITIONS ─────────────────────────
+export interface WorkProject {
+  id: string;
+  name: string;                  // e.g. "Optilens", "CH Optic", "Lutech"
+  industry: string;              // e.g. "Optical Distribution (14 Wilayas)"
+  category?: string;              // e.g. "ERPNext & Supply Chain", "SaaS Software"
+  description: string;           // Short overview of the client and their operations
+  solution: string;              // Detailed solution delivered by JetNext
+  delivered: string;             // Short intro header (e.g. "What we delivered:")
+  highlights: string[];          // List of bullet points / features delivered
+  metricValue?: string;          // e.g. "+45%", "-70%", "100%"
+  metricLabel?: string;          // e.g. "Faster Fulfillment", "Order Turnaround"
+  clientWebsite?: string;        // Optional client website link
+  logoLetter?: string;           // Initial letter or monogram
+  published: boolean;            // Controls visibility in public Our Work section
+  order: number;                 // Sort order (lower numbers display first)
   createdAt: string;
   updatedAt: string;
 }

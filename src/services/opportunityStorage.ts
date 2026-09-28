@@ -100,19 +100,22 @@ export const opportunityStorage = {
     return newOpp;
   },
 
-  createFromLead(lead: Lead): Opportunity {
+  createFromLead(lead: Lead, overrides?: Partial<Opportunity>): Opportunity {
     return this.saveOpportunity({
-      title: `${lead.company} - ${lead.serviceRequested || 'ERP Implementation'}`,
-      customerName: lead.company,
-      contactPerson: lead.name,
-      email: lead.email,
-      phone: lead.phone,
-      stage: 'qualification',
-      expectedValueDZD: lead.estimatedValueDZD || 2500000,
-      probability: 50,
-      expectedCloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      serviceInterest: lead.serviceRequested || 'ERPNext Implementation',
-      notes: `Generated from Lead #${lead.id}. ${lead.notes || lead.message || ''}`
+      title: overrides?.title || `${lead.company} - ${lead.serviceRequested || 'ERP Implementation'}`,
+      leadId: lead.id,
+      customerId: overrides?.customerId,
+      customerName: overrides?.customerName || lead.company,
+      contactPerson: overrides?.contactPerson || lead.name,
+      email: overrides?.email || lead.email,
+      phone: overrides?.phone || lead.phone,
+      stage: overrides?.stage || 'qualification',
+      expectedValueDZD: overrides?.expectedValueDZD !== undefined ? overrides.expectedValueDZD : (lead.estimatedValueDZD || 2500000),
+      probability: overrides?.probability !== undefined ? overrides.probability : 50,
+      expectedCloseDate: overrides?.expectedCloseDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      serviceInterest: overrides?.serviceInterest || lead.serviceRequested || 'ERPNext Implementation',
+      assignedTo: overrides?.assignedTo || 'Senior Solutions Consultant',
+      notes: overrides?.notes || `Generated from Lead #${lead.id}.${lead.location ? ` Wilaya: ${lead.location}.` : ''}${lead.industry ? ` Industry: ${lead.industry}.` : ''} ${lead.notes || lead.message || ''}`
     });
   },
 

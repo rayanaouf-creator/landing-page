@@ -1,4 +1,4 @@
-import { useState, useMemo, FormEvent } from 'react';
+import { useState, useMemo, useEffect, FormEvent } from 'react';
 import { 
   TrendingUp, 
   Search, 
@@ -18,7 +18,7 @@ import {
   Building2,
   PieChart
 } from 'lucide-react';
-import { Opportunity, OpportunityStage, Customer } from '../../types';
+import { Opportunity, OpportunityStage, Customer, Lead } from '../../types';
 import { opportunityStorage } from '../../services/opportunityStorage';
 import { SERVICE_PRESETS } from '../../pages/Admin';
 
@@ -38,6 +38,8 @@ interface OpportunityViewProps {
   isAddModalOpen?: boolean;
   onCloseAddModal?: () => void;
   initialCustomer?: Customer | null;
+  initialLead?: Lead | null;
+  onLeadConverted?: (leadId: string, oppId: string, options?: { advanceLeadStatus?: boolean }) => void;
   stageFilter?: string;
   onStageFilterChange?: (stage: string) => void;
 }
@@ -50,6 +52,8 @@ export function OpportunityView({
   isAddModalOpen = false,
   onCloseAddModal,
   initialCustomer,
+  initialLead,
+  onLeadConverted,
   stageFilter = 'all',
   onStageFilterChange
 }: OpportunityViewProps) {
@@ -63,10 +67,15 @@ export function OpportunityView({
   };
 
   // Modals
-  const [isFormOpen, setIsFormOpen] = useState(isAddModalOpen || Boolean(initialCustomer));
+  const [isFormOpen, setIsFormOpen] = useState(isAddModalOpen || Boolean(initialCustomer) || Boolean(initialLead));
   const [editingOpp, setEditingOpp] = useState<Opportunity | null>(null);
   const [viewingOpp, setViewingOpp] = useState<Opportunity | null>(null);
   const [oppToDelete, setOppToDelete] = useState<Opportunity | null>(null);
+
+  // Origin info if created from Lead
+  const [leadOrigin, setLeadOrigin] = useState<Lead | null>(initialLead || null);
+  const [originLeadId, setOriginLeadId] = useState<string>(initialLead?.id || '');
+  const [advanceLeadStatus, setAdvanceLeadStatus] = useState<boolean>(true);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -102,6 +111,55 @@ export function OpportunityView({
     setNotes('');
     setIsFormOpen(true);
   };
+
+  useEffect(() => {
+    if (isAddModalOpen) {
+      if (initialLead) {
+        setLeadOrigin(initialLead);
+        setOriginLeadId(initialLead.id);
+        setEditingOpp(null);
+        setTitle(`${initialLead.company} - ${initialLead.serviceRequested || 'ERP Implementation'}`);
+
+        const matchingCust = customers.find(c =>
+          c.company.toLowerCase() === initialLead.company.toLowerCase() ||
+          (initialLead.email && c.email.toLowerCase() === initialLead.email.toLowerCase())
+        );
+        setCustomerId(matchingCust?.id || '');
+        setCustomerName(initialLead.company);
+        setContactPerson(initialLead.name);
+        setEmail(initialLead.email || '');
+        setPhone(initialLead.phone || (initialLead.additionalPhones && initialLead.additionalPhones[0]) || '');
+        setStageValue('qualification');
+        setExpectedValueDZD(initialLead.estimatedValueDZD || 2500000);
+        setProbability(50);
+        setExpectedCloseDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+        setServiceInterest(initialLead.serviceRequested || 'ERPNext Implementation');
+        setAssignedTo('Senior Solutions Consultant');
+
+        const details = [
+          `Originating Lead #${initialLead.id}`,
+          initialLead.jobTitle ? `Title: ${initialLead.jobTitle}` : '',
+          initialLead.location ? `Wilaya: ${initialLead.location}` : '',
+          initialLead.industry ? `Industry: ${initialLead.industry}` : '',
+          initialLead.emergencyLevel ? `Urgency: ${initialLead.emergencyLevel}` : '',
+          initialLead.notes || initialLead.message ? `Notes: ${initialLead.notes || initialLead.message}` : ''
+        ].filter(Boolean).join(' | ');
+
+        setNotes(details);
+        setIsFormOpen(true);
+      } else if (initialCustomer) {
+        setLeadOrigin(null);
+        setOriginLeadId('');
+        openAddModal(initialCustomer);
+      } else {
+        setLeadOrigin(null);
+        setOriginLeadId('');
+        openAddModal();
+      }
+    } else {
+      setIsFormOpen(false);
+    }
+  }, [isAddModalOpen, initialLead, initialCustomer, customers]);
 
   const openEditModal = (opp: Opportunity) => {
     setEditingOpp(opp);
@@ -155,15 +213,20 @@ export function OpportunityView({
       expectedCloseDate,
       serviceInterest,
       assignedTo: assignedTo.trim(),
-      notes: notes.trim()
+      notes: notes.trim(),
+      leadId: originLeadId || editingOpp?.leadId || undefined
     };
 
     if (editingOpp) {
       opportunityStorage.updateOpportunity(editingOpp.id, payload);
       showToast(`Updated deal "${title}"`);
     } else {
-      opportunityStorage.saveOpportunity(payload);
-      showToast(`Created new deal "${title}"`);
+      const createdOpp = opportunityStorage.saveOpportunity(payload);
+      showToast(`Created commercial opportunity "${title}"!`);
+
+      if (originLeadId && onLeadConverted) {
+        onLeadConverted(originLeadId, createdOpp.id, { advanceLeadStatus });
+      }
     }
 
     setIsFormOpen(false);
@@ -415,7 +478,15 @@ export function OpportunityView({
                     <tr key={opp.id} className="hover:bg-slate-50/60 transition-colors group">
                       {/* Deal & Scope */}
                       <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900 text-sm">{opp.title}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-bold text-slate-900 text-sm">{opp.title}</p>
+                          {opp.leadId && (
+                            <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-teal-50 text-[#1b6b6a] border border-teal-200" title={`Originated from Lead #${opp.leadId}`}>
+                              <TrendingUp className="h-2.5 w-2.5" />
+                              From Lead
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-slate-500 mt-0.5">{opp.serviceInterest}</p>
                       </td>
 
@@ -529,6 +600,39 @@ export function OpportunityView({
 
             <form onSubmit={handleSave} className="p-6 overflow-y-auto custom-light-scrollbar space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Lead Conversion Notification Banner */}
+                {leadOrigin && (
+                  <div className="sm:col-span-2 rounded-2xl bg-teal-50 border border-teal-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1b6b6a] text-white shadow-xs shrink-0">
+                        <TrendingUp className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#1b6b6a] bg-teal-100/90 px-2 py-0.5 rounded">
+                            Created From Lead
+                          </span>
+                          <span className="text-xs font-bold text-slate-800">{leadOrigin.company}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1">
+                          Contact: <strong className="text-slate-900">{leadOrigin.name}</strong>
+                          {leadOrigin.phone && ` • ${leadOrigin.phone}`}
+                          {leadOrigin.serviceRequested && ` • ${leadOrigin.serviceRequested}`}
+                        </p>
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 text-xs font-semibold text-teal-900 shrink-0 cursor-pointer select-none bg-white py-1.5 px-3 rounded-xl border border-teal-200 shadow-2xs">
+                      <input
+                        type="checkbox"
+                        checked={advanceLeadStatus}
+                        onChange={(e) => setAdvanceLeadStatus(e.target.checked)}
+                        className="rounded text-[#1b6b6a] focus:ring-[#1b6b6a] h-4 w-4"
+                      />
+                      <span>Advance Lead Status to In Discussion</span>
+                    </label>
+                  </div>
+                )}
+
                 {/* Title */}
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">Opportunity Title *</label>
@@ -717,6 +821,18 @@ export function OpportunityView({
             </div>
 
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-light-scrollbar">
+              {viewingOpp.leadId && (
+                <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-teal-900 font-semibold">
+                    <TrendingUp className="h-4 w-4 text-[#1b6b6a]" />
+                    <span>Originated from Lead Inquiry #{viewingOpp.leadId}</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-teal-100 text-[#1b6b6a]">
+                    From Lead
+                  </span>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-slate-50">
                   <span className="text-[10px] uppercase font-bold text-slate-400">Deal Value</span>

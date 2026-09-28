@@ -3,6 +3,7 @@
     "home": "Accueil",
     "solutions": "Solutions",
     "services": "Services",
+    "saas": "Produits SaaS",
     "team": "Équipe",
     "book": "Réserver",
     "lang": "Langue",
@@ -67,6 +68,126 @@
       "help_desc": "Système de tickets, SLA et résolution des problèmes clients."
     }
   },
+  "saas": {
+    "subtitle": "Solutions Logicielles Propriétaires",
+    "title1": "Les Solutions SaaS que Nous Avons",
+    "title2": "Créées & Déployées",
+    "desc": "Au-delà de l'intégration ERP d'entreprise sur mesure, JetNext conçoit, développe et héberge des plateformes SaaS verticales résolvant les défis opérationnels critiques d'entreprises à forte croissance.",
+    "all_filter": "Toutes les Solutions",
+    "cat_optical": "Optique & Santé",
+    "cat_supply_chain": "Supply Chain & Logistique",
+    "cat_equipment": "Machines & GMAO",
+    "cat_b2b": "Espace B2B Client",
+    "view_demo": "Explorer la Solution",
+    "book_demo": "Demander une Démo",
+    "in_production": "En Production",
+    "client_proven": "Éprouvé sur le Terrain",
+    "features_title": "Fonctionnalités Clés",
+    "impact_title": "Impact Opérationnel Mesuré",
+    "tech_stack": "Architecture",
+    "target_audience": "Conçu pour",
+    "custom_saas_title": "Vous avez un projet SaaS spécifique à votre secteur ?",
+    "custom_saas_desc": "De la conception des modèles de données multi-sociétés aux interfaces React modernes et à l'hébergement cloud haute disponibilité, JetNext développe des logiciels propriétaires qui créent un avantage concurrentiel décisif.",
+    "custom_saas_cta": "Concevoir Votre SaaS Avec JetNext",
+    "modal": {
+      "close": "Fermer",
+      "architecture": "Architecture Système",
+      "features": "Fonctionnalités Plateforme & Capacités",
+      "workflows": "Workflows Automatisés & Architecture",
+      "schedule_walkthrough": "Réserver une Démo Guidée",
+      "tech_specs": "Spécifications Techniques & Déploiement"
+    },
+    "products": {
+      "joptic": {
+        "name": "Joptic-Pro",
+        "category": "Optique & Santé",
+        "badge": "SaaS Phare Optique",
+        "tagline": "ERP Cloud & Portail B2B Grossiste pour Professionnels de l'Optique",
+        "desc": "Un SaaS vertical conçu pour remplacer définitivement les fichiers Excel fragmentés chez les importateurs et grossistes en optique. Gère les matrices de puissances de verres complexes, le multi-dépôt et les commandes B2B de cliniques partenaires.",
+        "target": "Grossistes en optique, importateurs de verres et cliniques",
+        "impact": "-70% de Délai de Traitement des Commandes",
+        "impact_desc": "Les cliniques passent commande en ligne avec validation immédiate des corrections ; les dépôts préparent et expédient en quelques minutes.",
+        "features": [
+          "Portail de commande B2B avec catalogue optique et grilles tarifaires sur mesure",
+          "Matrice de calcul et validation automatisée des puissances et cylindres",
+          "Gestion des stocks multi-dépôts avec scan code-barres et suivi de lots",
+          "Passerelle directe avec les ateliers de montage et de surfaçage"
+        ],
+        "tech": "React 19 · Frappe Engine · Python REST · PostgreSQL · Redis",
+        "stats": [
+          { "value": "100%", "label": "Synchronisation temps réel" },
+          { "value": "-70%", "label": "Temps de traitement" },
+          { "value": "10 000+", "label": "Références optiques gérées" }
+        ]
+      },
+      "optisync": {
+        "name": "OptiDistro Hub",
+        "category": "Supply Chain & Logistique",
+        "badge": "Supply Chain Multi-Wilayas",
+        "tagline": "Plateforme de Distribution Multi-Wilayas & Zéro Stock Dormant",
+        "desc": "Conçu pour les entreprises pilotant un réseau de distribution à l'échelle nationale. Centralise la gestion des stocks entre dépôts régionaux, fluidifie les transferts inter-sociétés et éradique les ruptures.",
+        "target": "Distributeurs nationaux, importateurs et réseaux multi-filiales",
+        "impact": "+45% de Vitesse de Distribution Régionale",
+        "impact_desc": "Élimination des stocks dormants sur 14 wilayas et visibilité consolidée en temps réel pour la direction générale.",
+        "features": [
+          "Équilibrage dynamique des stocks multi-wilayas avec bons de transfert automatiques",
+          "Algorithmes d'alerte sur stocks dormants et articles à faible rotation",
+          "Gestion comptable et facturation inter-sociétés consolidée",
+          "Application mobile chauffeurs pour preuve électronique de livraison (e-POD)"
+        ],
+        "tech": "ERPNext Core · Frappe Custom App · Docker · PWA · REST API",
+        "stats": [
+          { "value": "14", "label": "Wilayas synchronisées" },
+          { "value": "+45%", "label": "Vitesse d'expédition" },
+          { "value": "0%", "label": "Angle mort sur les stocks" }
+        ]
+      },
+      "lutrack": {
+        "name": "LuTrack GMAO",
+        "category": "Machines & GMAO",
+        "badge": "Traçabilité Équipements & GMAO",
+        "tagline": "Registre des Équipements par Numéro de Série, Étalonnages & Maintenance",
+        "desc": "SaaS de GMAO et de suivi de cycle de vie conçu pour les importateurs et distributeurs d'équipements de haute technologie. Assure une traçabilité intégrale par numéro de série et automatise la facturation des contrats.",
+        "target": "Distributeurs d'équipements médicaux, machines industrielles et SAV",
+        "impact": "100% de Traçabilité des Machines",
+        "impact_desc": "Suivi individualisé de chaque machine par numéro de série, du dédouanement à la fin de garantie et interventions de maintenance.",
+        "features": [
+          "Suivi du cycle de vie unitaire par numéro de série avec statut de garantie",
+          "Planification des étalonnages préventifs et alertes automatiques",
+          "Rapports d'intervention mobiles pour techniciens avec signature numérique client",
+          "Facturation automatisée des contrats de maintenance et pièces détachées"
+        ],
+        "tech": "Frappe Framework Sur-Mesure · React Native · MariaDB · Cloud Sécurisé",
+        "stats": [
+          { "value": "100%", "label": "Traçabilité d'audit" },
+          { "value": "200h+", "label": "Heures admin économisées/mois" },
+          { "value": "99.8%", "label": "Conformité des contrats SLA" }
+        ]
+      },
+      "jetflow": {
+        "name": "JetFlow B2B",
+        "category": "Espace B2B Client",
+        "badge": "Portail B2B Self-Service",
+        "tagline": "Espace Client Marque Blanche Connecté Directement à l'ERP",
+        "desc": "Portail web clé en main synchronisé en temps réel avec le backend ERP. Permet aux clients B2B de consulter les stocks, commander en autonomie, suivre les livraisons et télécharger leurs factures 24h/24.",
+        "target": "Fabricants B2B, grossistes et entreprises commerciales",
+        "impact": "85% de Réduction des Appels et Commandes Manuelles",
+        "impact_desc": "Transforme la prise de commande manuelle par téléphone ou messagerie en un flux numérique fluide et sans erreur.",
+        "features": [
+          "Prise de commande client 24h/24 avec réservation instantanée de stock ERPNext",
+          "Consultation en temps réel des relevés de compte et limites de crédit",
+          "Dépôt numérique des justificatifs de paiement et génération de factures",
+          "Comptes d'entreprise multi-utilisateurs avec gestion des rôles (acheteurs, comptables)"
+        ],
+        "tech": "React SPA · Middleware Webhooks · Tailwind CSS · Authentification Sécurisée",
+        "stats": [
+          { "value": "85%", "label": "Moins de requêtes manuelles" },
+          { "value": "24/7", "label": "Disponibilité de commande" },
+          { "value": "< 1s", "label": "Synchronisation ERP" }
+        ]
+      }
+    }
+  },
   "proof": {
     "subtitle": "Preuve de Travail",
     "title1": "Histoires de",
@@ -120,6 +241,7 @@
       "optilens": {
         "client_name": "Laraba Oussama",
         "client_role": "Directeur des Opérations & Logistique",
+        "phone": "0552511446",
         "company": "Optilens",
         "industry": "Distribution Optique (14 Wilayas)",
         "service": "Déploiement ERPNext Multi-Sociétés",
@@ -136,7 +258,7 @@
         "quote": "L'adoption du logiciel SaaS Joptic-Pro conçu par JetNext a révolutionné notre gestion de gros. Nos milliers de références optiques et les commandes B2B de nos cliniques partenaires se gèrent désormais en temps réel avec une fluidité totale et un gain de temps considérable."
       },
       "lutech": {
-        "client_name": "Dr. Sofiane Haddad",
+        "client_name": "Redouan",
         "client_role": "Responsable Matériel Technique",
         "company": "Lutech",
         "industry": "Équipements & Optique Ophtalmique",

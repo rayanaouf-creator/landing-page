@@ -21,6 +21,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Work / Case studies showcase fulfilled from admin
+    match /work_projects/{projectId} {
+      allow read, write: if true;
+    }
+
     // Claims / Support tickets
     match /claims/{claimId} {
       allow read, write: if true;

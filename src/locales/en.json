@@ -3,6 +3,7 @@
     "home": "Home",
     "solutions": "Solutions",
     "services": "Services",
+    "saas": "SaaS Products",
     "team": "Team",
     "book": "Book Consultation",
     "lang": "Language",
@@ -67,6 +68,126 @@
       "help_desc": "Ticketing system, SLAs, and customer issue resolution."
     }
   },
+  "saas": {
+    "subtitle": "Proprietary Software Solutions",
+    "title1": "SaaS Products We Have",
+    "title2": "Created & Deployed",
+    "desc": "Beyond bespoke enterprise ERP consulting, JetNext designs, engineers, and operates specialized vertical SaaS platforms solving real operational bottlenecks for high-growth enterprises.",
+    "all_filter": "All Solutions",
+    "cat_optical": "Optical & Healthcare",
+    "cat_supply_chain": "Supply Chain & Distro",
+    "cat_equipment": "Machinery & GMAO",
+    "cat_b2b": "B2B Self-Service",
+    "view_demo": "Explore Architecture",
+    "book_demo": "Request Live Demo",
+    "in_production": "In Production",
+    "client_proven": "Field Proven",
+    "features_title": "Core Capabilities",
+    "impact_title": "Proven Field Impact",
+    "tech_stack": "Architecture",
+    "target_audience": "Designed for",
+    "custom_saas_title": "Need a custom SaaS built for your industry?",
+    "custom_saas_desc": "From business logic conception and multi-tenant database design to sleek React interfaces and cloud deployment, JetNext delivers proprietary software that gives you an unbeatable competitive moat.",
+    "custom_saas_cta": "Build Your SaaS With JetNext",
+    "modal": {
+      "close": "Close",
+      "architecture": "System Architecture",
+      "features": "Platform Features & Capabilities",
+      "workflows": "Automated Workflows & Architecture",
+      "schedule_walkthrough": "Book Live Walkthrough",
+      "tech_specs": "Technical Stack & Deployment"
+    },
+    "products": {
+      "joptic": {
+        "name": "Joptic-Pro",
+        "category": "Optical & Healthcare",
+        "badge": "Flagship Optical SaaS",
+        "tagline": "Cloud ERP & B2B Wholesale Portal for Optical Wholesalers and Clinics",
+        "desc": "A specialized vertical SaaS engineered to eradicate manual spreadsheet chaos for ophthalmic lens importers and optical wholesalers. Handles complex prescription matrices, multi-warehouse lens catalogs, and automated B2B clinic ordering.",
+        "target": "Optical Wholesalers, Lens Importers & Healthcare Clinics",
+        "impact": "-70% Order Turnaround Time",
+        "impact_desc": "Clinics place orders digitally with instant prescription validation; wholesale depots pack and dispatch in minutes.",
+        "features": [
+          "B2B ordering portal with live optical catalog and personalized pricing tiers",
+          "Automated prescription power & cylinder matrix validation",
+          "Multi-depot stock sync with barcode scanning and batch tracking",
+          "Direct integration with laboratory lens edging and finishing workflows"
+        ],
+        "tech": "React 19 · Frappe Engine · Python REST · PostgreSQL · Redis",
+        "stats": [
+          { "value": "100%", "label": "Real-time stock sync" },
+          { "value": "-70%", "label": "Order processing time" },
+          { "value": "10,000+", "label": "Optical SKUs tracked" }
+        ]
+      },
+      "optisync": {
+        "name": "OptiDistro Hub",
+        "category": "Supply Chain & Distro",
+        "badge": "Multi-Wilaya Supply Chain",
+        "tagline": "Centralized Multi-Wilaya Distribution & Dead-Stock Elimination Platform",
+        "desc": "Built for companies managing nationwide distribution networks across multiple regions. Unifies inventory across regional warehouses, coordinates inter-company transfers, and prevents costly dead stock.",
+        "target": "National Distributors, Importers & Multi-Branch Networks",
+        "impact": "+45% Faster Delivery Fulfillment",
+        "impact_desc": "Eliminated stock stagnation across 14 wilayas and provided executives unified real-time inventory visibility.",
+        "features": [
+          "Multi-wilaya inventory balancing with automated inter-depot transfer orders",
+          "Intelligent dead-stock detection and slow-moving item alerts",
+          "Multi-company billing and consolidated financial ledger",
+          "Driver mobile route execution and electronic proof-of-delivery (e-POD)"
+        ],
+        "tech": "ERPNext Core · Frappe Custom App · Docker · PWA · REST API",
+        "stats": [
+          { "value": "14", "label": "Wilayas synchronized" },
+          { "value": "+45%", "label": "Fulfillment speed" },
+          { "value": "0%", "label": "Stockout blindspots" }
+        ]
+      },
+      "lutrack": {
+        "name": "LuTrack GMAO",
+        "category": "Machinery & GMAO",
+        "badge": "Equipment Lifecycle & GMAO",
+        "tagline": "Serialized Machinery Registry, Calibration Schedules & Maintenance SaaS",
+        "desc": "A robust asset-tracking and computerized maintenance management SaaS designed for high-value equipment and machinery distributors. Guarantees 100% traceability per serial number with automated maintenance billing.",
+        "target": "Medical Equipment Providers, Machinery Importers & Technical Services",
+        "impact": "100% Machine Traceability",
+        "impact_desc": "Tracks every device by serial number from import customs clearance through warranty lifecycle and on-site servicing.",
+        "features": [
+          "Unit-level serial number lifecycle tracking with full warranty status",
+          "Preventive calibration scheduler with automatic client reminders",
+          "Field technician digital intervention logging and customer sign-off",
+          "Automated spare parts consumption tracking and recurring service billing"
+        ],
+        "tech": "Custom Frappe Framework · React Native · MariaDB · SSL Encrypted Cloud",
+        "stats": [
+          { "value": "100%", "label": "Equipment traceability" },
+          { "value": "200h+", "label": "Admin hours saved/mo" },
+          { "value": "99.8%", "label": "Preventive SLA compliance" }
+        ]
+      },
+      "jetflow": {
+        "name": "JetFlow B2B",
+        "category": "B2B Self-Service",
+        "badge": "Customer Self-Service SaaS",
+        "tagline": "Turnkey White-Label Customer Self-Service & Ordering Portal",
+        "desc": "A branded, high-performance web portal that connects directly to client ERP backends. Allows enterprise customers to place bulk orders, check real-time stock, review credit limits, and download invoices 24/7.",
+        "target": "B2B Manufacturers, Wholesalers & Commercial Enterprises",
+        "impact": "85% Reduction in Routine Calls",
+        "impact_desc": "Transforms manual, error-prone order reception into a sleek, automated self-service digital experience.",
+        "features": [
+          "24/7 client self-service ordering with instant ERPNext stock reservation",
+          "Live statement-of-account, outstanding balance, and credit limit tracking",
+          "Digital payment receipt submission and automated invoice generation",
+          "Multi-seat corporate accounts with role-based buyer and accountant permissions"
+        ],
+        "tech": "React SPA · Webhook Middleware · Tailwind CSS · Role-Based Auth",
+        "stats": [
+          { "value": "85%", "label": "Fewer manual order queries" },
+          { "value": "24/7", "label": "Order intake availability" },
+          { "value": "< 1s", "label": "Instant ERP sync" }
+        ]
+      }
+    }
+  },
   "proof": {
     "subtitle": "Proof of Work",
     "title1": "Success",
@@ -120,6 +241,7 @@
       "optilens": {
         "client_name": "Laraba Oussama",
         "client_role": "Operations & Logistics Director",
+        "phone": "0552511446",
         "company": "Optilens",
         "industry": "Optical Distribution (14 Wilayas)",
         "service": "ERPNext Multi-Company Setup",
@@ -136,7 +258,7 @@
         "quote": "Adopting the Joptic-Pro SaaS software engineered by JetNext transformed our wholesale optical distribution. Managing thousands of optical references and processing B2B orders for our partner clinics is now handled in real time with total fluidity and massive time savings."
       },
       "lutech": {
-        "client_name": "Dr. Sofiane Haddad",
+        "client_name": "Redouan",
         "client_role": "Technical Equipment Manager",
         "company": "Lutech",
         "industry": "Ophthalmic Machinery & Optics",

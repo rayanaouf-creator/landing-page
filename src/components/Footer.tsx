@@ -36,6 +36,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <a href="/#saas" id="footer-link-saas" className="text-sm text-slate-600 hover:text-[#44ACAB] transition-colors">
+                  {t('nav.saas', { defaultValue: 'SaaS Products' })}
+                </a>
+              </li>
+              <li>
                 <Link to="/erpnext" id="footer-link-erpnext" className="text-sm text-slate-600 hover:text-[#44ACAB] transition-colors">
                   ERPNext
                 </Link>

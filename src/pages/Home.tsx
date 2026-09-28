@@ -3,6 +3,8 @@ import { Partners } from '../components/Partners';
 import { Comparison } from '../components/Comparison';
 import { Services } from '../components/Services';
 import { Modules } from '../components/Modules';
+import { ProofOfWork } from '../components/ProofOfWork';
+import { SaaSSection } from '../components/SaaSSection';
 import { Testimonials } from '../components/Testimonials';
 import { Team } from '../components/Team';
 import { FAQ } from '../components/FAQ';
@@ -18,6 +20,8 @@ export function Home() {
       <Comparison />
       <Services />
       <Modules />
+      <ProofOfWork />
+      <SaaSSection />
       <Testimonials />
       <Team />
       <FAQ />

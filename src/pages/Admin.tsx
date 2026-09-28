@@ -46,16 +46,18 @@ import {
   UserCheck,
   FolderGit2
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject } from '../types';
 import { leadStorage } from '../services/leadStorage';
 import { customerStorage } from '../services/customerStorage';
 import { claimStorage } from '../services/claimStorage';
 import { opportunityStorage } from '../services/opportunityStorage';
 import { projectStorage } from '../services/projectStorage';
+import { workStorage } from '../services/workStorage';
 import { CustomerView } from '../components/admin/CustomerView';
 import { ClaimView } from '../components/admin/ClaimView';
 import { OpportunityView } from '../components/admin/OpportunityView';
 import { ProjectView } from '../components/admin/ProjectView';
+import { WorkView } from '../components/admin/WorkView';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string }> = {
   new: { label: 'New Lead', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
@@ -171,14 +173,15 @@ export function AdminPage() {
     );
   });
 
-  // Active CRM Tab: 'lead' | 'opportunity' | 'customer' | 'project' | 'claim'
-  const [activeTab, setActiveTab] = useState<'lead' | 'opportunity' | 'customer' | 'project' | 'claim'>('lead');
+  // Active CRM Tab: 'lead' | 'opportunity' | 'customer' | 'project' | 'claim' | 'work'
+  const [activeTab, setActiveTab] = useState<'lead' | 'opportunity' | 'customer' | 'project' | 'claim' | 'work'>('lead');
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
+  const [workProjects, setWorkProjects] = useState<WorkProject[]>([]);
 
   // Sub-filters for Customer, Opportunity, Project, and Claim
   const [customerStatusFilter, setCustomerStatusFilter] = useState<string>('all');
@@ -190,6 +193,7 @@ export function AdminPage() {
   const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
   const [isAddOppModalOpen, setIsAddOppModalOpen] = useState(false);
   const [initialCustomerForOpp, setInitialCustomerForOpp] = useState<Customer | null>(null);
+  const [initialLeadForOpp, setInitialLeadForOpp] = useState<Lead | null>(null);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [initialCustomerForProject, setInitialCustomerForProject] = useState<Customer | null>(null);
   const [isAddClaimModalOpen, setIsAddClaimModalOpen] = useState(false);
@@ -244,6 +248,7 @@ export function AdminPage() {
     loadCustomers();
     loadProjects();
     loadClaims();
+    loadWorkProjects();
 
     // Real-time synchronization subscriptions to Firebase Firestore collections
     const unsubLeads = leadStorage.subscribe((items) => setLeads(items));
@@ -251,6 +256,7 @@ export function AdminPage() {
     const unsubCusts = customerStorage.subscribe((items) => setCustomers(items));
     const unsubProjs = projectStorage.subscribe((items) => setProjects(items));
     const unsubClaims = claimStorage.subscribe((items) => setClaims(items));
+    const unsubWork = workStorage.subscribe((items) => setWorkProjects(items));
 
     return () => {
       unsubLeads();
@@ -258,8 +264,14 @@ export function AdminPage() {
       unsubCusts();
       unsubProjs();
       unsubClaims();
+      unsubWork();
     };
   }, [isAuthenticated]);
+
+  const loadWorkProjects = () => {
+    const list = workStorage.getProjects();
+    setWorkProjects(list);
+  };
 
   const loadLeads = () => {
     const list = leadStorage.getLeads();
@@ -297,8 +309,32 @@ export function AdminPage() {
 
   const handleCreateOpportunityForCustomer = (cust: Customer) => {
     setInitialCustomerForOpp(cust);
+    setInitialLeadForOpp(null);
     setIsAddOppModalOpen(true);
     setActiveTab('opportunity');
+  };
+
+  const handleCreateOpportunityFromLead = (lead: Lead) => {
+    setInitialLeadForOpp(lead);
+    setInitialCustomerForOpp(null);
+    setIsAddOppModalOpen(true);
+    setActiveTab('opportunity');
+    showToast(`Opening commercial opportunity builder for "${lead.company}"`);
+  };
+
+  const handleLeadConvertedToOpp = (leadId: string, oppId: string, options?: { advanceLeadStatus?: boolean }) => {
+    const targetLead = leads.find(l => l.id === leadId);
+    if (targetLead) {
+      const updates: Partial<Lead> = {
+        opportunityId: oppId
+      };
+      if (options?.advanceLeadStatus !== false && (targetLead.status === 'new' || targetLead.status === 'contacted')) {
+        updates.status = 'in_discussion';
+      }
+      leadStorage.updateLead(leadId, updates);
+      loadLeads();
+      showToast(`Linked deal to lead "${targetLead.company}"!`);
+    }
   };
 
   const handleCreateProjectForCustomer = (cust: Customer) => {
@@ -954,6 +990,30 @@ export function AdminPage() {
                 {openClaimsCount > 0 ? `${openClaimsCount} open` : claims.length}
               </span>
             </button>
+
+            {/* 6. Our Work Showcase */}
+            <button
+              id="admin-sidebar-nav-work"
+              onClick={() => {
+                setActiveTab('work');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'work'
+                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Briefcase className={`h-4 w-4 ${activeTab === 'work' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                <span className="text-sm">Our Work</span>
+              </div>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'work' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {workProjects.length}
+              </span>
+            </button>
           </div>
 
           {/* DYNAMIC CONTEXTUAL MODULE ACTIONS & VIEWS */}
@@ -1485,8 +1545,11 @@ export function AdminPage() {
             onCloseAddModal={() => {
               setIsAddOppModalOpen(false);
               setInitialCustomerForOpp(null);
+              setInitialLeadForOpp(null);
             }}
             initialCustomer={initialCustomerForOpp}
+            initialLead={initialLeadForOpp}
+            onLeadConverted={handleLeadConvertedToOpp}
             stageFilter={oppStageFilter}
             onStageFilterChange={setOppStageFilter}
           />
@@ -1523,6 +1586,14 @@ export function AdminPage() {
             initialCustomerForClaim={initialCustomerForClaim}
             statusFilter={claimStatusFilter}
             onStatusFilterChange={setClaimStatusFilter}
+          />
+        )}
+
+        {activeTab === 'work' && (
+          <WorkView
+            projects={workProjects}
+            onRefresh={loadWorkProjects}
+            showNotification={showToast}
           />
         )}
 
@@ -1789,7 +1860,7 @@ export function AdminPage() {
                       >
                         {/* Company & Location & Industry */}
                         <td className="py-4 pl-6 pr-3">
-                          <div className="font-bold text-slate-900 flex items-center gap-2">
+                          <div className="font-bold text-slate-900 flex items-center gap-2 flex-wrap">
                             <span>{lead.company}</span>
                             {(() => {
                               const badge = getSourceBadge(lead.source);
@@ -1799,6 +1870,12 @@ export function AdminPage() {
                                 </span>
                               );
                             })()}
+                            {lead.opportunityId && (
+                              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200" title="Commercial Opportunity created">
+                                <TrendingUp className="h-2.5 w-2.5" />
+                                Deal Created
+                              </span>
+                            )}
                           </div>
                           
                           <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -1968,6 +2045,14 @@ export function AdminPage() {
                               title="View full lead record"
                             >
                               <Eye className="h-4 w-4" />
+                            </button>
+                            <button
+                              id={`admin-create-opp-lead-${lead.id}`}
+                              onClick={() => handleCreateOpportunityFromLead(lead)}
+                              className="rounded-lg p-1.5 text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                              title="Create Commercial Opportunity from this Lead"
+                            >
+                              <TrendingUp className="h-4 w-4" />
                             </button>
                             <button
                               id={`admin-edit-lead-${lead.id}`}
@@ -2484,6 +2569,25 @@ export function AdminPage() {
                   </div>
                 </div>
 
+                {viewingLead.opportunityId && (
+                  <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-blue-900 font-semibold">
+                      <TrendingUp className="h-4 w-4 text-blue-600" />
+                      <span>Commercial opportunity deal has been created for this inquiry</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setViewingLead(null);
+                        setActiveTab('opportunity');
+                      }}
+                      className="text-[11px] font-bold text-blue-700 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>View in Pipeline</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+
                 {(viewingLead.notes || viewingLead.message) && (
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Notes & Scope</p>
@@ -2495,7 +2599,7 @@ export function AdminPage() {
               </div>
 
               <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/80 gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => {
                       handleOpenEditModal(viewingLead);
@@ -2505,6 +2609,19 @@ export function AdminPage() {
                   >
                     <Edit3 className="h-3.5 w-3.5" />
                     <span>Edit Lead</span>
+                  </button>
+                  <button
+                    id="admin-view-lead-create-opp-btn"
+                    onClick={() => {
+                      const l = viewingLead;
+                      setViewingLead(null);
+                      handleCreateOpportunityFromLead(l);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors"
+                    title="Create commercial sales opportunity from this lead"
+                  >
+                    <TrendingUp className="h-3.5 w-3.5 text-blue-600" />
+                    <span>Create Opportunity</span>
                   </button>
                   <button
                     onClick={() => {

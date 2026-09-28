@@ -30,11 +30,12 @@ export function Navbar() {
         <Link to="/" className="flex items-center">
           <img src="/cropedlogo.png" alt="JetNext Logo" className="h-10 w-auto object-contain" />
         </Link>
-        <div className="hidden md:flex items-center gap-8 bg-white/80 backdrop-blur-md px-8 py-3 rounded-full shadow-sm ring-1 ring-slate-200/50">
+        <div className="hidden md:flex items-center gap-7 bg-white/80 backdrop-blur-md px-8 py-3 rounded-full shadow-sm ring-1 ring-slate-200/50">
           <Link to="/services" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.services')}</Link>
+          <a href={isHome ? "#saas" : "/#saas"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.saas', { defaultValue: 'SaaS' })}</a>
           <Link to="/erpnext" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">ERPNext</Link>
           <Link to="/iso9001" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">ISO 9001</Link>
-          <Link to="/work" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.work')}</Link>
+          <a href={isHome ? "#work" : "/work"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.work')}</a>
           <Link to="/team" className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">{t('nav.team')}</Link>
           <Link to={isHome ? "#contact" : "/#contact"} className="text-sm font-semibold text-slate-600 hover:text-[#44ACAB] transition-colors">Contact</Link>
         </div>
@@ -99,9 +100,10 @@ export function Navbar() {
                 <div className="-my-6 divide-y divide-slate-100">
                   <div className="space-y-4 py-6 flex flex-col">
                     <Link to="/services" onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-slate-900 hover:bg-slate-50">{t('nav.services')}</Link>
+                    <a href={isHome ? "#saas" : "/#saas"} onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-slate-900 hover:bg-slate-50">{t('nav.saas', { defaultValue: 'SaaS' })}</a>
                     <Link to="/erpnext" onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-slate-900 hover:bg-slate-50">ERPNext</Link>
                     <Link to="/iso9001" onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-slate-900 hover:bg-slate-50">ISO 9001</Link>
-                    <Link to="/work" onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-slate-900 hover:bg-slate-50">{t('nav.work')}</Link>
+                    <a href={isHome ? "#work" : "/work"} onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-slate-900 hover:bg-slate-50">{t('nav.work')}</a>
                     <Link to="/team" onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-slate-900 hover:bg-slate-50">{t('nav.team')}</Link>
                     <Link to={isHome ? "#contact" : "/#contact"} onClick={() => setMobileMenuOpen(false)} className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-slate-900 hover:bg-slate-50">Contact</Link>
                   </div>
