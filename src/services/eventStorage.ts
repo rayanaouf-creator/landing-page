@@ -26,6 +26,14 @@ export const DEFAULT_EVENTS: CompanyEvent[] = [
     attendeesCount: 120,
     tags: ['ERPNext', 'Enterprise', 'Product Launch', 'Commercial'],
     isImportant: true,
+    tasks: [
+      { id: 'et-1', policyTaskId: 'ptask-1', title: 'Verify booth marketing banners, brochures & company collateral', isCompleted: true, completedBy: 'Amina Benali' },
+      { id: 'et-2', policyTaskId: 'ptask-2', title: 'Deploy and test offline & cloud ERPNext / IoT live demo sandbox', isCompleted: true, completedBy: 'Yacine Zerrouki' },
+      { id: 'et-3', policyTaskId: 'ptask-3', title: 'Confirm team attendees, corporate attire standards & badges', isCompleted: false },
+      { id: 'et-4', policyTaskId: 'ptask-4', title: 'Set up digital lead scanner, QR code & CRM real-time intake form', isCompleted: true, completedBy: 'Rayan Aouf' },
+      { id: 'et-5', policyTaskId: 'ptask-5', title: 'Verify venue logistics, power backups & presentation slides', isCompleted: false },
+      { id: 'et-6', policyTaskId: 'ptask-6', title: 'Schedule 24h post-event commercial follow-up & debrief', isCompleted: false }
+    ],
     createdAt: '2026-09-01T08:00:00.000Z',
     updatedAt: '2026-09-01T08:00:00.000Z'
   },
@@ -43,6 +51,12 @@ export const DEFAULT_EVENTS: CompanyEvent[] = [
     attendeesCount: 18,
     tags: ['ISO 9001', 'Audit', 'Quality Assurance', 'Compliance'],
     isImportant: true,
+    tasks: [
+      { id: 'et-7', policyTaskId: 'ptask-1', title: 'Verify audit documentation, register printouts & evidence binders', isCompleted: true, completedBy: 'Sofia Khelil' },
+      { id: 'et-8', policyTaskId: 'ptask-3', title: 'Confirm team attendees, corporate attire standards & badges', isCompleted: true, completedBy: 'Sofia Khelil' },
+      { id: 'et-9', policyTaskId: 'ptask-5', title: 'Verify boardroom logistics, projector & CAPA presentation slides', isCompleted: true, completedBy: 'Sofia Khelil' },
+      { id: 'et-10', policyTaskId: 'ptask-6', title: 'Schedule internal closing meeting & auditor debrief', isCompleted: true, completedBy: 'Rayan Aouf' }
+    ],
     createdAt: '2026-09-05T09:00:00.000Z',
     updatedAt: '2026-09-05T09:00:00.000Z'
   },
@@ -60,6 +74,11 @@ export const DEFAULT_EVENTS: CompanyEvent[] = [
     attendeesCount: 14,
     tags: ['Sales', 'Strategy', 'Pipeline', 'Quarterly'],
     isImportant: false,
+    tasks: [
+      { id: 'et-11', policyTaskId: 'ptask-2', title: 'Prepare pipeline metrics report and closed-won analytics', isCompleted: false },
+      { id: 'et-12', policyTaskId: 'ptask-3', title: 'Confirm commercial team attendance & agenda review', isCompleted: true, completedBy: 'Amina Benali' },
+      { id: 'et-13', policyTaskId: 'ptask-6', title: 'Schedule Q4 target allocation assignments debrief', isCompleted: false }
+    ],
     createdAt: '2026-09-10T10:00:00.000Z',
     updatedAt: '2026-09-10T10:00:00.000Z'
   },
@@ -173,6 +192,7 @@ class EventStorageService {
                 attendeesCount: data.attendeesCount || 0,
                 tags: Array.isArray(data.tags) ? data.tags : [],
                 isImportant: Boolean(data.isImportant),
+                tasks: Array.isArray(data.tasks) ? data.tasks : [],
                 createdAt: data.createdAt || new Date().toISOString(),
                 updatedAt: data.updatedAt || new Date().toISOString()
               });
@@ -261,6 +281,50 @@ class EventStorageService {
     }
 
     return updated;
+  }
+
+  public async toggleTaskCompletion(eventId: string, taskId: string, completedBy: string = 'Current User'): Promise<CompanyEvent> {
+    const event = this.events.find((e) => e.id === eventId);
+    if (!event) throw new Error(`Event ${eventId} not found.`);
+
+    const currentTasks = event.tasks || [];
+    const updatedTasks = currentTasks.map(t => {
+      if (t.id === taskId) {
+        const nextCompleted = !t.isCompleted;
+        return {
+          ...t,
+          isCompleted: nextCompleted,
+          completedAt: nextCompleted ? new Date().toISOString() : undefined,
+          completedBy: nextCompleted ? completedBy : undefined
+        };
+      }
+      return t;
+    });
+
+    return this.updateEvent(eventId, { tasks: updatedTasks });
+  }
+
+  public async syncTasksFromEventPolicy(eventId: string, policyTasks: { id: string; title: string; description?: string }[]): Promise<CompanyEvent> {
+    const event = this.events.find((e) => e.id === eventId);
+    if (!event) throw new Error(`Event ${eventId} not found.`);
+
+    const existingTasks = event.tasks || [];
+    const existingPolicyTaskIds = new Set(existingTasks.map(t => t.policyTaskId).filter(Boolean));
+
+    const newMergedTasks = [...existingTasks];
+    policyTasks.forEach(pt => {
+      if (!existingPolicyTaskIds.has(pt.id)) {
+        newMergedTasks.push({
+          id: `et-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          policyTaskId: pt.id,
+          title: pt.title,
+          description: pt.description,
+          isCompleted: false
+        });
+      }
+    });
+
+    return this.updateEvent(eventId, { tasks: newMergedTasks });
   }
 
   public async deleteEvent(id: string): Promise<boolean> {

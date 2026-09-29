@@ -1987,6 +1987,8 @@ export function AdminPage() {
         {activeTab === 'events' && canAccess('events') && (
           <EventsView
             events={events}
+            policies={policies}
+            currentUser={currentUser}
             onRefresh={loadEvents}
             showToast={showToast}
           />

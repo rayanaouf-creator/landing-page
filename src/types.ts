@@ -290,6 +290,23 @@ export interface AppUser {
 }
 
 // ── COMPANY POLICIES ────────────────────────────────────────────────
+export type PolicyType = 
+  | 'Event policy' 
+  | 'Cleaning Policy' 
+  | 'Recrutment Policy' 
+  | 'Dayly policy' 
+  | 'Weekly Policy' 
+  | 'other';
+
+export const POLICY_TYPES: { id: PolicyType; label: string; description: string; isSingleton: boolean }[] = [
+  { id: 'Event policy', label: 'Event policy', description: 'Rules for corporate events, expos, webinars & summit coordination', isSingleton: true },
+  { id: 'Cleaning Policy', label: 'Cleaning Policy', description: 'Hygiene, workstation sanitization & workplace cleanliness standards', isSingleton: true },
+  { id: 'Recrutment Policy', label: 'Recrutment Policy', description: 'Talent acquisition, candidate vetting, interviews & onboarding protocol', isSingleton: true },
+  { id: 'Dayly policy', label: 'Dayly policy', description: 'Daily attendance, morning standup reporting & end-of-day checklist', isSingleton: true },
+  { id: 'Weekly Policy', label: 'Weekly Policy', description: 'Weekly sprint planning, retrospectives & milestone delivery reviews', isSingleton: true },
+  { id: 'other', label: 'other', description: 'General operational procedures, ISO rules & custom organizational policies', isSingleton: false }
+];
+
 export type PolicyCategory = 
   | 'Quality & ISO 9001' 
   | 'Security & Privacy' 
@@ -299,10 +316,18 @@ export type PolicyCategory =
 
 export type PolicyStatus = 'active' | 'under_review' | 'archived';
 
+export interface PolicyTask {
+  id: string;
+  title: string;
+  description?: string;
+  isMandatory?: boolean;
+}
+
 export interface CompanyPolicy {
   id: string;
   title: string;
-  category: PolicyCategory;
+  type: PolicyType;
+  category?: PolicyCategory | string;
   version: string;
   status: PolicyStatus;
   effectiveDate: string;
@@ -312,6 +337,7 @@ export interface CompanyPolicy {
   content: string;
   mandatoryFor: string[];
   tags: string[];
+  tasks?: PolicyTask[];
   documentUrl?: string;
   createdAt: string;
   updatedAt: string;
@@ -320,6 +346,16 @@ export interface CompanyPolicy {
 // ── CORPORATE EVENTS ────────────────────────────────────────────────
 export type EventType = 'meeting' | 'launch' | 'audit' | 'training' | 'conference' | 'webinar';
 export type EventStatus = 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+
+export interface EventPreparationTask {
+  id: string;
+  policyTaskId?: string;
+  title: string;
+  description?: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  completedBy?: string;
+}
 
 export interface CompanyEvent {
   id: string;
@@ -335,6 +371,7 @@ export interface CompanyEvent {
   attendeesCount?: number;
   tags?: string[];
   isImportant?: boolean;
+  tasks?: EventPreparationTask[];
   createdAt: string;
   updatedAt: string;
 }
