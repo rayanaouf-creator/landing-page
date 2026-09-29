@@ -30,9 +30,12 @@ import {
   ChevronDown,
   Info,
   Clock,
-  Briefcase
+  Briefcase,
+  SlidersHorizontal,
+  Layers,
+  LayoutGrid
 } from 'lucide-react';
-import { AppUser, UserRole, UserStatus } from '../../types';
+import { AppUser, UserRole, UserStatus, CrmResource, ALL_CRM_RESOURCES } from '../../types';
 import { userStorage } from '../../services/userStorage';
 
 interface UsersViewProps {
@@ -40,6 +43,25 @@ interface UsersViewProps {
   onRefresh: () => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
+
+// Helper for default resources per role
+export const getDefaultResourcesForRole = (role: UserRole): CrmResource[] => {
+  switch (role) {
+    case 'admin':
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'];
+    case 'sales_manager':
+      return ['lead', 'opportunity', 'customer'];
+    case 'sales_rep':
+      return ['lead', 'opportunity'];
+    case 'support_agent':
+      return ['customer', 'claim'];
+    case 'project_manager':
+      return ['customer', 'project', 'work'];
+    case 'viewer':
+    default:
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work'];
+  }
+};
 
 // Role configuration definitions with labels, colors, and permissions summary
 export const ROLE_CONFIG: Record<UserRole, {
@@ -150,6 +172,10 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
   const [showCredentialsPassword, setShowCredentialsPassword] = useState(false);
   const [copiedCredential, setCopiedCredential] = useState<string | null>(null);
 
+  // Dedicated Resource Assignment Modal State
+  const [assigningResourcesUser, setAssigningResourcesUser] = useState<AppUser | null>(null);
+  const [selectedResources, setSelectedResources] = useState<CrmResource[]>([]);
+
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -158,6 +184,7 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
     email: '',
     role: 'sales_rep' as UserRole,
     status: 'active' as UserStatus,
+    assignedResources: ['lead', 'opportunity'] as CrmResource[],
     department: '',
     title: '',
     phone: '',
@@ -216,6 +243,7 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
       email: '',
       role: 'sales_rep',
       status: 'active',
+      assignedResources: ['lead', 'opportunity'],
       department: 'Commercial & Sales',
       title: 'Sales Representative',
       phone: '',
@@ -235,6 +263,9 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
       email: user.email,
       role: user.role,
       status: user.status,
+      assignedResources: user.assignedResources && user.assignedResources.length > 0
+        ? [...user.assignedResources]
+        : getDefaultResourcesForRole(user.role),
       department: user.department || '',
       title: user.title || '',
       phone: user.phone || '',
@@ -242,6 +273,26 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
     });
     setShowPasswordInForm(false);
     setIsAddModalOpen(true);
+  };
+
+  const handleOpenResourcesModal = (user: AppUser) => {
+    setAssigningResourcesUser(user);
+    const existing = user.assignedResources && user.assignedResources.length > 0
+      ? user.assignedResources
+      : getDefaultResourcesForRole(user.role);
+    setSelectedResources([...existing]);
+  };
+
+  const handleSaveResources = async () => {
+    if (!assigningResourcesUser) return;
+    try {
+      await userStorage.updateUserResources(assigningResourcesUser.id, selectedResources);
+      showToast(`Assigned ${selectedResources.length} sidebar resources to ${assigningResourcesUser.name}!`, 'success');
+      setAssigningResourcesUser(null);
+      onRefresh();
+    } catch {
+      showToast('Failed to update sidebar resources.', 'error');
+    }
   };
 
   const handleOpenCredentialsModal = (user: AppUser) => {
@@ -296,6 +347,7 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
           email: formData.email.trim(),
           role: formData.role,
           status: formData.status,
+          assignedResources: formData.assignedResources,
           department: formData.department.trim(),
           title: formData.title.trim(),
           phone: formData.phone.trim(),
@@ -310,6 +362,7 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
           email: formData.email.trim(),
           role: formData.role,
           status: formData.status,
+          assignedResources: formData.assignedResources,
           department: formData.department.trim(),
           title: formData.title.trim(),
           phone: formData.phone.trim(),
@@ -604,6 +657,7 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
               <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="py-3.5 pl-6 pr-3">User & Contact</th>
                 <th className="px-3 py-3.5">Assigned Role (Click to Change)</th>
+                <th className="px-3 py-3.5">Assigned Resources</th>
                 <th className="px-3 py-3.5">Department & Title</th>
                 <th className="px-3 py-3.5">Status</th>
                 <th className="px-3 py-3.5">Added Date</th>
@@ -613,7 +667,7 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
             <tbody className="divide-y divide-slate-100 text-xs">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center">
+                  <td colSpan={7} className="py-12 text-center">
                     <Users className="mx-auto h-10 w-10 text-slate-300 mb-2" />
                     <p className="text-sm font-bold text-slate-700">No users found</p>
                     <p className="text-xs text-slate-400 mt-1">Try changing your search terms or filters.</p>
@@ -727,6 +781,40 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                         </div>
                       </td>
 
+                      {/* Assigned Sidebar Resources */}
+                      <td className="px-3 py-4">
+                        <div className="space-y-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResourcesModal(user)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 text-[11px] font-bold border border-teal-200 transition-colors group/res"
+                            title="Click to assign sidebar resources"
+                          >
+                            <SlidersHorizontal className="h-3.5 w-3.5 text-teal-600 group-hover/res:rotate-90 transition-transform" />
+                            <span>
+                              {user.assignedResources ? user.assignedResources.length : 7} / {ALL_CRM_RESOURCES.length} Visible
+                            </span>
+                            <span className="text-[10px] text-teal-600 underline ml-0.5">Edit</span>
+                          </button>
+                          <div className="flex items-center gap-1 flex-wrap max-w-xs">
+                            {ALL_CRM_RESOURCES.map((r) => {
+                              const isPermitted = user.assignedResources
+                                ? user.assignedResources.includes(r.id)
+                                : true;
+                              if (!isPermitted) return null;
+                              return (
+                                <span
+                                  key={r.id}
+                                  className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200"
+                                >
+                                  {r.shortLabel}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </td>
+
                       {/* Department & Title */}
                       <td className="px-3 py-4">
                         <p className="font-semibold text-slate-800">{user.title || 'Team Member'}</p>
@@ -771,6 +859,13 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                       {/* Actions */}
                       <td className="py-4 pl-3 pr-6 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleOpenResourcesModal(user)}
+                            className="p-1.5 text-teal-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-colors"
+                            title="Assign Sidebar Resources"
+                          >
+                            <SlidersHorizontal className="h-4 w-4" />
+                          </button>
                           <button
                             onClick={() => handleOpenCredentialsModal(user)}
                             className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
@@ -825,15 +920,15 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
       {/* ── ADD / EDIT USER MODAL ── */}
       <AnimatePresence>
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xl rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-8"
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-4 sm:my-8 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] flex flex-col"
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white">
+              <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white shrink-0 sticky top-0 z-20">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-[#44ACAB]/20 text-[#44ACAB]">
                     <UserPlus className="h-5 w-5" />
@@ -848,15 +943,18 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+                  title="Close (Esc)"
                 >
                   <UserX className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Form */}
-              <form onSubmit={handleSubmitUser} className="p-6 space-y-4">
+              <form onSubmit={handleSubmitUser} className="flex-1 overflow-y-auto flex flex-col min-h-0 custom-dark-scrollbar">
+                <div className="p-6 space-y-4 flex-1">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Full Name */}
                   <div>
@@ -1027,6 +1125,112 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                   </div>
                 </div>
 
+                {/* ── ASSIGNED SIDEBAR RESOURCES (RESOURCE ACCESS PERMISSIONS) ── */}
+                <div className="rounded-2xl border border-teal-200/90 bg-teal-50/40 p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-lg bg-teal-100 text-teal-800">
+                        <SlidersHorizontal className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-teal-950 uppercase tracking-wider">
+                          Assigned Sidebar Resources
+                        </span>
+                        <p className="text-[10px] text-teal-700">
+                          Controls which menu items appear in this user's left sidebar
+                        </p>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center text-[10px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-full">
+                      {formData.assignedResources.length} of {ALL_CRM_RESOURCES.length} Visible
+                    </span>
+                  </div>
+
+                  {/* Preset Pills */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">
+                      Quick Presets:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignedResources: ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'] })}
+                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-teal-200 text-teal-800 hover:bg-teal-50 transition-colors"
+                    >
+                      All Resources (7)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignedResources: ['lead', 'opportunity', 'customer'] })}
+                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      Sales Pipeline (3)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignedResources: ['customer', 'claim'] })}
+                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      Support & Care (2)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignedResources: ['customer', 'project', 'work'] })}
+                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      Projects Ops (3)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignedResources: [] })}
+                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  {/* Resource Checkboxes Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    {ALL_CRM_RESOURCES.map((res) => {
+                      const isAssigned = formData.assignedResources.includes(res.id);
+                      return (
+                        <div
+                          key={res.id}
+                          onClick={() => {
+                            const updated = isAssigned
+                              ? formData.assignedResources.filter((r) => r !== res.id)
+                              : [...formData.assignedResources, res.id];
+                            setFormData({ ...formData, assignedResources: updated });
+                          }}
+                          className={`cursor-pointer rounded-xl p-2.5 border transition-all flex items-start gap-2.5 ${
+                            isAssigned
+                              ? 'border-[#44ACAB] bg-white ring-1 ring-[#44ACAB] shadow-xs'
+                              : 'border-slate-200/80 bg-white/60 opacity-60 hover:opacity-100 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className={`mt-0.5 h-4 w-4 rounded flex items-center justify-center shrink-0 transition-colors ${
+                            isAssigned ? 'bg-[#1b6b6a] text-white' : 'border border-slate-300'
+                          }`}>
+                            {isAssigned && <Check className="h-3 w-3" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className={`text-xs font-bold ${isAssigned ? 'text-slate-900' : 'text-slate-500'}`}>
+                                {res.label}
+                              </span>
+                              <span className="text-[9px] font-extrabold uppercase px-1 py-0.2 rounded bg-slate-100 text-slate-600">
+                                {res.category}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
+                              {res.description}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Department */}
                   <div>
@@ -1107,18 +1311,20 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                   />
                 </div>
 
-                {/* Actions */}
-                <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                </div>
+
+                {/* Fixed Bottom Actions Footer */}
+                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50/95 backdrop-blur-xs flex items-center justify-end gap-2.5 shrink-0 sticky bottom-0 z-20">
                   <button
                     type="button"
                     onClick={() => setIsAddModalOpen(false)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="rounded-xl bg-[#44ACAB] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[#389695] transition-all transform hover:scale-[1.01]"
+                    className="rounded-xl bg-[#1b6b6a] hover:bg-[#155453] px-5 py-2 text-xs font-bold text-white shadow-md transition-all transform hover:scale-[1.01]"
                   >
                     {editingUser ? 'Save Changes' : 'Create User'}
                   </button>
@@ -1355,6 +1561,165 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── DEDICATED ASSIGN RESOURCES MODAL ── */}
+      <AnimatePresence>
+        {assigningResourcesUser && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-4 sm:my-8 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] flex flex-col"
+            >
+              <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white shrink-0 sticky top-0 z-20">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-teal-500/20 text-teal-300">
+                    <SlidersHorizontal className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm">Assign Sidebar Resources</h3>
+                    <p className="text-xs text-slate-300">
+                      {assigningResourcesUser.name} (@{assigningResourcesUser.username || assigningResourcesUser.email.split('@')[0]})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAssigningResourcesUser(null)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+                  title="Close (Esc)"
+                >
+                  <UserX className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4 flex-1 overflow-y-auto custom-dark-scrollbar">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-600">
+                    Select which CRM modules appear in <strong>{assigningResourcesUser.name}'s</strong> sidebar:
+                  </p>
+                  <span className="text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
+                    {selectedResources.length} of {ALL_CRM_RESOURCES.length} Selected
+                  </span>
+                </div>
+
+                {/* Preset shortcuts */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResources(ALL_CRM_RESOURCES.map((r) => r.id))}
+                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100 transition-colors"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResources(['lead', 'opportunity', 'customer'])}
+                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                  >
+                    Sales (3)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResources(['customer', 'claim'])}
+                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                  >
+                    Support (2)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResources(['customer', 'project', 'work'])}
+                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                  >
+                    Projects (3)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResources(getDefaultResourcesForRole(assigningResourcesUser.role))}
+                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors"
+                  >
+                    Role Default ({ROLE_CONFIG[assigningResourcesUser.role].label})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResources([])}
+                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                {/* Resource List */}
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {ALL_CRM_RESOURCES.map((res) => {
+                    const isSelected = selectedResources.includes(res.id);
+                    return (
+                      <div
+                        key={res.id}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedResources(selectedResources.filter((r) => r !== res.id));
+                          } else {
+                            setSelectedResources([...selectedResources, res.id]);
+                          }
+                        }}
+                        className={`cursor-pointer flex items-center justify-between p-3 rounded-xl border transition-all ${
+                          isSelected
+                            ? 'border-[#44ACAB] bg-[#e6f4f4] ring-1 ring-[#44ACAB]'
+                            : 'border-slate-200 bg-white hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`h-5 w-5 rounded flex items-center justify-center transition-colors ${
+                            isSelected ? 'bg-[#1b6b6a] text-white' : 'border border-slate-300'
+                          }`}>
+                            {isSelected && <Check className="h-3.5 w-3.5" />}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-bold ${isSelected ? 'text-[#1b6b6a]' : 'text-slate-800'}`}>
+                                {res.label}
+                              </span>
+                              <span className="text-[10px] font-semibold text-slate-500 bg-white px-1.5 py-0.2 rounded border border-slate-200">
+                                {res.category}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5">{res.description}</p>
+                          </div>
+                        </div>
+                        <span className={`text-[11px] font-bold font-mono px-2 py-0.5 rounded ${
+                          isSelected ? 'bg-[#1b6b6a] text-white' : 'text-slate-400'
+                        }`}>
+                          {isSelected ? 'Visible' : 'Hidden'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="p-4 px-6 border-t border-slate-200 bg-slate-50/95 backdrop-blur-xs flex items-center justify-end gap-2.5 shrink-0 sticky bottom-0 z-20">
+                  <button
+                    type="button"
+                    onClick={() => setAssigningResourcesUser(null)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveResources}
+                    className="rounded-xl bg-[#1b6b6a] hover:bg-[#155453] px-5 py-2 text-xs font-bold text-white shadow-md transition-all"
+                  >
+                    Apply Resources ({selectedResources.length})
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

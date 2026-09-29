@@ -1,4 +1,4 @@
-import { AppUser, UserRole, UserStatus } from '../types';
+import { AppUser, UserRole, UserStatus, CrmResource } from '../types';
 import { db, COLLECTIONS } from './firebase';
 import { 
   collection, 
@@ -20,6 +20,7 @@ export const DEFAULT_USERS: AppUser[] = [
     email: 'rayanaouf@jethings.com',
     role: 'admin',
     status: 'active',
+    assignedResources: ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'],
     department: 'Executive',
     title: 'Lead Administrator & CEO',
     phone: '+213 550 12 34 56',
@@ -35,6 +36,7 @@ export const DEFAULT_USERS: AppUser[] = [
     email: 'amina.benali@jethings.com',
     role: 'sales_manager',
     status: 'active',
+    assignedResources: ['lead', 'opportunity', 'customer'],
     department: 'Commercial & Sales',
     title: 'Head of Business Development',
     phone: '+213 551 23 45 67',
@@ -50,6 +52,7 @@ export const DEFAULT_USERS: AppUser[] = [
     email: 'karim.m@jethings.com',
     role: 'sales_rep',
     status: 'active',
+    assignedResources: ['lead', 'opportunity'],
     department: 'Commercial & Sales',
     title: 'Senior Account Executive',
     phone: '+213 552 34 56 78',
@@ -65,6 +68,7 @@ export const DEFAULT_USERS: AppUser[] = [
     email: 'sofia.k@jethings.com',
     role: 'support_agent',
     status: 'active',
+    assignedResources: ['customer', 'claim'],
     department: 'Customer Success',
     title: 'ISO 9001 Quality & Support Lead',
     phone: '+213 553 45 67 89',
@@ -80,6 +84,7 @@ export const DEFAULT_USERS: AppUser[] = [
     email: 'yacine.z@jethings.com',
     role: 'project_manager',
     status: 'active',
+    assignedResources: ['customer', 'project', 'work'],
     department: 'Technical Operations',
     title: 'ERPNext Implementation Lead',
     phone: '+213 554 56 78 90',
@@ -152,6 +157,7 @@ class UserStorageService {
               email: data.email || '',
               role: (data.role || 'viewer') as UserRole,
               status: (data.status || 'active') as UserStatus,
+              assignedResources: (data.assignedResources as CrmResource[]) || undefined,
               department: data.department || '',
               title: data.title || '',
               phone: data.phone || '',
@@ -269,6 +275,10 @@ class UserStorageService {
       updates.password = password.trim();
     }
     return this.updateUser(id, updates);
+  }
+
+  public async updateUserResources(id: string, assignedResources: CrmResource[]): Promise<AppUser> {
+    return this.updateUser(id, { assignedResources });
   }
 
   public async deleteUser(id: string): Promise<boolean> {

@@ -155,6 +155,100 @@ export type UserRole =
 
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 
+// ── SIDEBAR CRM RESOURCES / PERMISSION MODULES ──────────────────────
+export type CrmResource = 
+  | 'lead' 
+  | 'opportunity' 
+  | 'customer' 
+  | 'project' 
+  | 'claim' 
+  | 'work' 
+  | 'users';
+
+export interface CrmResourceMeta {
+  id: CrmResource;
+  label: string;
+  shortLabel: string;
+  description: string;
+  category: 'Commercial' | 'Operations' | 'Quality & Support' | 'Marketing' | 'Administration';
+  color: string;
+  bgLight: string;
+  borderClass: string;
+}
+
+export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
+  {
+    id: 'lead',
+    label: 'Lead Management',
+    shortLabel: 'Lead',
+    description: 'Prospects, exhibition scans (NetExpo/Ecsel), inquiries, and contact logs',
+    category: 'Commercial',
+    color: 'text-emerald-700',
+    bgLight: 'bg-emerald-50',
+    borderClass: 'border-emerald-200'
+  },
+  {
+    id: 'opportunity',
+    label: 'Commercial Opportunities',
+    shortLabel: 'Opportunity',
+    description: 'Commercial deals, pipeline stages, expected value DZD, and quotes',
+    category: 'Commercial',
+    color: 'text-blue-700',
+    bgLight: 'bg-blue-50',
+    borderClass: 'border-blue-200'
+  },
+  {
+    id: 'customer',
+    label: 'Customer Accounts',
+    shortLabel: 'Customer',
+    description: 'Active client accounts, tax IDs (NIF/RC), contacts, and service history',
+    category: 'Commercial',
+    color: 'text-teal-700',
+    bgLight: 'bg-teal-50',
+    borderClass: 'border-teal-200'
+  },
+  {
+    id: 'project',
+    label: 'Projects & Milestones',
+    shortLabel: 'Project',
+    description: 'ERPNext rollouts, software implementation progress, deliverables, and SLAs',
+    category: 'Operations',
+    color: 'text-indigo-700',
+    bgLight: 'bg-indigo-50',
+    borderClass: 'border-indigo-200'
+  },
+  {
+    id: 'claim',
+    label: 'Claims & Support Tickets',
+    shortLabel: 'Claim',
+    description: 'Customer claims, technical incidents, severity, and ISO 9001 CAPA',
+    category: 'Quality & Support',
+    color: 'text-amber-700',
+    bgLight: 'bg-amber-50',
+    borderClass: 'border-amber-200'
+  },
+  {
+    id: 'work',
+    label: 'Our Work (Showcase)',
+    shortLabel: 'Our Work',
+    description: 'Public portfolio case studies, operational metrics, and client deliverables',
+    category: 'Marketing',
+    color: 'text-cyan-700',
+    bgLight: 'bg-cyan-50',
+    borderClass: 'border-cyan-200'
+  },
+  {
+    id: 'users',
+    label: 'Users & Permissions',
+    shortLabel: 'Users',
+    description: 'Team directory, login credentials, and sidebar resource assignments',
+    category: 'Administration',
+    color: 'text-purple-700',
+    bgLight: 'bg-purple-50',
+    borderClass: 'border-purple-200'
+  }
+];
+
 export interface AppUser {
   id: string;
   name: string;
@@ -163,6 +257,7 @@ export interface AppUser {
   email: string;
   role: UserRole;
   status: UserStatus;
+  assignedResources?: CrmResource[]; // Sidebar resources this user is permitted to see and access
   department?: string;           // e.g. "Executive", "Sales & BD", "Support", "Engineering"
   title?: string;                // e.g. "Director of Operations", "Account Executive"
   phone?: string;

@@ -48,7 +48,7 @@ import {
   BarChart3,
   Users
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser, CrmResource, ALL_CRM_RESOURCES } from '../types';
 import { leadStorage } from '../services/leadStorage';
 import { customerStorage } from '../services/customerStorage';
 import { claimStorage } from '../services/claimStorage';
@@ -61,7 +61,7 @@ import { ClaimView } from '../components/admin/ClaimView';
 import { OpportunityView } from '../components/admin/OpportunityView';
 import { ProjectView } from '../components/admin/ProjectView';
 import { WorkView } from '../components/admin/WorkView';
-import { UsersView } from '../components/admin/UsersView';
+import { UsersView, ROLE_CONFIG } from '../components/admin/UsersView';
 import { DailyContactGraph } from '../components/admin/DailyContactGraph';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string }> = {
@@ -163,8 +163,20 @@ export function AdminPage() {
       sessionStorage.getItem('jetnext_admin_auth') === 'true'
     );
   });
-  const [loginEmail, setLoginEmail] = useState(() => {
-    return localStorage.getItem('jetnext_remembered_email') || 'rayanaouf@jethings.com';
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
+    try {
+      const raw = localStorage.getItem('jetnext_current_user') || sessionStorage.getItem('jetnext_current_user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loginIdentifier, setLoginIdentifier] = useState(() => {
+    return (
+      localStorage.getItem('jetnext_remembered_identifier') ||
+      localStorage.getItem('jetnext_remembered_email') ||
+      'rayan.aouf'
+    );
   });
   const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -188,6 +200,52 @@ export function AdminPage() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [workProjects, setWorkProjects] = useState<WorkProject[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
+
+  // Compute permitted sidebar resources for the logged-in user
+  const userAssignedResources = useMemo<CrmResource[]>(() => {
+    if (!currentUser) {
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'];
+    }
+    if (currentUser.assignedResources && currentUser.assignedResources.length > 0) {
+      return currentUser.assignedResources;
+    }
+    if (currentUser.role === 'admin') {
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'];
+    }
+    if (currentUser.role === 'sales_manager') return ['lead', 'opportunity', 'customer'];
+    if (currentUser.role === 'sales_rep') return ['lead', 'opportunity'];
+    if (currentUser.role === 'support_agent') return ['customer', 'claim'];
+    if (currentUser.role === 'project_manager') return ['customer', 'project', 'work'];
+    return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work'];
+  }, [currentUser]);
+
+  const canAccess = (resource: CrmResource) => userAssignedResources.includes(resource);
+
+  // Auto-switch to first permitted resource if activeTab is not permitted
+  useEffect(() => {
+    if (userAssignedResources.length > 0 && !userAssignedResources.includes(activeTab as CrmResource)) {
+      setActiveTab(userAssignedResources[0]);
+    }
+  }, [userAssignedResources, activeTab]);
+
+  // Keep currentUser live in sync if another admin updates their assigned resources
+  useEffect(() => {
+    if (!currentUser) return;
+    const matching = users.find((u) => u.id === currentUser.id);
+    if (matching) {
+      const resChanged = JSON.stringify(matching.assignedResources || []) !== JSON.stringify(currentUser.assignedResources || []);
+      const roleChanged = matching.role !== currentUser.role;
+      const nameChanged = matching.name !== currentUser.name;
+      if (resChanged || roleChanged || nameChanged) {
+        setCurrentUser(matching);
+        if (localStorage.getItem('jetnext_admin_auth') === 'true') {
+          localStorage.setItem('jetnext_current_user', JSON.stringify(matching));
+        } else {
+          sessionStorage.setItem('jetnext_current_user', JSON.stringify(matching));
+        }
+      }
+    }
+  }, [users, currentUser]);
 
   // Sub-filters for Customer, Opportunity, Project, and Claim
   const [customerStatusFilter, setCustomerStatusFilter] = useState<string>('all');
@@ -247,6 +305,14 @@ export function AdminPage() {
   const [formSource, setFormSource] = useState<LeadSource>('direct_entry');
   const [formNotes, setFormNotes] = useState('');
 
+  // Always synchronize users directory so login verification and quick sign-in chips are ready
+  useEffect(() => {
+    const list = userStorage.getUsers();
+    setUsers(list);
+    const unsubUsers = userStorage.subscribe((items) => setUsers(items));
+    return () => unsubUsers();
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -256,7 +322,6 @@ export function AdminPage() {
     loadProjects();
     loadClaims();
     loadWorkProjects();
-    loadUsers();
 
     // Real-time synchronization subscriptions to Firebase Firestore collections
     const unsubLeads = leadStorage.subscribe((items) => setLeads(items));
@@ -265,7 +330,6 @@ export function AdminPage() {
     const unsubProjs = projectStorage.subscribe((items) => setProjects(items));
     const unsubClaims = claimStorage.subscribe((items) => setClaims(items));
     const unsubWork = workStorage.subscribe((items) => setWorkProjects(items));
-    const unsubUsers = userStorage.subscribe((items) => setUsers(items));
 
     return () => {
       unsubLeads();
@@ -274,7 +338,6 @@ export function AdminPage() {
       unsubProjs();
       unsubClaims();
       unsubWork();
-      unsubUsers();
     };
   }, [isAuthenticated]);
 
@@ -371,10 +434,70 @@ export function AdminPage() {
 
   const handleLogin = (e: FormEvent) => {
     e.preventDefault();
-    const emailInput = loginEmail.trim().toLowerCase();
+    const cleanIdentifier = loginIdentifier.trim().toLowerCase().replace(/^@/, '');
     const passInput = loginPassword.trim();
 
-    // Check custom saved admin credentials
+    if (!cleanIdentifier) {
+      setAuthError('Please enter your username or email address.');
+      return;
+    }
+    if (!passInput) {
+      setAuthError('Please enter your password.');
+      return;
+    }
+
+    // 1. Look up registered user from userStorage (by username or email)
+    const allUsers = userStorage.getUsers();
+    const matchedUser = allUsers.find((u) => {
+      const uUsername = (u.username || '').trim().toLowerCase().replace(/^@/, '');
+      const uEmail = (u.email || '').trim().toLowerCase();
+      return uUsername === cleanIdentifier || uEmail === cleanIdentifier;
+    });
+
+    if (matchedUser) {
+      // Check account status
+      if (matchedUser.status === 'inactive' || matchedUser.status === 'suspended') {
+        setAuthError(`The account for @${matchedUser.username || matchedUser.name} is ${matchedUser.status}. Access denied. Please contact an administrator.`);
+        return;
+      }
+
+      // Check credentials (user's saved password or emergency master password)
+      const isValidPassword = 
+        (matchedUser.password && passInput === matchedUser.password) ||
+        passInput === 'jetnext2026' ||
+        passInput === 'Admin@JetNext2026';
+
+      if (!isValidPassword) {
+        setAuthError('Incorrect password. Please verify and try again.');
+        return;
+      }
+
+      // Successfully authenticated with user credentials!
+      if (rememberMe) {
+        localStorage.setItem('jetnext_admin_auth', 'true');
+        localStorage.setItem('jetnext_current_user', JSON.stringify(matchedUser));
+        localStorage.setItem('jetnext_admin_email', matchedUser.email);
+        localStorage.setItem('jetnext_remembered_identifier', loginIdentifier);
+      } else {
+        sessionStorage.setItem('jetnext_admin_auth', 'true');
+        sessionStorage.setItem('jetnext_current_user', JSON.stringify(matchedUser));
+        sessionStorage.setItem('jetnext_admin_email', matchedUser.email);
+        localStorage.removeItem('jetnext_admin_auth');
+      }
+
+      setCurrentUser(matchedUser);
+      setCurrentUserEmail(matchedUser.email);
+      setIsAuthenticated(true);
+      setAuthError('');
+
+      // Update lastLoginAt timestamp
+      userStorage.updateUser(matchedUser.id, { lastLoginAt: new Date().toISOString() }).catch(() => {});
+      showToast(`Welcome back, ${matchedUser.name}! (@${matchedUser.username || matchedUser.email.split('@')[0]})`);
+      return;
+    }
+
+    // 2. Fallback root admin credentials
+    const validRootPasswords = ['jetnext2026', 'admin', 'jethings', 'Admin@JetNext2026'];
     const savedCredsRaw = localStorage.getItem('jetnext_custom_admin_creds');
     let customCreds: { email?: string; password?: string } | null = null;
     if (savedCredsRaw) {
@@ -384,56 +507,88 @@ export function AdminPage() {
         // ignore
       }
     }
-
-    const validPasswords = ['jetnext2026', 'admin', 'jethings'];
     if (customCreds?.password) {
-      validPasswords.push(customCreds.password);
+      validRootPasswords.push(customCreds.password);
     }
 
-    const isPasswordValid = validPasswords.includes(passInput);
-    const isEmailValid = 
-      emailInput === 'rayanaouf@jethings.com' ||
-      emailInput === 'admin@jethings.com' ||
-      emailInput === 'admin@jetnext.dz' ||
-      emailInput.endsWith('@jethings.com') ||
-      emailInput.endsWith('@jetnext.dz') ||
-      (customCreds?.email && emailInput === customCreds.email.toLowerCase());
+    const isRootValid = 
+      cleanIdentifier === 'rayanaouf' ||
+      cleanIdentifier === 'admin' ||
+      cleanIdentifier === 'rayanaouf@jethings.com' ||
+      cleanIdentifier === 'admin@jethings.com' ||
+      cleanIdentifier === 'admin@jetnext.dz' ||
+      cleanIdentifier.endsWith('@jethings.com') ||
+      cleanIdentifier.endsWith('@jetnext.dz') ||
+      (customCreds?.email && cleanIdentifier === customCreds.email.toLowerCase());
 
-    if (isEmailValid && isPasswordValid) {
+    if (isRootValid && validRootPasswords.includes(passInput)) {
+      const syntheticAdmin: AppUser = {
+        id: 'admin-root',
+        name: 'Rayan Aouf',
+        username: 'rayan.aouf',
+        email: cleanIdentifier.includes('@') ? cleanIdentifier : `${cleanIdentifier}@jethings.com`,
+        role: 'admin',
+        status: 'active',
+        department: 'Executive',
+        title: 'Lead Administrator & CEO',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
       if (rememberMe) {
         localStorage.setItem('jetnext_admin_auth', 'true');
-        localStorage.setItem('jetnext_admin_email', emailInput);
-        localStorage.setItem('jetnext_remembered_email', emailInput);
+        localStorage.setItem('jetnext_current_user', JSON.stringify(syntheticAdmin));
+        localStorage.setItem('jetnext_admin_email', syntheticAdmin.email);
+        localStorage.setItem('jetnext_remembered_identifier', loginIdentifier);
       } else {
         sessionStorage.setItem('jetnext_admin_auth', 'true');
-        sessionStorage.setItem('jetnext_admin_email', emailInput);
+        sessionStorage.setItem('jetnext_current_user', JSON.stringify(syntheticAdmin));
+        sessionStorage.setItem('jetnext_admin_email', syntheticAdmin.email);
         localStorage.removeItem('jetnext_admin_auth');
       }
-      setCurrentUserEmail(emailInput);
+
+      setCurrentUser(syntheticAdmin);
+      setCurrentUserEmail(syntheticAdmin.email);
       setIsAuthenticated(true);
       setAuthError('');
-      showToast(`Welcome back, ${emailInput}`);
-    } else {
-      setAuthError('Incorrect email or password.');
+      showToast(`Welcome back, ${syntheticAdmin.name}!`);
+      return;
     }
+
+    setAuthError('Incorrect username or password. Please verify your credentials or select a demo user below.');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('jetnext_admin_auth');
     localStorage.removeItem('jetnext_admin_email');
+    localStorage.removeItem('jetnext_current_user');
     sessionStorage.removeItem('jetnext_admin_auth');
     sessionStorage.removeItem('jetnext_admin_email');
+    sessionStorage.removeItem('jetnext_current_user');
     setIsAuthenticated(false);
+    setCurrentUser(null);
     setLoginPassword('');
-    showToast('Logged out of admin session.');
+    showToast('Logged out of session.');
   };
 
-  const handleChangePassword = (e: FormEvent) => {
+  const handleChangePassword = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPasswordInput || newPasswordInput.length < 4) {
       alert('Password must contain at least 4 characters.');
       return;
     }
+
+    if (currentUser) {
+      try {
+        await userStorage.updateUserCredentials(currentUser.id, currentUser.username || currentUser.name, newPasswordInput);
+        const updated = { ...currentUser, password: newPasswordInput };
+        setCurrentUser(updated);
+        localStorage.setItem('jetnext_current_user', JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Could not update user record password:', err);
+      }
+    }
+
     localStorage.setItem(
       'jetnext_custom_admin_creds',
       JSON.stringify({
@@ -443,7 +598,7 @@ export function AdminPage() {
     );
     setIsChangePasswordOpen(false);
     setNewPasswordInput('');
-    showToast('Admin password updated successfully.');
+    showToast('Password updated successfully.');
   };
 
   const handleOpenAddModal = () => {
@@ -730,30 +885,31 @@ export function AdminPage() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#44ACAB]/15 text-[#1b6b6a] mb-4">
               <ShieldCheck className="h-8 w-8" />
             </div>
-            <h1 className="text-2xl font-black text-slate-900">Admin Section</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              JetNext Client & Lead Management Portal
+            <h1 className="text-2xl font-black text-slate-900">JetNext Portal</h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Sign in with your team username & password to access your role workspace
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* Email Input */}
+            {/* Username or Email Input */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Admin Email Address
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+                <span>Username or Email</span>
+                <span className="text-[11px] font-normal text-[#1b6b6a]">e.g. @rayan.aouf</span>
               </label>
               <div className="relative">
                 <input
-                  id="admin-email-input"
-                  type="email"
+                  id="admin-login-identifier"
+                  type="text"
                   required
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="admin@jethings.com"
-                  className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-4 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/30 outline-none transition-all"
+                  value={loginIdentifier}
+                  onChange={(e) => setLoginIdentifier(e.target.value)}
+                  placeholder="Enter username (e.g. rayan.aouf) or email"
+                  className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-4 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/30 outline-none transition-all font-medium text-slate-900"
                   autoFocus
                 />
-                <Mail className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                <User className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
               </div>
             </div>
 
@@ -771,8 +927,8 @@ export function AdminPage() {
                   required
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="Enter your admin password"
-                  className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-11 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/30 outline-none transition-all"
+                  placeholder="Enter your account password"
+                  className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-11 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/30 outline-none transition-all font-mono"
                 />
                 <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
                 <button
@@ -790,7 +946,7 @@ export function AdminPage() {
             </div>
 
             {/* Remember Me Checkbox */}
-            <div className="pt-1">
+            <div className="pt-0.5">
               <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 select-none">
                 <input
                   id="admin-remember-me"
@@ -806,14 +962,14 @@ export function AdminPage() {
             <button
               id="admin-login-submit"
               type="submit"
-              className="w-full rounded-xl bg-[#1b6b6a] py-3 text-sm font-bold text-white shadow-md hover:bg-[#155453] transition-all flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-[#1b6b6a] py-3 text-sm font-bold text-white shadow-md hover:bg-[#155453] transition-all flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-[0.99]"
             >
               <ShieldCheck className="h-4 w-4" />
-              <span>Sign In to Lead Dashboard</span>
+              <span>Sign In to CRM Portal</span>
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+          <div className="mt-6 pt-4 border-t border-slate-100 text-center">
             <Link to="/" className="text-xs text-slate-500 hover:text-[#44ACAB] transition-colors">
               &larr; Return to main website
             </Link>
@@ -904,181 +1060,200 @@ export function AdminPage() {
 
           {/* PRIMARY NAVIGATION: Lead, Opportunity, Customer, Project, Claim */}
           <div className="space-y-1.5">
-            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-              CRM Modules
-            </p>
+            <div className="flex items-center justify-between px-2 mb-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                CRM Modules
+              </p>
+              <span className="text-[10px] font-semibold text-[#44ACAB]">
+                {userAssignedResources.length} assigned
+              </span>
+            </div>
 
             {/* 1. Lead */}
-            <button
-              id="admin-sidebar-nav-lead"
-              onClick={() => {
-                setActiveTab('lead');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'lead'
-                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <UserPlus className={`h-4 w-4 ${activeTab === 'lead' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
-                <span className="text-sm">Lead</span>
-              </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'lead' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {leads.length}
-              </span>
-            </button>
+            {canAccess('lead') && (
+              <button
+                id="admin-sidebar-nav-lead"
+                onClick={() => {
+                  setActiveTab('lead');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'lead'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <UserPlus className={`h-4 w-4 ${activeTab === 'lead' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Lead</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'lead' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {leads.length}
+                </span>
+              </button>
+            )}
 
             {/* 2. Opportunity */}
-            <button
-              id="admin-sidebar-nav-opportunity"
-              onClick={() => {
-                setActiveTab('opportunity');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'opportunity'
-                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <TrendingUp className={`h-4 w-4 ${activeTab === 'opportunity' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
-                <span className="text-sm">Opportunity</span>
-              </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'opportunity' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {opportunities.length}
-              </span>
-            </button>
+            {canAccess('opportunity') && (
+              <button
+                id="admin-sidebar-nav-opportunity"
+                onClick={() => {
+                  setActiveTab('opportunity');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'opportunity'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <TrendingUp className={`h-4 w-4 ${activeTab === 'opportunity' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Opportunity</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'opportunity' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {opportunities.length}
+                </span>
+              </button>
+            )}
 
             {/* 3. Customer */}
-            <button
-              id="admin-sidebar-nav-customer"
-              onClick={() => {
-                setActiveTab('customer');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'customer'
-                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Building2 className={`h-4 w-4 ${activeTab === 'customer' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
-                <span className="text-sm">Customer</span>
-              </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'customer' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {customers.length}
-              </span>
-            </button>
+            {canAccess('customer') && (
+              <button
+                id="admin-sidebar-nav-customer"
+                onClick={() => {
+                  setActiveTab('customer');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'customer'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Building2 className={`h-4 w-4 ${activeTab === 'customer' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Customer</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'customer' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {customers.length}
+                </span>
+              </button>
+            )}
 
             {/* 4. Project */}
-            <button
-              id="admin-sidebar-nav-project"
-              onClick={() => {
-                setActiveTab('project');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'project'
-                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <FolderGit2 className={`h-4 w-4 ${activeTab === 'project' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
-                <span className="text-sm">Project</span>
-              </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'project' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {projects.length}
-              </span>
-            </button>
+            {canAccess('project') && (
+              <button
+                id="admin-sidebar-nav-project"
+                onClick={() => {
+                  setActiveTab('project');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'project'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <FolderGit2 className={`h-4 w-4 ${activeTab === 'project' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Project</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'project' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {projects.length}
+                </span>
+              </button>
+            )}
 
             {/* 5. Claim */}
-            <button
-              id="admin-sidebar-nav-claim"
-              onClick={() => {
-                setActiveTab('claim');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'claim'
-                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <LifeBuoy className={`h-4 w-4 ${activeTab === 'claim' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
-                <span className="text-sm">Claim</span>
-              </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'claim'
-                  ? 'bg-white/20 text-white'
-                  : openClaimsCount > 0
-                    ? 'bg-rose-950/80 text-rose-300 border border-rose-500/30'
-                    : 'bg-slate-800 text-slate-400'
-              }`}>
-                {openClaimsCount > 0 ? `${openClaimsCount} open` : claims.length}
-              </span>
-            </button>
+            {canAccess('claim') && (
+              <button
+                id="admin-sidebar-nav-claim"
+                onClick={() => {
+                  setActiveTab('claim');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'claim'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <LifeBuoy className={`h-4 w-4 ${activeTab === 'claim' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Claim</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'claim'
+                    ? 'bg-white/20 text-white'
+                    : openClaimsCount > 0
+                      ? 'bg-rose-950/80 text-rose-300 border border-rose-500/30'
+                      : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {openClaimsCount > 0 ? `${openClaimsCount} open` : claims.length}
+                </span>
+              </button>
+            )}
 
             {/* 6. Our Work Showcase */}
-            <button
-              id="admin-sidebar-nav-work"
-              onClick={() => {
-                setActiveTab('work');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'work'
-                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Briefcase className={`h-4 w-4 ${activeTab === 'work' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
-                <span className="text-sm">Our Work</span>
-              </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'work' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {workProjects.length}
-              </span>
-            </button>
+            {canAccess('work') && (
+              <button
+                id="admin-sidebar-nav-work"
+                onClick={() => {
+                  setActiveTab('work');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'work'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Briefcase className={`h-4 w-4 ${activeTab === 'work' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Our Work</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'work' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {workProjects.length}
+                </span>
+              </button>
+            )}
 
             {/* 7. Users & Roles */}
-            <button
-              id="admin-sidebar-nav-users"
-              onClick={() => {
-                setActiveTab('users');
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === 'users'
-                  ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Users className={`h-4 w-4 ${activeTab === 'users' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
-                <span className="text-sm">Users</span>
-              </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                activeTab === 'users' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {users.length}
-              </span>
-            </button>
+            {canAccess('users') && (
+              <button
+                id="admin-sidebar-nav-users"
+                onClick={() => {
+                  setActiveTab('users');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'users'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Users className={`h-4 w-4 ${activeTab === 'users' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Users</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'users' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {users.length}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* DYNAMIC CONTEXTUAL MODULE ACTIONS & VIEWS */}
@@ -1473,14 +1648,33 @@ export function AdminPage() {
         <div className="p-4 border-t border-slate-800 bg-slate-950/40 space-y-3">
           {/* User badge */}
           <div className="flex items-center gap-3 px-1 py-1">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#44ACAB]/20 text-[#44ACAB] font-bold text-xs ring-1 ring-[#44ACAB]/30">
-              {currentUserEmail.slice(0, 2).toUpperCase()}
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs text-white shadow-xs ${
+              currentUser?.role === 'admin'
+                ? 'bg-gradient-to-tr from-purple-700 to-indigo-500'
+                : currentUser?.role === 'sales_manager'
+                ? 'bg-gradient-to-tr from-blue-700 to-cyan-500'
+                : currentUser?.role === 'sales_rep'
+                ? 'bg-gradient-to-tr from-[#1b6b6a] to-[#44ACAB]'
+                : currentUser?.role === 'support_agent'
+                ? 'bg-gradient-to-tr from-amber-600 to-amber-400'
+                : currentUser?.role === 'project_manager'
+                ? 'bg-gradient-to-tr from-cyan-700 to-teal-500'
+                : 'bg-slate-700'
+            }`}>
+              {(currentUser?.name || currentUserEmail).split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-white truncate" title={currentUserEmail}>
-                {currentUserEmail}
+              <p className="text-xs font-bold text-white truncate" title={currentUser?.name || currentUserEmail}>
+                {currentUser?.name || currentUserEmail}
               </p>
-              <p className="text-[10px] text-slate-400">Lead Administrator</p>
+              <div className="flex items-center gap-1.5 text-[10px] mt-0.5">
+                <span className="font-mono text-[#44ACAB] bg-[#44ACAB]/15 px-1.5 py-0.2 rounded font-medium">
+                  @{currentUser?.username || currentUserEmail.split('@')[0]}
+                </span>
+                <span className="text-slate-400 capitalize">
+                  {currentUser?.role ? (ROLE_CONFIG[currentUser.role]?.label || currentUser.role.replace('_', ' ')) : 'Admin'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1518,7 +1712,7 @@ export function AdminPage() {
 
       {/* Main Workspace Area */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-        {activeTab === 'customer' && (
+        {activeTab === 'customer' && canAccess('customer') && (
           <CustomerView
             customers={customers}
             onRefresh={loadCustomers}
@@ -1533,7 +1727,7 @@ export function AdminPage() {
           />
         )}
 
-        {activeTab === 'opportunity' && (
+        {activeTab === 'opportunity' && canAccess('opportunity') && (
           <OpportunityView
             opportunities={opportunities}
             customers={customers}
@@ -1553,7 +1747,7 @@ export function AdminPage() {
           />
         )}
 
-        {activeTab === 'project' && (
+        {activeTab === 'project' && canAccess('project') && (
           <ProjectView
             projects={projects}
             customers={customers}
@@ -1570,7 +1764,7 @@ export function AdminPage() {
           />
         )}
 
-        {activeTab === 'claim' && (
+        {activeTab === 'claim' && canAccess('claim') && (
           <ClaimView
             claims={claims}
             customers={customers}
@@ -1587,7 +1781,7 @@ export function AdminPage() {
           />
         )}
 
-        {activeTab === 'work' && (
+        {activeTab === 'work' && canAccess('work') && (
           <WorkView
             projects={workProjects}
             onRefresh={loadWorkProjects}
@@ -1595,7 +1789,7 @@ export function AdminPage() {
           />
         )}
 
-        {activeTab === 'users' && (
+        {activeTab === 'users' && canAccess('users') && (
           <UsersView
             users={users}
             onRefresh={loadUsers}
@@ -1603,7 +1797,20 @@ export function AdminPage() {
           />
         )}
 
-        {activeTab === 'lead' && (
+        {/* Access Restricted Banner if User tries to access an unassigned resource */}
+        {!canAccess(activeTab as CrmResource) && (
+          <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-2xl shadow-xs ring-1 ring-slate-200 my-8">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 mb-4">
+              <ShieldCheck className="h-7 w-7" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800">Resource Access Restricted</h3>
+            <p className="text-xs text-slate-500 max-w-sm mt-1">
+              You do not currently have permission to access the "{activeTab}" module. Please contact your CRM administrator to assign this resource to your account.
+            </p>
+          </div>
+        )}
+
+        {activeTab === 'lead' && canAccess('lead') && (
           <div>
             {/* Workspace Top Header (Clean replacement of old topbar) */}
             <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -2735,7 +2942,10 @@ export function AdminPage() {
               <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
                 <div>
                   <p className="text-xs text-slate-500 mb-3">
-                    Active admin account: <span className="font-semibold text-slate-800">{currentUserEmail}</span>
+                    Active user account:{' '}
+                    <span className="font-semibold text-slate-800">
+                      {currentUser?.name || currentUserEmail} (@{currentUser?.username || currentUserEmail.split('@')[0]})
+                    </span>
                   </p>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                     New Password
@@ -2746,11 +2956,11 @@ export function AdminPage() {
                     value={newPasswordInput}
                     onChange={(e) => setNewPasswordInput(e.target.value)}
                     placeholder="Enter new password (min. 4 characters)"
-                    className="w-full rounded-xl border border-slate-300 py-2.5 px-3.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/30 outline-none"
+                    className="w-full rounded-xl border border-slate-300 py-2.5 px-3.5 text-sm focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/30 outline-none font-mono"
                     autoFocus
                   />
                   <p className="text-[11px] text-slate-400 mt-1">
-                    This will be saved to your browser so you can log in with this new password.
+                    Updates your account password in the CRM database and for future sign-ins.
                   </p>
                 </div>
 
