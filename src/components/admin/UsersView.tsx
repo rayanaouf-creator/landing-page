@@ -33,7 +33,9 @@ import {
   Briefcase,
   SlidersHorizontal,
   Layers,
-  LayoutGrid
+  LayoutGrid,
+  FileText,
+  Calendar
 } from 'lucide-react';
 import { AppUser, UserRole, UserStatus, CrmResource, ALL_CRM_RESOURCES } from '../../types';
 import { userStorage } from '../../services/userStorage';
@@ -45,21 +47,35 @@ interface UsersViewProps {
 }
 
 // Helper for default resources per role
+export const getSidebarItemIcon = (id: CrmResource) => {
+  switch (id) {
+    case 'lead': return UserPlus;
+    case 'opportunity': return TrendingUp;
+    case 'customer': return Building2;
+    case 'project': return FolderGit2;
+    case 'claim': return LifeBuoy;
+    case 'work': return Briefcase;
+    case 'users': return Users;
+    case 'policy': return FileText;
+    case 'events': return Calendar;
+  }
+};
+
 export const getDefaultResourcesForRole = (role: UserRole): CrmResource[] => {
   switch (role) {
     case 'admin':
-      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'];
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events'];
     case 'sales_manager':
-      return ['lead', 'opportunity', 'customer'];
+      return ['lead', 'opportunity', 'customer', 'events'];
     case 'sales_rep':
       return ['lead', 'opportunity'];
     case 'support_agent':
-      return ['customer', 'claim'];
+      return ['customer', 'claim', 'policy'];
     case 'project_manager':
-      return ['customer', 'project', 'work'];
+      return ['customer', 'project', 'work', 'events'];
     case 'viewer':
     default:
-      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work'];
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'policy', 'events'];
   }
 };
 
@@ -277,9 +293,9 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
 
   const handleOpenResourcesModal = (user: AppUser) => {
     setAssigningResourcesUser(user);
-    const existing = user.assignedResources && user.assignedResources.length > 0
+    const existing = Array.isArray(user.assignedResources)
       ? user.assignedResources
-      : getDefaultResourcesForRole(user.role);
+      : ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'];
     setSelectedResources([...existing]);
   };
 
@@ -920,12 +936,12 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
       {/* ── ADD / EDIT USER MODAL ── */}
       <AnimatePresence>
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-4 sm:my-8 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] flex flex-col"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col relative"
             >
               {/* Header */}
               <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white shrink-0 sticky top-0 z-20">
@@ -1129,62 +1145,62 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                 <div className="rounded-2xl border border-teal-200/90 bg-teal-50/40 p-4 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                     <div className="flex items-center gap-2">
-                      <div className="p-1 rounded-lg bg-teal-100 text-teal-800">
+                      <div className="p-1.5 rounded-lg bg-[#1b6b6a] text-white">
                         <SlidersHorizontal className="h-4 w-4" />
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-teal-950 uppercase tracking-wider">
-                          Assigned Sidebar Resources
+                        <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                          Sidebar Resources (Permissions)
                         </span>
-                        <p className="text-[10px] text-teal-700">
-                          Controls which menu items appear in this user's left sidebar
+                        <p className="text-[11px] text-teal-900 font-medium">
+                          All items on the sidebar are resources. If you select it, it will appear to the user on the sidebar. Otherwise it will not appear.
                         </p>
                       </div>
                     </div>
-                    <span className="inline-flex items-center text-[10px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-full">
-                      {formData.assignedResources.length} of {ALL_CRM_RESOURCES.length} Visible
+                    <span className="inline-flex items-center text-xs font-bold text-teal-900 bg-teal-100/90 border border-teal-200 px-2.5 py-0.5 rounded-full shrink-0">
+                      {formData.assignedResources.length} of {ALL_CRM_RESOURCES.length} on Sidebar
                     </span>
                   </div>
 
                   {/* Preset Pills */}
-                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">
                       Quick Presets:
                     </span>
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, assignedResources: ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'] })}
-                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-teal-200 text-teal-800 hover:bg-teal-50 transition-colors"
+                      onClick={() => setFormData({ ...formData, assignedResources: ALL_CRM_RESOURCES.map((r) => r.id) })}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-teal-300 text-[#1b6b6a] hover:bg-teal-50 transition-colors shadow-2xs"
                     >
-                      All Resources (7)
+                      Show All ({ALL_CRM_RESOURCES.length})
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, assignedResources: ['lead', 'opportunity', 'customer'] })}
-                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                     >
-                      Sales Pipeline (3)
+                      Sales (3)
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, assignedResources: ['customer', 'claim'] })}
-                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                     >
-                      Support & Care (2)
+                      Support (2)
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, assignedResources: ['customer', 'project', 'work'] })}
-                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                     >
-                      Projects Ops (3)
+                      Projects (3)
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, assignedResources: [] })}
-                      className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors"
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors"
                     >
-                      Clear
+                      Hide All (0)
                     </button>
                   </div>
 
@@ -1192,6 +1208,7 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                     {ALL_CRM_RESOURCES.map((res) => {
                       const isAssigned = formData.assignedResources.includes(res.id);
+                      const Icon = getSidebarItemIcon(res.id);
                       return (
                         <div
                           key={res.id}
@@ -1201,30 +1218,35 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                               : [...formData.assignedResources, res.id];
                             setFormData({ ...formData, assignedResources: updated });
                           }}
-                          className={`cursor-pointer rounded-xl p-2.5 border transition-all flex items-start gap-2.5 ${
+                          className={`cursor-pointer rounded-xl p-3 border transition-all flex items-center justify-between gap-3 ${
                             isAssigned
-                              ? 'border-[#44ACAB] bg-white ring-1 ring-[#44ACAB] shadow-xs'
-                              : 'border-slate-200/80 bg-white/60 opacity-60 hover:opacity-100 hover:border-slate-300'
+                              ? 'border-[#44ACAB] bg-white ring-2 ring-[#44ACAB]/40 shadow-xs'
+                              : 'border-slate-200 bg-white/70 opacity-60 hover:opacity-100 hover:border-slate-300'
                           }`}
                         >
-                          <div className={`mt-0.5 h-4 w-4 rounded flex items-center justify-center shrink-0 transition-colors ${
-                            isAssigned ? 'bg-[#1b6b6a] text-white' : 'border border-slate-300'
-                          }`}>
-                            {isAssigned && <Check className="h-3 w-3" />}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className={`text-xs font-bold ${isAssigned ? 'text-slate-900' : 'text-slate-500'}`}>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={`h-5 w-5 rounded flex items-center justify-center shrink-0 transition-colors ${
+                              isAssigned ? 'bg-[#1b6b6a] text-white shadow-xs' : 'border-2 border-slate-300 bg-white'
+                            }`}>
+                              {isAssigned && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                            </div>
+                            <div className={`p-1.5 rounded-lg ${isAssigned ? 'bg-teal-50 text-[#1b6b6a]' : 'bg-slate-100 text-slate-500'}`}>
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className={`text-xs font-bold block truncate ${isAssigned ? 'text-slate-900' : 'text-slate-500'}`}>
                                 {res.label}
                               </span>
-                              <span className="text-[9px] font-extrabold uppercase px-1 py-0.2 rounded bg-slate-100 text-slate-600">
-                                {res.category}
+                              <span className="text-[10px] text-slate-400 block truncate">
+                                {res.description}
                               </span>
                             </div>
-                            <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
-                              {res.description}
-                            </p>
                           </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                            isAssigned ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-400'
+                          }`}>
+                            {isAssigned ? 'Appears on Sidebar' : 'Will Not Appear'}
+                          </span>
                         </div>
                       );
                     })}
@@ -1338,12 +1360,12 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
       {/* ── QUICK ROLE ASSIGNMENT MODAL ── */}
       <AnimatePresence>
         {assigningRoleUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden"
+              className="w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col relative"
             >
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white">
                 <div className="flex items-center gap-2.5">
@@ -1423,12 +1445,12 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
       {/* ── EDIT CREDENTIALS MODAL (QUICK ACTION) ── */}
       <AnimatePresence>
         {editingCredentialsUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden"
+              className="w-full max-w-md rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col relative"
             >
               <div className="bg-gradient-to-r from-amber-700 to-amber-600 px-6 py-4 flex items-center justify-between text-white">
                 <div className="flex items-center gap-2.5">
@@ -1569,12 +1591,12 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
       {/* ── DEDICATED ASSIGN RESOURCES MODAL ── */}
       <AnimatePresence>
         {assigningResourcesUser && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-4 sm:my-8 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] flex flex-col"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col relative"
             >
               <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white shrink-0 sticky top-0 z-20">
                 <div className="flex items-center gap-2.5">
@@ -1600,11 +1622,14 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
 
               <div className="p-6 space-y-4 flex-1 overflow-y-auto custom-dark-scrollbar">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-slate-600">
-                    Select which CRM modules appear in <strong>{assigningResourcesUser.name}'s</strong> sidebar:
-                  </p>
-                  <span className="text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
-                    {selectedResources.length} of {ALL_CRM_RESOURCES.length} Selected
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">Sidebar Items Visibility</h4>
+                    <p className="text-[11px] text-slate-500">
+                      All sidebar items are resources. If selected, it will appear to <strong>{assigningResourcesUser.name}</strong> on the sidebar. Otherwise it will not appear.
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-[#1b6b6a] bg-teal-50 border border-teal-200 px-3 py-1 rounded-full shrink-0">
+                    {selectedResources.length} of {ALL_CRM_RESOURCES.length} on Sidebar
                   </span>
                 </div>
 
@@ -1614,51 +1639,45 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                   <button
                     type="button"
                     onClick={() => setSelectedResources(ALL_CRM_RESOURCES.map((r) => r.id))}
-                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100 transition-colors"
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-50 text-[#1b6b6a] border border-teal-200 hover:bg-teal-100 transition-colors"
                   >
-                    Select All
+                    Select All ({ALL_CRM_RESOURCES.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedResources(['lead', 'opportunity', 'customer'])}
-                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                   >
                     Sales (3)
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedResources(['customer', 'claim'])}
-                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                   >
                     Support (2)
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedResources(['customer', 'project', 'work'])}
-                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                   >
                     Projects (3)
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSelectedResources(getDefaultResourcesForRole(assigningResourcesUser.role))}
-                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors"
-                  >
-                    Role Default ({ROLE_CONFIG[assigningResourcesUser.role].label})
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setSelectedResources([])}
-                    className="px-2 py-1 text-xs font-semibold rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                    className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
                   >
-                    Clear
+                    Hide All (0)
                   </button>
                 </div>
 
                 {/* Resource List */}
-                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                   {ALL_CRM_RESOURCES.map((res) => {
                     const isSelected = selectedResources.includes(res.id);
+                    const Icon = getSidebarItemIcon(res.id);
                     return (
                       <div
                         key={res.id}
@@ -1671,32 +1690,30 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
                         }}
                         className={`cursor-pointer flex items-center justify-between p-3 rounded-xl border transition-all ${
                           isSelected
-                            ? 'border-[#44ACAB] bg-[#e6f4f4] ring-1 ring-[#44ACAB]'
+                            ? 'border-[#44ACAB] bg-[#e6f4f4] ring-2 ring-[#44ACAB]/40 shadow-xs'
                             : 'border-slate-200 bg-white hover:bg-slate-50'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`h-5 w-5 rounded flex items-center justify-center transition-colors ${
-                            isSelected ? 'bg-[#1b6b6a] text-white' : 'border border-slate-300'
+                            isSelected ? 'bg-[#1b6b6a] text-white shadow-xs' : 'border-2 border-slate-300 bg-white'
                           }`}>
-                            {isSelected && <Check className="h-3.5 w-3.5" />}
+                            {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                          </div>
+                          <div className={`p-1.5 rounded-lg ${isSelected ? 'bg-white text-[#1b6b6a] shadow-xs' : 'bg-slate-100 text-slate-500'}`}>
+                            <Icon className="h-4 w-4" />
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <span className={`text-xs font-bold ${isSelected ? 'text-[#1b6b6a]' : 'text-slate-800'}`}>
-                                {res.label}
-                              </span>
-                              <span className="text-[10px] font-semibold text-slate-500 bg-white px-1.5 py-0.2 rounded border border-slate-200">
-                                {res.category}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 mt-0.5">{res.description}</p>
+                            <span className={`text-xs font-bold block ${isSelected ? 'text-[#1b6b6a]' : 'text-slate-800'}`}>
+                              {res.label}
+                            </span>
+                            <p className="text-[11px] text-slate-500">{res.description}</p>
                           </div>
                         </div>
-                        <span className={`text-[11px] font-bold font-mono px-2 py-0.5 rounded ${
-                          isSelected ? 'bg-[#1b6b6a] text-white' : 'text-slate-400'
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                          isSelected ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-400'
                         }`}>
-                          {isSelected ? 'Visible' : 'Hidden'}
+                          {isSelected ? 'Appears on Sidebar' : 'Will Not Appear'}
                         </span>
                       </div>
                     );
@@ -1728,12 +1745,12 @@ export function UsersView({ users, onRefresh, showToast }: UsersViewProps) {
       {/* ── DELETE CONFIRMATION MODAL ── */}
       <AnimatePresence>
         {deletingUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200 text-center"
+              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200 text-center my-auto"
             >
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mb-3">
                 <AlertCircle className="h-6 w-6" />

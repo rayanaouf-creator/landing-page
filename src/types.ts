@@ -163,7 +163,9 @@ export type CrmResource =
   | 'project' 
   | 'claim' 
   | 'work' 
-  | 'users';
+  | 'users'
+  | 'policy'
+  | 'events';
 
 export interface CrmResourceMeta {
   id: CrmResource;
@@ -179,9 +181,9 @@ export interface CrmResourceMeta {
 export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
   {
     id: 'lead',
-    label: 'Lead Management',
+    label: 'Lead',
     shortLabel: 'Lead',
-    description: 'Prospects, exhibition scans (NetExpo/Ecsel), inquiries, and contact logs',
+    description: 'Lead inquiries & exhibition contact forms',
     category: 'Commercial',
     color: 'text-emerald-700',
     bgLight: 'bg-emerald-50',
@@ -189,9 +191,9 @@ export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
   },
   {
     id: 'opportunity',
-    label: 'Commercial Opportunities',
+    label: 'Opportunity',
     shortLabel: 'Opportunity',
-    description: 'Commercial deals, pipeline stages, expected value DZD, and quotes',
+    description: 'Commercial opportunities & deals pipeline',
     category: 'Commercial',
     color: 'text-blue-700',
     bgLight: 'bg-blue-50',
@@ -199,9 +201,9 @@ export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
   },
   {
     id: 'customer',
-    label: 'Customer Accounts',
+    label: 'Customer',
     shortLabel: 'Customer',
-    description: 'Active client accounts, tax IDs (NIF/RC), contacts, and service history',
+    description: 'Active client accounts & directory',
     category: 'Commercial',
     color: 'text-teal-700',
     bgLight: 'bg-teal-50',
@@ -209,9 +211,9 @@ export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
   },
   {
     id: 'project',
-    label: 'Projects & Milestones',
+    label: 'Project',
     shortLabel: 'Project',
-    description: 'ERPNext rollouts, software implementation progress, deliverables, and SLAs',
+    description: 'Client implementation projects & milestones',
     category: 'Operations',
     color: 'text-indigo-700',
     bgLight: 'bg-indigo-50',
@@ -219,9 +221,9 @@ export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
   },
   {
     id: 'claim',
-    label: 'Claims & Support Tickets',
+    label: 'Claim',
     shortLabel: 'Claim',
-    description: 'Customer claims, technical incidents, severity, and ISO 9001 CAPA',
+    description: 'Customer claims, tickets & ISO 9001 CAPA',
     category: 'Quality & Support',
     color: 'text-amber-700',
     bgLight: 'bg-amber-50',
@@ -229,9 +231,9 @@ export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
   },
   {
     id: 'work',
-    label: 'Our Work (Showcase)',
+    label: 'Our Work',
     shortLabel: 'Our Work',
-    description: 'Public portfolio case studies, operational metrics, and client deliverables',
+    description: 'Public case studies & portfolio showcase',
     category: 'Marketing',
     color: 'text-cyan-700',
     bgLight: 'bg-cyan-50',
@@ -239,13 +241,33 @@ export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
   },
   {
     id: 'users',
-    label: 'Users & Permissions',
+    label: 'Users',
     shortLabel: 'Users',
-    description: 'Team directory, login credentials, and sidebar resource assignments',
+    description: 'Team users, credentials & sidebar permissions',
     category: 'Administration',
     color: 'text-purple-700',
     bgLight: 'bg-purple-50',
     borderClass: 'border-purple-200'
+  },
+  {
+    id: 'policy',
+    label: 'Policy',
+    shortLabel: 'Policy',
+    description: 'Company compliance policies, ISO guidelines & SLA standards',
+    category: 'Administration',
+    color: 'text-rose-700',
+    bgLight: 'bg-rose-50',
+    borderClass: 'border-rose-200'
+  },
+  {
+    id: 'events',
+    label: 'Events',
+    shortLabel: 'Events',
+    description: 'Corporate summits, client demos, audits & team calendar',
+    category: 'Operations',
+    color: 'text-violet-700',
+    bgLight: 'bg-violet-50',
+    borderClass: 'border-violet-200'
   }
 ];
 
@@ -263,6 +285,56 @@ export interface AppUser {
   phone?: string;
   notes?: string;
   lastLoginAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── COMPANY POLICIES ────────────────────────────────────────────────
+export type PolicyCategory = 
+  | 'Quality & ISO 9001' 
+  | 'Security & Privacy' 
+  | 'Sales & Commercial' 
+  | 'Operations & SLA' 
+  | 'HR & Workplace';
+
+export type PolicyStatus = 'active' | 'under_review' | 'archived';
+
+export interface CompanyPolicy {
+  id: string;
+  title: string;
+  category: PolicyCategory;
+  version: string;
+  status: PolicyStatus;
+  effectiveDate: string;
+  reviewDate?: string;
+  author: string;
+  summary: string;
+  content: string;
+  mandatoryFor: string[];
+  tags: string[];
+  documentUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── CORPORATE EVENTS ────────────────────────────────────────────────
+export type EventType = 'meeting' | 'launch' | 'audit' | 'training' | 'conference' | 'webinar';
+export type EventStatus = 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+
+export interface CompanyEvent {
+  id: string;
+  title: string;
+  description: string;
+  type: EventType;
+  status: EventStatus;
+  startDate: string; // ISO date or string
+  endDate?: string;
+  time?: string;
+  location: string;
+  organizer: string;
+  attendeesCount?: number;
+  tags?: string[];
+  isImportant?: boolean;
   createdAt: string;
   updatedAt: string;
 }

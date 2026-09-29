@@ -36,6 +36,16 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Company policies and governance
+    match /policies/{policyId} {
+      allow read, write: if true;
+    }
+
+    // Corporate events and team schedules
+    match /events/{eventId} {
+      allow read, write: if true;
+    }
+
     // Connection test doc
     match /test/{docId} {
       allow read, write: if true;

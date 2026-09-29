@@ -46,9 +46,10 @@ import {
   UserCheck,
   FolderGit2,
   BarChart3,
-  Users
+  Users,
+  FileText
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser, CrmResource, ALL_CRM_RESOURCES } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser, CrmResource, ALL_CRM_RESOURCES, CompanyPolicy, CompanyEvent } from '../types';
 import { leadStorage } from '../services/leadStorage';
 import { customerStorage } from '../services/customerStorage';
 import { claimStorage } from '../services/claimStorage';
@@ -56,12 +57,16 @@ import { opportunityStorage } from '../services/opportunityStorage';
 import { projectStorage } from '../services/projectStorage';
 import { workStorage } from '../services/workStorage';
 import { userStorage } from '../services/userStorage';
+import { policyStorage } from '../services/policyStorage';
+import { eventStorage } from '../services/eventStorage';
 import { CustomerView } from '../components/admin/CustomerView';
 import { ClaimView } from '../components/admin/ClaimView';
 import { OpportunityView } from '../components/admin/OpportunityView';
 import { ProjectView } from '../components/admin/ProjectView';
 import { WorkView } from '../components/admin/WorkView';
 import { UsersView, ROLE_CONFIG } from '../components/admin/UsersView';
+import { PolicyView } from '../components/admin/PolicyView';
+import { EventsView } from '../components/admin/EventsView';
 import { DailyContactGraph } from '../components/admin/DailyContactGraph';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string }> = {
@@ -190,8 +195,8 @@ export function AdminPage() {
     );
   });
 
-  // Active CRM Tab: 'lead' | 'opportunity' | 'customer' | 'project' | 'claim' | 'work' | 'users'
-  const [activeTab, setActiveTab] = useState<'lead' | 'opportunity' | 'customer' | 'project' | 'claim' | 'work' | 'users'>('lead');
+  // Active CRM Tab
+  const [activeTab, setActiveTab] = useState<CrmResource>('lead');
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -200,23 +205,22 @@ export function AdminPage() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [workProjects, setWorkProjects] = useState<WorkProject[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
+  const [policies, setPolicies] = useState<CompanyPolicy[]>([]);
+  const [events, setEvents] = useState<CompanyEvent[]>([]);
 
   // Compute permitted sidebar resources for the logged-in user
   const userAssignedResources = useMemo<CrmResource[]>(() => {
     if (!currentUser) {
-      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'];
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events'];
     }
-    if (currentUser.assignedResources && currentUser.assignedResources.length > 0) {
+    // If assignedResources is explicitly configured for this user, strictly show ONLY what is selected
+    if (Array.isArray(currentUser.assignedResources)) {
       return currentUser.assignedResources;
     }
-    if (currentUser.role === 'admin') {
-      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users'];
-    }
-    if (currentUser.role === 'sales_manager') return ['lead', 'opportunity', 'customer'];
-    if (currentUser.role === 'sales_rep') return ['lead', 'opportunity'];
-    if (currentUser.role === 'support_agent') return ['customer', 'claim'];
-    if (currentUser.role === 'project_manager') return ['customer', 'project', 'work'];
-    return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work'];
+    // Legacy fallback only if assignedResources has never been defined
+    return currentUser.role === 'admin'
+      ? ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events']
+      : ['lead', 'opportunity', 'customer'];
   }, [currentUser]);
 
   const canAccess = (resource: CrmResource) => userAssignedResources.includes(resource);
@@ -322,6 +326,8 @@ export function AdminPage() {
     loadProjects();
     loadClaims();
     loadWorkProjects();
+    loadPolicies();
+    loadEvents();
 
     // Real-time synchronization subscriptions to Firebase Firestore collections
     const unsubLeads = leadStorage.subscribe((items) => setLeads(items));
@@ -330,6 +336,8 @@ export function AdminPage() {
     const unsubProjs = projectStorage.subscribe((items) => setProjects(items));
     const unsubClaims = claimStorage.subscribe((items) => setClaims(items));
     const unsubWork = workStorage.subscribe((items) => setWorkProjects(items));
+    const unsubPolicies = policyStorage.subscribe((items) => setPolicies(items));
+    const unsubEvents = eventStorage.subscribe((items) => setEvents(items));
 
     return () => {
       unsubLeads();
@@ -338,6 +346,8 @@ export function AdminPage() {
       unsubProjs();
       unsubClaims();
       unsubWork();
+      unsubPolicies();
+      unsubEvents();
     };
   }, [isAuthenticated]);
 
@@ -349,6 +359,16 @@ export function AdminPage() {
   const loadWorkProjects = () => {
     const list = workStorage.getProjects();
     setWorkProjects(list);
+  };
+
+  const loadPolicies = () => {
+    const list = policyStorage.getPolicies();
+    setPolicies(list);
+  };
+
+  const loadEvents = () => {
+    const list = eventStorage.getEvents();
+    setEvents(list);
   };
 
   const loadLeads = () => {
@@ -1254,6 +1274,58 @@ export function AdminPage() {
                 </span>
               </button>
             )}
+
+            {/* 8. Policy */}
+            {canAccess('policy') && (
+              <button
+                id="admin-sidebar-nav-policy"
+                onClick={() => {
+                  setActiveTab('policy');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'policy'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <FileText className={`h-4 w-4 ${activeTab === 'policy' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Policy</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'policy' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {policies.length}
+                </span>
+              </button>
+            )}
+
+            {/* 9. Events */}
+            {canAccess('events') && (
+              <button
+                id="admin-sidebar-nav-events"
+                onClick={() => {
+                  setActiveTab('events');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'events'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Calendar className={`h-4 w-4 ${activeTab === 'events' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Events</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'events' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {events.length}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* DYNAMIC CONTEXTUAL MODULE ACTIONS & VIEWS */}
@@ -1584,9 +1656,12 @@ export function AdminPage() {
                 <button
                   id="admin-sidebar-add-user-btn"
                   onClick={() => {
-                    const addBtn = document.getElementById('admin-create-user-btn');
-                    if (addBtn) addBtn.click();
+                    setActiveTab('users');
                     setIsSidebarOpen(false);
+                    setTimeout(() => {
+                      const addBtn = document.getElementById('admin-create-user-btn');
+                      if (addBtn) addBtn.click();
+                    }, 60);
                   }}
                   className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-2.5 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
                 >
@@ -1638,6 +1713,110 @@ export function AdminPage() {
                 >
                   <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
                   <span>Export Users (CSV)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'policy' && (
+            <div className="space-y-4 pt-3 border-t border-slate-800">
+              <div>
+                <button
+                  id="admin-sidebar-add-policy-btn"
+                  onClick={() => {
+                    const btn = document.getElementById('admin-create-policy-btn');
+                    if (btn) btn.click();
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-2.5 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
+                >
+                  <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  <span>+ New Policy</span>
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Governance Summary
+                </p>
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 space-y-1.5 text-xs text-slate-300">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Total Standards</span>
+                    <span className="font-bold text-white">{policies.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-emerald-300">In Force</span>
+                    <span className="font-bold text-emerald-400">{policies.filter(p => p.status === 'active').length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-rose-300">ISO Quality</span>
+                    <span className="font-bold text-rose-400">{policies.filter(p => p.category === 'Quality & ISO 9001').length}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Policy Tools
+                </p>
+                <button
+                  onClick={() => policyStorage.exportCSV()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                  <span>Export Policies (CSV)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'events' && (
+            <div className="space-y-4 pt-3 border-t border-slate-800">
+              <div>
+                <button
+                  id="admin-sidebar-add-event-btn"
+                  onClick={() => {
+                    const btn = document.getElementById('admin-create-event-btn');
+                    if (btn) btn.click();
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#44ACAB] py-2.5 px-4 text-xs font-bold text-white hover:bg-[#389695] transition-all shadow-md group"
+                >
+                  <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  <span>+ Schedule Event</span>
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Calendar Highlights
+                </p>
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 space-y-1.5 text-xs text-slate-300">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Total Events</span>
+                    <span className="font-bold text-white">{events.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-emerald-300">Upcoming</span>
+                    <span className="font-bold text-emerald-400">{events.filter(e => e.status === 'upcoming').length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-amber-300">High Priority</span>
+                    <span className="font-bold text-amber-400">{events.filter(e => e.isImportant).length}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-800 space-y-1">
+                <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Calendar Tools
+                </p>
+                <button
+                  onClick={() => eventStorage.exportCSV()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                  <span>Export Events (CSV)</span>
                 </button>
               </div>
             </div>
@@ -1793,6 +1972,22 @@ export function AdminPage() {
           <UsersView
             users={users}
             onRefresh={loadUsers}
+            showToast={showToast}
+          />
+        )}
+
+        {activeTab === 'policy' && canAccess('policy') && (
+          <PolicyView
+            policies={policies}
+            onRefresh={loadPolicies}
+            showToast={showToast}
+          />
+        )}
+
+        {activeTab === 'events' && canAccess('events') && (
+          <EventsView
+            events={events}
+            onRefresh={loadEvents}
             showToast={showToast}
           />
         )}

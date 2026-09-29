@@ -43,7 +43,9 @@ export const COLLECTIONS = {
   OPPORTUNITIES: 'opportunities',
   PROJECTS: 'projects',
   WORK_PROJECTS: 'work_projects',
-  USERS: 'users'
+  USERS: 'users',
+  POLICIES: 'policies',
+  EVENTS: 'events'
 } as const;
 
 export {
