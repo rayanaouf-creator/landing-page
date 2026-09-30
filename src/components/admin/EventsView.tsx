@@ -127,6 +127,9 @@ export function EventsView({ events, policies, currentUser, onRefresh, showToast
       isImportant: false
     });
     setIsFormOpen(true);
+    setTimeout(() => {
+      document.getElementById('event-editor-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   };
 
   const handleOpenEdit = (event: CompanyEvent) => {
@@ -146,6 +149,9 @@ export function EventsView({ events, policies, currentUser, onRefresh, showToast
       isImportant: Boolean(event.isImportant)
     });
     setIsFormOpen(true);
+    setTimeout(() => {
+      document.getElementById('event-editor-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   };
 
   const handleSaveEvent = async (e: FormEvent) => {
@@ -243,14 +249,262 @@ export function EventsView({ events, policies, currentUser, onRefresh, showToast
 
           <button
             id="admin-create-event-btn"
-            onClick={handleOpenAdd}
+            onClick={() => {
+              if (isFormOpen && !editingEvent) {
+                setIsFormOpen(false);
+              } else {
+                handleOpenAdd();
+              }
+            }}
             className="inline-flex items-center gap-2 rounded-xl bg-[#1b6b6a] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#155453] transition-all transform hover:scale-[1.01]"
           >
-            <Plus className="h-4 w-4" />
-            <span>+ Add Event</span>
+            {isFormOpen && !editingEvent ? (
+              <>
+                <X className="h-4 w-4" />
+                <span>Close Form</span>
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" />
+                <span>+ Add Event</span>
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* ── ON-PAGE CREATE / EDIT EVENT FORM ── */}
+      <AnimatePresence>
+        {isFormOpen && (
+          <motion.div
+            id="event-editor-form"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-2xl bg-white shadow-md ring-1 ring-slate-200 overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#44ACAB]/20 text-[#44ACAB]">
+                  <Calendar className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">
+                    {editingEvent ? `Edit Event Schedule: ${editingEvent.title}` : 'Schedule New Event'}
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Plan summits, client demonstrations, ISO audits, and training milestones
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFormOpen(false);
+                  setEditingEvent(null);
+                }}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+                title="Close Form"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEvent} className="flex flex-col">
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Event Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. ERPNext v16 Enterprise Solutions Launch"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Event Type *
+                    </label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value as EventType })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    >
+                      {EVENT_TYPES.map(t => (
+                        <option key={t.id} value={t.id}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Status *
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatus })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    >
+                      <option value="upcoming">Upcoming</option>
+                      <option value="ongoing">Ongoing</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Start Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      End Date (Optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Timing
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 09:30 - 16:30"
+                      value={formData.time}
+                      onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Location / Venue *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. El Aurassi Hotel, Algiers"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Organizer / Lead
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Amina Benali"
+                      value={formData.organizer}
+                      onChange={(e) => setFormData({ ...formData, organizer: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Event Scope & Agenda *
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    placeholder="Objectives, presentation topics, client attendees, and deliverables..."
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Estimated Attendees
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={formData.attendeesCount}
+                      onChange={(e) => setFormData({ ...formData, attendeesCount: parseInt(e.target.value) || 0 })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Tags (comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="SAFEX, ERPNext, Demo"
+                      value={formData.tags}
+                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 select-none">
+                    <input
+                      type="checkbox"
+                      checked={formData.isImportant}
+                      onChange={(e) => setFormData({ ...formData, isImportant: e.target.checked })}
+                      className="h-4 w-4 rounded border-slate-300 text-[#1b6b6a] focus:ring-[#44ACAB] accent-[#1b6b6a]"
+                    />
+                    <span>Mark as Featured Milestone / High Priority Event</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    setEditingEvent(null);
+                  }}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#1b6b6a] hover:bg-[#155453] px-5 py-2 text-xs font-bold text-white shadow-md transition-all"
+                >
+                  {editingEvent ? 'Save Event Changes' : 'Schedule Event'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── METRICS ROW ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
@@ -567,232 +821,6 @@ export function EventsView({ events, policies, currentUser, onRefresh, showToast
         )}
       </AnimatePresence>
 
-      {/* ── ADD / EDIT EVENT MODAL ── */}
-      <AnimatePresence>
-        {isFormOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xl rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col relative"
-            >
-              <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white shrink-0 sticky top-0 z-20">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-[#44ACAB]/20 text-[#44ACAB]">
-                    <Calendar className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base">
-                      {editingEvent ? 'Edit Event Schedule' : 'Schedule New Event'}
-                    </h3>
-                    <p className="text-xs text-slate-300">
-                      Plan summits, client demonstrations, ISO audits, and training milestones
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsFormOpen(false)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveEvent} className="flex-1 overflow-y-auto min-h-0 flex flex-col custom-dark-scrollbar">
-                <div className="p-6 space-y-4 flex-1">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                      Event Title *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. ERPNext v16 Enterprise Solutions Launch"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Event Type *
-                      </label>
-                      <select
-                        value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value as EventType })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      >
-                        {EVENT_TYPES.map(t => (
-                          <option key={t.id} value={t.id}>{t.label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Status *
-                      </label>
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatus })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      >
-                        <option value="upcoming">Upcoming</option>
-                        <option value="ongoing">Ongoing</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Start Date *
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={formData.startDate}
-                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        End Date (Optional)
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.endDate}
-                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Timing
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 09:30 - 16:30"
-                        value={formData.time}
-                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Location / Venue *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. El Aurassi Hotel, Algiers"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Organizer / Lead
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Amina Benali"
-                        value={formData.organizer}
-                        onChange={(e) => setFormData({ ...formData, organizer: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                      Event Scope & Agenda *
-                    </label>
-                    <textarea
-                      rows={3}
-                      required
-                      placeholder="Objectives, presentation topics, client attendees, and deliverables..."
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Estimated Attendees
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={formData.attendeesCount}
-                        onChange={(e) => setFormData({ ...formData, attendeesCount: parseInt(e.target.value) || 0 })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Tags (comma-separated)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="SAFEX, ERPNext, Demo"
-                        value={formData.tags}
-                        onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 select-none">
-                      <input
-                        type="checkbox"
-                        checked={formData.isImportant}
-                        onChange={(e) => setFormData({ ...formData, isImportant: e.target.checked })}
-                        className="h-4 w-4 rounded border-slate-300 text-[#1b6b6a] focus:ring-[#44ACAB] accent-[#1b6b6a]"
-                      />
-                      <span>Mark as Featured Milestone / High Priority Event</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2.5 shrink-0 sticky bottom-0 z-20">
-                  <button
-                    type="button"
-                    onClick={() => setIsFormOpen(false)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-[#1b6b6a] hover:bg-[#155453] px-5 py-2 text-xs font-bold text-white shadow-md transition-all"
-                  >
-                    {editingEvent ? 'Save Changes' : 'Schedule Event'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* ── DELETE CONFIRMATION MODAL ── */}
       <AnimatePresence>

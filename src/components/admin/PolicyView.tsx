@@ -171,6 +171,9 @@ export function PolicyView({ policies, onRefresh, showToast }: PolicyViewProps) 
       tags: `${chosenType}, Standard`
     });
     setIsFormOpen(true);
+    setTimeout(() => {
+      document.getElementById('policy-editor-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   };
 
   const handleOpenEdit = (policy: CompanyPolicy) => {
@@ -192,6 +195,9 @@ export function PolicyView({ policies, onRefresh, showToast }: PolicyViewProps) 
       tags: (policy.tags || []).join(', ')
     });
     setIsFormOpen(true);
+    setTimeout(() => {
+      document.getElementById('policy-editor-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   };
 
   const handleSavePolicy = async (e: FormEvent) => {
@@ -313,14 +319,417 @@ export function PolicyView({ policies, onRefresh, showToast }: PolicyViewProps) 
 
           <button
             id="admin-create-policy-btn"
-            onClick={() => handleOpenAdd()}
+            onClick={() => {
+              if (isFormOpen && !editingPolicy) {
+                setIsFormOpen(false);
+              } else {
+                handleOpenAdd();
+              }
+            }}
             className="inline-flex items-center gap-2 rounded-xl bg-[#1b6b6a] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#155453] transition-all transform hover:scale-[1.01]"
           >
-            <Plus className="h-4 w-4" />
-            <span>+ New Policy</span>
+            {isFormOpen && !editingPolicy ? (
+              <>
+                <X className="h-4 w-4" />
+                <span>Close Form</span>
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" />
+                <span>+ New Policy</span>
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* ── ON-PAGE CREATE / EDIT POLICY FORM ── */}
+      <AnimatePresence>
+        {isFormOpen && (
+          <motion.div
+            id="policy-editor-form"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-2xl bg-white shadow-md ring-1 ring-slate-200 overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#44ACAB]/20 text-[#44ACAB]">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">
+                    {editingPolicy ? `Edit Policy Document: ${editingPolicy.title}` : 'Create New Policy Document'}
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Select policy type (1 allowed per specific type, unlimited for 'Other')
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFormOpen(false);
+                  setEditingPolicy(null);
+                }}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+                title="Close Form"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePolicy} className="flex flex-col">
+              <div className="p-6 space-y-4">
+                
+                {/* POLICY TYPE SELECTION (SINGLETON RULE ENFORCEMENT) */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Policy Type *</span>
+                    <span className="text-[11px] font-normal text-slate-500">1 max per specific type • Unlimited for "other"</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {POLICY_TYPES.map((t) => {
+                      const isSelected = formData.type === t.id;
+                      const isSingleton = t.isSingleton;
+                      const existing = policies.find(p => p.type === t.id && p.id !== editingPolicy?.id);
+                      const isTaken = isSingleton && Boolean(existing);
+
+                      return (
+                        <div
+                          key={t.id}
+                          className={`p-2.5 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
+                            isTaken 
+                              ? 'opacity-85 bg-slate-50/90 border-amber-200/80'
+                              : isSelected
+                              ? 'border-[#44ACAB] bg-[#e6f4f4] ring-2 ring-[#44ACAB]/40 shadow-xs'
+                              : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            disabled={isTaken}
+                            onClick={() => setFormData({ ...formData, type: t.id })}
+                            className={`w-full text-left ${isTaken ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`text-xs font-bold ${isTaken ? 'text-slate-600 line-through decoration-amber-500/50' : isSelected ? 'text-[#1b6b6a]' : 'text-slate-800'}`}>
+                                {t.label}
+                              </span>
+                              {isSingleton ? (
+                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded shrink-0 ${
+                                  isTaken ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                                }`}>
+                                  {isTaken ? '1/1 Reached' : '0/1 Available'}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 shrink-0">
+                                  Unlimited
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-500 line-clamp-1">{t.description}</p>
+                          </button>
+
+                          {isTaken && existing && (
+                            <div className="mt-1.5 pt-1.5 border-t border-amber-100/90 flex items-center justify-between text-[10px]">
+                              <span className="text-amber-800 truncate max-w-[120px]" title={existing.title}>
+                                "{existing.title}"
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenEdit(existing);
+                                }}
+                                className="text-amber-900 font-bold hover:underline shrink-0 ml-1"
+                              >
+                                Edit instead →
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* POLICY CREATION RULES INFO BANNER */}
+                  <div className="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 flex items-start gap-2.5">
+                    <Info className="h-4 w-4 text-[#1b6b6a] shrink-0 mt-0.5" />
+                    <div className="text-[11px] leading-relaxed text-slate-600 space-y-0.5">
+                      <span className="font-bold text-slate-800">Policy Rules:</span> Exactly <strong>1</strong> policy can be created for <em>Event policy</em>, <em>Cleaning Policy</em>, <em>Recrutment Policy</em>, <em>Dayly policy</em>, and <em>Weekly Policy</em>. For <em>other</em>, you can create as many policies as needed.
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Policy Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Workplace Sanitization & Cleaning Policy"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Version *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="v1.0"
+                      value={formData.version}
+                      onChange={(e) => setFormData({ ...formData, version: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Status *
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as PolicyStatus })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    >
+                      <option value="active">Active (In Force)</option>
+                      <option value="under_review">Under Review</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Effective Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.effectiveDate}
+                      onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Author / Sponsor
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.author}
+                      onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                      placeholder="e.g. Rayan Aouf (CEO)"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Executive Summary *
+                  </label>
+                  <textarea
+                    rows={2}
+                    required
+                    placeholder="Brief overview explaining purpose and primary requirements..."
+                    value={formData.summary}
+                    onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Full Policy Text / Clauses *
+                  </label>
+                  <textarea
+                    rows={5}
+                    required
+                    placeholder="Section 1. Purpose&#10;Section 2. Standard Operating Procedures..."
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 font-mono focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Mandatory Audience (comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="All Employees, Support, Sales"
+                      value={formData.mandatoryFor}
+                      onChange={(e) => setFormData({ ...formData, mandatoryFor: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Tags (comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="ISO 9001, Checklist, Guidelines"
+                      value={formData.tags}
+                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* ── EVENT PREPARATION CHECKLIST TASKS ── */}
+                <div className="pt-3 border-t border-slate-200/80">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                        <CheckSquare className="h-4 w-4 text-[#1b6b6a]" />
+                        <span>Preparation Checklist Tasks ({formTasks.length})</span>
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        These tasks will automatically appear on all future corporate events as a preparation checklist before attending and presenting.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Task items list */}
+                  <div className="space-y-2 mb-3">
+                    {formTasks.length === 0 ? (
+                      <div className="p-3.5 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50 text-xs text-slate-400">
+                        No preparation checklist tasks added yet. Add tasks below to enforce event readiness.
+                      </div>
+                    ) : (
+                      formTasks.map((task, idx) => (
+                        <div key={task.id || idx} className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/70">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold shrink-0">
+                            {idx + 1}
+                          </span>
+                          <input
+                            type="text"
+                            value={task.title}
+                            onChange={(e) => {
+                              const next = [...formTasks];
+                              next[idx].title = e.target.value;
+                              setFormTasks(next);
+                            }}
+                            placeholder="Task title..."
+                            className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:outline-hidden focus:border-[#44ACAB]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = [...formTasks];
+                              next[idx].isMandatory = !next[idx].isMandatory;
+                              setFormTasks(next);
+                            }}
+                            className={`text-[10px] font-bold px-2 py-1 rounded-md border transition-colors shrink-0 ${
+                              task.isMandatory
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : 'bg-slate-100 text-slate-500 border-slate-200'
+                            }`}
+                          >
+                            {task.isMandatory ? 'Required' : 'Optional'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormTasks(formTasks.filter((_, i) => i !== idx));
+                            }}
+                            className="text-slate-400 hover:text-rose-600 p-1 transition-colors shrink-0"
+                            title="Remove task"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Add Task Input */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newTaskInput}
+                      onChange={(e) => setNewTaskInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newTaskInput.trim()) {
+                            setFormTasks([
+                              ...formTasks,
+                              {
+                                id: `ptask-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                                title: newTaskInput.trim(),
+                                isMandatory: true
+                              }
+                            ]);
+                            setNewTaskInput('');
+                          }
+                        }
+                      }}
+                      placeholder="e.g. Verify marketing roll-ups and client demo credentials..."
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:border-[#44ACAB] focus:outline-hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newTaskInput.trim()) {
+                          setFormTasks([
+                            ...formTasks,
+                            {
+                              id: `ptask-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                              title: newTaskInput.trim(),
+                              isMandatory: true
+                            }
+                          ]);
+                          setNewTaskInput('');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-xl bg-slate-800 text-white px-3 py-1.5 text-xs font-bold hover:bg-slate-900 transition-colors shrink-0"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Add Task</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    setEditingPolicy(null);
+                  }}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#1b6b6a] hover:bg-[#155453] px-5 py-2 text-xs font-bold text-white shadow-md transition-all"
+                >
+                  {editingPolicy ? 'Save Changes' : 'Publish Policy Document'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── SEARCH & FILTER CONTROLS ── */}
       <div className="rounded-2xl bg-white p-3.5 sm:p-4 shadow-xs ring-1 ring-slate-200">
@@ -723,387 +1132,7 @@ export function PolicyView({ policies, onRefresh, showToast }: PolicyViewProps) 
         )}
       </AnimatePresence>
 
-      {/* ── ADD / EDIT POLICY MODAL ── */}
-      <AnimatePresence>
-        {isFormOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col relative"
-            >
-              <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white shrink-0 sticky top-0 z-20">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-[#44ACAB]/20 text-[#44ACAB]">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base">
-                      {editingPolicy ? 'Edit Policy Document' : 'Create New Policy'}
-                    </h3>
-                    <p className="text-xs text-slate-300">
-                      Select policy type (1 allowed per specific type, unlimited for 'Other')
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsFormOpen(false)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
 
-              <form onSubmit={handleSavePolicy} className="flex-1 overflow-y-auto min-h-0 flex flex-col custom-dark-scrollbar">
-                <div className="p-6 space-y-4 flex-1">
-                  
-                  {/* POLICY TYPE SELECTION (SINGLETON RULE ENFORCEMENT) */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1 flex items-center justify-between">
-                      <span>Policy Type *</span>
-                      <span className="text-[11px] font-normal text-slate-500">1 max per specific type • Unlimited for "other"</span>
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                      {POLICY_TYPES.map((t) => {
-                        const isSelected = formData.type === t.id;
-                        const isSingleton = t.isSingleton;
-                        const existing = policies.find(p => p.type === t.id && p.id !== editingPolicy?.id);
-                        const isTaken = isSingleton && Boolean(existing);
-
-                        return (
-                          <div
-                            key={t.id}
-                            className={`p-2.5 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
-                              isTaken 
-                                ? 'opacity-85 bg-slate-50/90 border-amber-200/80'
-                                : isSelected
-                                ? 'border-[#44ACAB] bg-[#e6f4f4] ring-2 ring-[#44ACAB]/40 shadow-xs'
-                                : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
-                            }`}
-                          >
-                            <button
-                              type="button"
-                              disabled={isTaken}
-                              onClick={() => setFormData({ ...formData, type: t.id })}
-                              className={`w-full text-left ${isTaken ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <span className={`text-xs font-bold ${isTaken ? 'text-slate-600 line-through decoration-amber-500/50' : isSelected ? 'text-[#1b6b6a]' : 'text-slate-800'}`}>
-                                  {t.label}
-                                </span>
-                                {isSingleton ? (
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded shrink-0 ${
-                                    isTaken ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                                  }`}>
-                                    {isTaken ? '1/1 Reached' : '0/1 Available'}
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 shrink-0">
-                                    Unlimited
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[10px] text-slate-500 line-clamp-1">{t.description}</p>
-                            </button>
-
-                            {isTaken && existing && (
-                              <div className="mt-1.5 pt-1.5 border-t border-amber-100/90 flex items-center justify-between text-[10px]">
-                                <span className="text-amber-800 truncate max-w-[120px]" title={existing.title}>
-                                  "{existing.title}"
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenEdit(existing);
-                                  }}
-                                  className="text-amber-900 font-bold hover:underline shrink-0 ml-1"
-                                >
-                                  Edit instead →
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* POLICY CREATION RULES INFO BANNER */}
-                    <div className="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 flex items-start gap-2.5">
-                      <Info className="h-4 w-4 text-[#1b6b6a] shrink-0 mt-0.5" />
-                      <div className="text-[11px] leading-relaxed text-slate-600 space-y-0.5">
-                        <span className="font-bold text-slate-800">Policy Rules:</span> Exactly <strong>1</strong> policy can be created for <em>Event policy</em>, <em>Cleaning Policy</em>, <em>Recrutment Policy</em>, <em>Dayly policy</em>, and <em>Weekly Policy</em>. For <em>other</em>, you can create as many policies as needed.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                      Policy Title *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Workplace Sanitization & Cleaning Policy"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Version *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="v1.0"
-                        value={formData.version}
-                        onChange={(e) => setFormData({ ...formData, version: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Status *
-                      </label>
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as PolicyStatus })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      >
-                        <option value="active">Active (In Force)</option>
-                        <option value="under_review">Under Review</option>
-                        <option value="archived">Archived</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Effective Date *
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={formData.effectiveDate}
-                        onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Author / Sponsor
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.author}
-                        onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                        placeholder="e.g. Rayan Aouf (CEO)"
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                      Executive Summary *
-                    </label>
-                    <textarea
-                      rows={2}
-                      required
-                      placeholder="Brief overview explaining purpose and primary requirements..."
-                      value={formData.summary}
-                      onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                      Full Policy Text / Clauses *
-                    </label>
-                    <textarea
-                      rows={5}
-                      required
-                      placeholder="Section 1. Purpose&#10;Section 2. Standard Operating Procedures..."
-                      value={formData.content}
-                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 font-mono focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Mandatory Audience (comma-separated)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="All Employees, Support, Sales"
-                        value={formData.mandatoryFor}
-                        onChange={(e) => setFormData({ ...formData, mandatoryFor: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Tags (comma-separated)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="ISO 9001, Checklist, Guidelines"
-                        value={formData.tags}
-                        onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
-
-                  {/* ── EVENT PREPARATION CHECKLIST TASKS ── */}
-                  <div className="pt-3 border-t border-slate-200/80">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                          <CheckSquare className="h-4 w-4 text-[#1b6b6a]" />
-                          <span>Preparation Checklist Tasks ({formTasks.length})</span>
-                        </label>
-                        <p className="text-[11px] text-slate-500">
-                          These tasks will automatically appear on all future corporate events as a preparation checklist before attending and presenting.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Task items list */}
-                    <div className="space-y-2 mb-3">
-                      {formTasks.length === 0 ? (
-                        <div className="p-3.5 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50 text-xs text-slate-400">
-                          No preparation checklist tasks added yet. Add tasks below to enforce event readiness.
-                        </div>
-                      ) : (
-                        formTasks.map((task, idx) => (
-                          <div key={task.id || idx} className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/70">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold shrink-0">
-                              {idx + 1}
-                            </span>
-                            <input
-                              type="text"
-                              value={task.title}
-                              onChange={(e) => {
-                                const next = [...formTasks];
-                                next[idx].title = e.target.value;
-                                setFormTasks(next);
-                              }}
-                              placeholder="Task title..."
-                              className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:outline-hidden focus:border-[#44ACAB]"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const next = [...formTasks];
-                                next[idx].isMandatory = !next[idx].isMandatory;
-                                setFormTasks(next);
-                              }}
-                              className={`text-[10px] font-bold px-2 py-1 rounded-md border transition-colors shrink-0 ${
-                                task.isMandatory
-                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                  : 'bg-slate-100 text-slate-500 border-slate-200'
-                              }`}
-                            >
-                              {task.isMandatory ? 'Required' : 'Optional'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFormTasks(formTasks.filter((_, i) => i !== idx));
-                              }}
-                              className="text-slate-400 hover:text-rose-600 p-1 transition-colors shrink-0"
-                              title="Remove task"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    {/* Add Task Input */}
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={newTaskInput}
-                        onChange={(e) => setNewTaskInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (newTaskInput.trim()) {
-                              setFormTasks([
-                                ...formTasks,
-                                {
-                                  id: `ptask-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-                                  title: newTaskInput.trim(),
-                                  isMandatory: true
-                                }
-                              ]);
-                              setNewTaskInput('');
-                            }
-                          }
-                        }}
-                        placeholder="e.g. Verify marketing roll-ups and client demo credentials..."
-                        className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:border-[#44ACAB] focus:outline-hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (newTaskInput.trim()) {
-                            setFormTasks([
-                              ...formTasks,
-                              {
-                                id: `ptask-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-                                title: newTaskInput.trim(),
-                                isMandatory: true
-                              }
-                            ]);
-                            setNewTaskInput('');
-                          }
-                        }}
-                        className="inline-flex items-center gap-1 rounded-xl bg-slate-800 text-white px-3 py-1.5 text-xs font-bold hover:bg-slate-900 transition-colors shrink-0"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add Task</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2.5 shrink-0 sticky bottom-0 z-20">
-                  <button
-                    type="button"
-                    onClick={() => setIsFormOpen(false)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-[#1b6b6a] hover:bg-[#155453] px-5 py-2 text-xs font-bold text-white shadow-md transition-all"
-                  >
-                    {editingPolicy ? 'Save Changes' : 'Publish Policy'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* ── DELETE CONFIRMATION MODAL ── */}
       <AnimatePresence>
