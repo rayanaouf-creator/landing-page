@@ -47,9 +47,12 @@ import {
   FolderGit2,
   BarChart3,
   Users,
-  FileText
+  FileText,
+  MessageCircle,
+  History,
+  MessageSquare
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser, CrmResource, ALL_CRM_RESOURCES, CompanyPolicy, CompanyEvent } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser, CrmResource, ALL_CRM_RESOURCES, CompanyPolicy, CompanyEvent, ClientInteraction, ContactChannel } from '../types';
 import { leadStorage } from '../services/leadStorage';
 import { customerStorage } from '../services/customerStorage';
 import { claimStorage } from '../services/claimStorage';
@@ -68,6 +71,7 @@ import { UsersView, ROLE_CONFIG } from '../components/admin/UsersView';
 import { PolicyView } from '../components/admin/PolicyView';
 import { EventsView } from '../components/admin/EventsView';
 import { DailyContactGraph } from '../components/admin/DailyContactGraph';
+import { ClientContactLogModal } from '../components/admin/ClientContactLogModal';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string }> = {
   new: { label: 'New Lead', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
@@ -286,6 +290,7 @@ export function AdminPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
+  const [contactLogClient, setContactLogClient] = useState<Lead | null>(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -708,11 +713,11 @@ export function AdminPage() {
     setIsFormModalOpen(false);
   };
 
-  const handleDeleteLead = (id: string, name: string) => {
+  const handleDeleteLead = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete lead "${name}"? This action cannot be undone.`)) {
-      leadStorage.deleteLead(id);
+      await leadStorage.deleteLead(id);
       loadLeads();
-      showToast('Lead removed from database.');
+      showToast('Lead permanently removed from database.');
       if (viewingLead?.id === id) {
         setViewingLead(null);
       }
@@ -735,13 +740,39 @@ export function AdminPage() {
     showToast(`Status updated to ${STATUS_CONFIG[newStatus].label}.`);
   };
 
-  const handleLogContact = (id: string, method: string = 'phone') => {
+  const handleLogContact = (id: string, method: string = 'phone', interactionDetails?: Partial<ClientInteraction>) => {
     const existing = leads.find(l => l.id === id);
     if (!existing) return;
-    const nowIso = new Date().toISOString();
+    const nowIso = interactionDetails?.contactedAt || new Date().toISOString();
+
+    // Preserve existing contact history or bootstrap from legacy single contactedAt
+    const currentHistory: ClientInteraction[] = existing.contactHistory ? [...existing.contactHistory] : [];
+    if (currentHistory.length === 0 && existing.contactedAt) {
+      currentHistory.push({
+        id: `legacy-${Date.now()}`,
+        channel: (existing.contactMethod as any) || 'phone',
+        contactedAt: existing.contactedAt,
+        summary: 'Prior contact recorded',
+        loggedBy: 'Team'
+      });
+    }
+
+    const newInteraction: ClientInteraction = {
+      id: interactionDetails?.id || `cnt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      channel: (method as any) || 'phone',
+      contactedAt: nowIso,
+      summary: interactionDetails?.summary || '',
+      outcome: interactionDetails?.outcome || 'In Discussion / Interested',
+      loggedBy: interactionDetails?.loggedBy || currentUser?.name || 'Rayan Aouf',
+      nextFollowUpDate: interactionDetails?.nextFollowUpDate
+    };
+
+    const updatedHistory = [newInteraction, ...currentHistory];
+
     const updates: Partial<Lead> = {
       contactedAt: nowIso,
-      contactMethod: method
+      contactMethod: method,
+      contactHistory: updatedHistory
     };
     if (existing.status === 'new') {
       updates.status = 'contacted';
@@ -751,7 +782,31 @@ export function AdminPage() {
     if (viewingLead?.id === id) {
       setViewingLead(prev => prev ? { ...prev, ...updates } : null);
     }
-    showToast(`Logged contact with ${existing.company || existing.name} via ${method}.`);
+    if (contactLogClient?.id === id) {
+      setContactLogClient(prev => prev ? { ...prev, ...updates } : null);
+    }
+    showToast(`Logged ${method} contact with ${existing.company || existing.name}.`);
+  };
+
+  const handleDeleteLeadInteraction = (leadId: string, interactionId: string) => {
+    const existing = leads.find(l => l.id === leadId);
+    if (!existing || !existing.contactHistory) return;
+    const filtered = existing.contactHistory.filter(i => i.id !== interactionId);
+    const latest = filtered[0];
+    const updates: Partial<Lead> = {
+      contactHistory: filtered,
+      contactedAt: latest ? latest.contactedAt : undefined,
+      contactMethod: latest ? latest.channel : undefined
+    };
+    leadStorage.updateLead(leadId, updates);
+    loadLeads();
+    if (viewingLead?.id === leadId) {
+      setViewingLead(prev => prev ? { ...prev, ...updates } : null);
+    }
+    if (contactLogClient?.id === leadId) {
+      setContactLogClient(prev => prev ? { ...prev, ...updates } : null);
+    }
+    showToast('Contact interaction removed from history.');
   };
 
   const handleCopy = (text: string, id: string) => {
@@ -2092,18 +2147,18 @@ export function AdminPage() {
         )}
 
         {/* Filter & Search Bar */}
-        <div className="mt-8 rounded-2xl bg-white p-4 sm:p-5 shadow-xs ring-1 ring-slate-200 space-y-4">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+        <div className="mt-8 rounded-2xl bg-white p-3.5 sm:p-4 shadow-xs ring-1 ring-slate-200">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+            {/* Search (constrained width so dropdowns sit to its right) */}
+            <div className="relative w-full sm:w-60 md:w-64 lg:w-72 shrink-0">
+              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
               <input
                 id="admin-search-input"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search leads by company, contact name, email, phone, or service..."
-                className="w-full rounded-xl bg-slate-50 border border-slate-200 py-2.5 pl-10 pr-10 text-xs sm:text-sm focus:bg-white focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none transition-all"
+                placeholder="Search leads by company, contact..."
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 py-2 pl-9 pr-9 text-xs sm:text-sm focus:bg-white focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-none transition-all"
               />
               {searchQuery && (
                 <button
@@ -2115,104 +2170,112 @@ export function AdminPage() {
               )}
             </div>
 
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs font-bold text-slate-500">Order by:</span>
+            {/* Status Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-500">Status:</span>
+              <select
+                id="admin-filter-status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 outline-none focus:border-[#44ACAB] font-medium shadow-2xs"
+              >
+                <option value="all">All Statuses ({leads.length})</option>
+                <option value="new">New ({leads.filter(l => l.status === 'new').length})</option>
+                <option value="contacted">Contacted ({leads.filter(l => l.status === 'contacted').length})</option>
+                <option value="in_discussion">In Discussion ({leads.filter(l => l.status === 'in_discussion').length})</option>
+                <option value="proposal_sent">Proposal Sent ({leads.filter(l => l.status === 'proposal_sent').length})</option>
+                <option value="converted">Won / Converted ({leads.filter(l => l.status === 'converted').length})</option>
+                <option value="lost">Lost / Closed ({leads.filter(l => l.status === 'lost').length})</option>
+              </select>
+            </div>
+
+            {/* Priority Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-500">Priority:</span>
+              <select
+                id="admin-filter-priority"
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 outline-none focus:border-[#44ACAB] font-medium shadow-2xs"
+              >
+                <option value="all">All Priorities</option>
+                <option value="high">High Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="low">Low Priority</option>
+              </select>
+            </div>
+
+            {/* Urgency Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-500">Urgency:</span>
+              <select
+                id="admin-filter-emergency"
+                value={emergencyFilter}
+                onChange={(e) => setEmergencyFilter(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 outline-none focus:border-[#44ACAB] font-medium shadow-2xs"
+              >
+                <option value="all">All Urgencies</option>
+                <option value="immediate">Immediate (&lt; 2 wks)</option>
+                <option value="high">Urgent (&lt; 1 mo)</option>
+                <option value="medium">Planned (1-3 mos)</option>
+                <option value="low">Exploratory</option>
+              </select>
+            </div>
+
+            {/* Source Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-500">Source:</span>
+              <select
+                id="admin-filter-source"
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 outline-none focus:border-[#44ACAB] font-medium shadow-2xs"
+              >
+                <option value="all">All Sources</option>
+                <option value="NetExpo-1">NetExpo-1</option>
+                <option value="EcselExpo-5">EcselExpo-5</option>
+                <option value="website_booking">Website Form</option>
+                <option value="direct_entry">Direct / Internal</option>
+                <option value="referral">Referral</option>
+                <option value="phone">Phone</option>
+              </select>
+            </div>
+
+            {/* Sort / Order by Dropdown */}
+            <div className="flex items-center gap-1.5 ml-auto">
+              <span className="text-xs font-bold text-slate-500">Order:</span>
               <select
                 id="admin-sort-select"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none focus:border-[#44ACAB] font-medium"
+                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 outline-none focus:border-[#44ACAB] font-medium shadow-2xs"
               >
-                <option value="status_new_first">Status / Type: New Inquiries First</option>
-                <option value="status_contacted_first">Status / Type: Contacted First</option>
-                <option value="status_discussion_first">Status / Type: In Discussion First</option>
-                <option value="status_desc">Status / Type: Won / Converted First</option>
+                <option value="status_new_first">Status: New First</option>
+                <option value="status_contacted_first">Status: Contacted First</option>
+                <option value="status_discussion_first">Status: In Discussion First</option>
+                <option value="status_desc">Status: Converted First</option>
                 <option value="date_desc">Date: Newest First</option>
                 <option value="date_asc">Date: Oldest First</option>
-                <option value="company">Company Name (A-Z)</option>
+                <option value="company">Company (A-Z)</option>
               </select>
             </div>
-          </div>
 
-          {/* Status Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
-            <span className="text-xs font-bold text-slate-500 mr-1">Status:</span>
-            {[
-              { id: 'all', label: 'All', count: leads.length },
-              { id: 'new', label: 'New', count: leads.filter(l => l.status === 'new').length },
-              { id: 'contacted', label: 'Contacted', count: leads.filter(l => l.status === 'contacted').length },
-              { id: 'in_discussion', label: 'In Discussion', count: leads.filter(l => l.status === 'in_discussion').length },
-              { id: 'proposal_sent', label: 'Proposal Sent', count: leads.filter(l => l.status === 'proposal_sent').length },
-              { id: 'converted', label: 'Converted', count: leads.filter(l => l.status === 'converted').length },
-              { id: 'lost', label: 'Closed', count: leads.filter(l => l.status === 'lost').length }
-            ].map((st) => (
+            {/* Reset Filters button if any filter is active */}
+            {(statusFilter !== 'all' || priorityFilter !== 'all' || emergencyFilter !== 'all' || sourceFilter !== 'all' || searchQuery) && (
               <button
-                key={st.id}
-                id={`admin-filter-status-${st.id}`}
-                onClick={() => setStatusFilter(st.id)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
-                  statusFilter === st.id
-                    ? 'bg-[#1b6b6a] text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
+                type="button"
+                onClick={() => {
+                  setStatusFilter('all');
+                  setPriorityFilter('all');
+                  setEmergencyFilter('all');
+                  setSourceFilter('all');
+                  setSearchQuery('');
+                }}
+                className="text-xs font-bold text-[#1b6b6a] hover:text-[#155453] hover:underline whitespace-nowrap pl-1"
               >
-                {st.label} ({st.count})
+                Reset
               </button>
-            ))}
-
-            <div className="ml-auto flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-500">Urgency:</span>
-                <select
-                  id="admin-filter-emergency"
-                  value={emergencyFilter}
-                  onChange={(e) => setEmergencyFilter(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:border-[#44ACAB]"
-                >
-                  <option value="all">All Urgencies</option>
-                  <option value="immediate">Immediate (&lt; 2 wks)</option>
-                  <option value="high">Urgent (&lt; 1 mo)</option>
-                  <option value="medium">Planned (1-3 mos)</option>
-                  <option value="low">Exploratory</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
-                <span className="text-xs font-bold text-slate-500">Priority:</span>
-                {['all', 'high', 'medium', 'low'].map((pr) => (
-                  <button
-                    key={pr}
-                    onClick={() => setPriorityFilter(pr)}
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize transition-all ${
-                      priorityFilter === pr
-                        ? 'bg-slate-800 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {pr}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
-                <span className="text-xs font-bold text-slate-500">Source:</span>
-                <select
-                  id="admin-filter-source"
-                  value={sourceFilter}
-                  onChange={(e) => setSourceFilter(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:border-[#44ACAB] font-medium"
-                >
-                  <option value="all">All Sources</option>
-                  <option value="NetExpo-1">NetExpo-1</option>
-                  <option value="EcselExpo-5">EcselExpo-5</option>
-                  <option value="website_booking">Website Form</option>
-                  <option value="direct_entry">Direct / Internal</option>
-                  <option value="referral">Referral</option>
-                  <option value="phone">Phone</option>
-                </select>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -2276,6 +2339,7 @@ export function AdminPage() {
                       </div>
                     </th>
                     <th className="px-3 py-3.5">Priority</th>
+                    <th className="px-3 py-3.5">Contact History</th>
                     <th className="px-3 py-3.5">Created</th>
                     <th className="py-3.5 pl-3 pr-6 text-right">Actions</th>
                   </tr>
@@ -2459,6 +2523,43 @@ export function AdminPage() {
                           </span>
                         </td>
 
+                        {/* Contact History & Log */}
+                        <td className="px-3 py-4 whitespace-nowrap">
+                          {lead.contactHistory && lead.contactHistory.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => setContactLogClient(lead)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-2xs group"
+                              title="Click to view all contact history and log new contact"
+                            >
+                              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span className="font-bold">{lead.contactHistory.length}</span>
+                              <span className="text-[11px] text-emerald-700 capitalize">
+                                {lead.contactMethod || 'contact'}{lead.contactHistory.length > 1 ? 's' : ''}
+                              </span>
+                            </button>
+                          ) : lead.contactedAt ? (
+                            <button
+                              type="button"
+                              onClick={() => setContactLogClient(lead)}
+                              className="inline-flex items-center gap-1 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md hover:bg-blue-100 font-medium"
+                              title="1 contact recorded • Click to view history"
+                            >
+                              <span>1 contact ({lead.contactMethod || 'phone'})</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setContactLogClient(lead)}
+                              className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-[#1b6b6a] transition-colors"
+                              title="Log contact with this client (WhatsApp, Mail, Phone, Face-to-Face)"
+                            >
+                              <PhoneCall className="h-3 w-3 text-slate-400" />
+                              <span>+ Log</span>
+                            </button>
+                          )}
+                        </td>
+
                         {/* Created Date */}
                         <td className="px-3 py-4 text-xs text-slate-500 whitespace-nowrap">
                           {new Date(lead.createdAt).toLocaleDateString('en-GB', {
@@ -2473,11 +2574,16 @@ export function AdminPage() {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               id={`admin-log-contact-${lead.id}`}
-                              onClick={() => handleLogContact(lead.id, 'phone')}
-                              className="rounded-lg p-1.5 text-slate-500 hover:bg-[#e6f4f4] hover:text-[#1b6b6a] transition-colors"
-                              title="Log phone call / mark contacted today"
+                              onClick={() => setContactLogClient(lead)}
+                              className="rounded-lg p-1.5 text-slate-500 hover:bg-[#e6f4f4] hover:text-[#1b6b6a] transition-colors relative"
+                              title="Log client contact (WhatsApp, Mail, Phone, Face-to-Face) / View History"
                             >
                               <PhoneCall className="h-4 w-4" />
+                              {lead.contactHistory && lead.contactHistory.length > 1 && (
+                                <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-[#1b6b6a] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                  {lead.contactHistory.length}
+                                </span>
+                              )}
                             </button>
                             <button
                               id={`admin-view-lead-${lead.id}`}
@@ -3010,30 +3116,87 @@ export function AdminPage() {
                   </div>
                 </div>
 
-                {/* Contact Tracking Status & Log Call Action */}
-                <div className="rounded-xl p-3.5 bg-slate-50 border border-slate-200 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <span className="font-bold text-slate-700 block">Contact Activity Tracking:</span>
-                    {viewingLead.contactedAt ? (
-                      <p className="text-emerald-700 mt-0.5 font-medium flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                        <span>Contacted on <strong>{new Date(viewingLead.contactedAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong> {viewingLead.contactMethod ? `via ${viewingLead.contactMethod}` : ''}</span>
+                {/* Contact Tracking Status & Interaction History Timeline */}
+                <div className="rounded-2xl p-4 bg-slate-50 border border-slate-200/90 text-xs space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <History className="h-4 w-4 text-[#1b6b6a]" />
+                        <span className="font-bold text-slate-800 text-sm">
+                          Client Interaction Log & History
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                          {(viewingLead.contactHistory?.length || (viewingLead.contactedAt ? 1 : 0))} logged
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Track every WhatsApp, phone call, email, or face-to-face meeting with full notes and timestamps.
                       </p>
-                    ) : (
-                      <p className="text-amber-600 mt-0.5 font-medium">
-                        {viewingLead.status === 'new' ? 'Not yet marked as contacted' : `Status: ${viewingLead.status}`}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
+                    </div>
+
                     <button
-                      onClick={() => handleLogContact(viewingLead.id, 'phone')}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#44ACAB] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#328887] shadow-xs transition-all"
+                      type="button"
+                      onClick={() => setContactLogClient(viewingLead)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#1b6b6a] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#155453] shadow-xs transition-all shrink-0 self-start sm:self-auto"
                     >
-                      <PhoneCall className="h-3.5 w-3.5" />
-                      <span>{viewingLead.contactedAt ? 'Log New Call Today' : 'Log Call / Contact Today'}</span>
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>+ Log Contact (WhatsApp / Call / Mail / F2F)</span>
                     </button>
                   </div>
+
+                  {/* Summary of interactions */}
+                  {viewingLead.contactHistory && viewingLead.contactHistory.length > 0 ? (
+                    <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>Latest Interactions:</span>
+                        <button
+                          type="button"
+                          onClick={() => setContactLogClient(viewingLead)}
+                          className="text-[#1b6b6a] font-bold hover:underline"
+                        >
+                          View Full History ({viewingLead.contactHistory.length}) →
+                        </button>
+                      </div>
+                      {viewingLead.contactHistory.slice(0, 3).map((ci, idx) => (
+                        <div key={ci.id || idx} className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start justify-between gap-2 text-xs shadow-2xs">
+                          <div className="flex items-start gap-2">
+                            <span className="capitalize font-bold text-[#1b6b6a] bg-teal-50 px-2 py-0.5 rounded text-[10px] border border-teal-200/60">
+                              {ci.channel.replace('_', ' ')}
+                            </span>
+                            <div>
+                              <p className="text-slate-800 font-medium line-clamp-1">{ci.summary || 'Interaction logged'}</p>
+                              <span className="text-[10px] text-slate-400">
+                                {new Date(ci.contactedAt).toLocaleDateString()} at {new Date(ci.contactedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} by {ci.loggedBy || 'Team'}
+                              </span>
+                            </div>
+                          </div>
+                          {ci.outcome && (
+                            <span className="text-[10px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 shrink-0">
+                              {ci.outcome}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : viewingLead.contactedAt ? (
+                    <div className="mt-1 p-3 rounded-xl bg-white border border-slate-200 text-xs flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                        <span>Contacted on {new Date(viewingLead.contactedAt).toLocaleDateString()} via {viewingLead.contactMethod || 'phone'}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setContactLogClient(viewingLead)}
+                        className="text-xs text-[#1b6b6a] font-bold hover:underline"
+                      >
+                        Manage History
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-1 p-3.5 rounded-xl bg-white border border-dashed border-slate-200 text-xs text-slate-400 text-center">
+                      No contacts recorded yet for this client. Click "+ Log Contact" above to record your first communication.
+                    </div>
+                  )}
                 </div>
 
                 {viewingLead.opportunityId && (
@@ -3181,6 +3344,26 @@ export function AdminPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ── CLIENT CONTACT LOG & INTERACTION HISTORY MODAL ── */}
+      {contactLogClient && (
+        <ClientContactLogModal
+          isOpen={Boolean(contactLogClient)}
+          onClose={() => setContactLogClient(null)}
+          clientName={contactLogClient.name}
+          clientCompany={contactLogClient.company}
+          clientPhone={contactLogClient.phone}
+          clientEmail={contactLogClient.email}
+          contactHistory={contactLogClient.contactHistory || []}
+          currentUserName={currentUser?.name || 'Rayan Aouf'}
+          onSaveInteraction={(interaction) => {
+            handleLogContact(contactLogClient.id, interaction.channel, interaction);
+          }}
+          onDeleteInteraction={(interactionId) => {
+            handleDeleteLeadInteraction(contactLogClient.id, interactionId);
+          }}
+        />
+      )}
     </div>
   );
 }

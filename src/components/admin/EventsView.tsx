@@ -21,11 +21,13 @@ import {
   ShieldCheck,
   Briefcase
 } from 'lucide-react';
-import { CompanyEvent, EventType, EventStatus } from '../../types';
+import { CompanyEvent, EventType, EventStatus, CompanyPolicy, AppUser } from '../../types';
 import { eventStorage } from '../../services/eventStorage';
 
 interface EventsViewProps {
   events: CompanyEvent[];
+  policies?: CompanyPolicy[];
+  currentUser?: AppUser | null;
   onRefresh: () => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -39,7 +41,7 @@ const EVENT_TYPES: { id: EventType; label: string; icon: typeof Calendar }[] = [
   { id: 'webinar', label: 'Client Webinar', icon: ExternalLink }
 ];
 
-export function EventsView({ events, onRefresh, showToast }: EventsViewProps) {
+export function EventsView({ events, policies, currentUser, onRefresh, showToast }: EventsViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');

@@ -3,6 +3,18 @@ export type LeadPriority = 'high' | 'medium' | 'low';
 export type LeadSource = 'website_booking' | 'direct_entry' | 'referral' | 'phone' | 'NetExpo-1' | 'EcselExpo-5' | 'netexpo_1' | 'ecselexpo_5';
 export type EmergencyLevel = 'immediate' | 'high' | 'medium' | 'low';
 
+export type ContactChannel = 'whatsapp' | 'mail' | 'phone' | 'face_to_face' | 'video_call' | 'other';
+
+export interface ClientInteraction {
+  id: string;
+  channel: ContactChannel;
+  contactedAt: string;          // ISO timestamp
+  summary?: string;             // Notes / discussion summary
+  outcome?: string;             // e.g. "Interested", "Follow-up Scheduled", "Sent Quotation", "No Answer"
+  loggedBy?: string;            // Staff member who logged this contact
+  nextFollowUpDate?: string;    // Optional next follow-up date
+}
+
 export interface Lead {
   id: string;
   name: string;
@@ -22,8 +34,9 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
   notes?: string;
-  contactedAt?: string;           // ISO timestamp of when the lead was contacted
-  contactMethod?: string;         // 'phone' | 'email' | 'whatsapp' | 'meeting' | 'other'
+  contactedAt?: string;           // ISO timestamp of most recent contact
+  contactMethod?: string;         // Most recent contact channel ('whatsapp' | 'mail' | 'phone' | 'face_to_face' | 'video_call' | 'other')
+  contactHistory?: ClientInteraction[]; // Complete historical log of all client interactions
   estimatedValueDZD?: number;
   opportunityId?: string;         // Linked Opportunity ID once converted/created
 }
@@ -45,6 +58,9 @@ export interface Customer {
   website?: string;
   taxId?: string;                // NIF / NIS / RC
   notes?: string;
+  contactedAt?: string;           // ISO timestamp of most recent contact
+  contactMethod?: string;         // Most recent contact channel
+  contactHistory?: ClientInteraction[]; // Complete historical log of all client interactions
   createdAt: string;
   updatedAt: string;
 }

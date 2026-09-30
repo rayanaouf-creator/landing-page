@@ -10,6 +10,8 @@ import {
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_customers_database_v2';
+const DELETED_CUSTOMERS_KEY = 'jetnext_deleted_customer_ids_v1';
+const MIGRATED_FLAG_KEY = 'jetnext_customers_migrated_flag_v2';
 const FAKE_CUSTOMER_IDS = ['cust-101', 'cust-102', 'cust-103'];
 
 type CustomerListener = (customers: Customer[]) => void;
@@ -17,13 +19,41 @@ const listeners: Set<CustomerListener> = new Set();
 let memoryCustomers: Customer[] = [];
 let isInitialized = false;
 
+function getDeletedCustomerIds(): Set<string> {
+  try {
+    const raw = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(DELETED_CUSTOMERS_KEY) : null;
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function addDeletedCustomerId(id: string): void {
+  try {
+    const set = getDeletedCustomerIds();
+    set.add(id);
+    localStorage.setItem(DELETED_CUSTOMERS_KEY, JSON.stringify([...set]));
+  } catch {}
+}
+
+function removeDeletedCustomerId(id: string): void {
+  try {
+    const set = getDeletedCustomerIds();
+    set.delete(id);
+    localStorage.setItem(DELETED_CUSTOMERS_KEY, JSON.stringify([...set]));
+  } catch {}
+}
+
 function loadLocalMirror(): Customer[] {
   try {
     const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
     if (!data) return [];
     const parsed: Customer[] = JSON.parse(data);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(c => !FAKE_CUSTOMER_IDS.includes(c.id));
+    const deleted = getDeletedCustomerIds();
+    return parsed.filter(c => !FAKE_CUSTOMER_IDS.includes(c.id) && !deleted.has(c.id));
   } catch {
     return [];
   }
@@ -38,26 +68,42 @@ function initFirestoreSync() {
   try {
     const colRef = collection(db, COLLECTIONS.CUSTOMERS);
     onSnapshot(colRef, (snapshot) => {
+      const deletedIds = getDeletedCustomerIds();
       const remoteCustomers: Customer[] = [];
+
       snapshot.forEach((d) => {
-        remoteCustomers.push(d.data() as Customer);
+        const cust = d.data() as Customer;
+        // If this ID was permanently deleted by the user, ensure it is wiped from Firestore and skip it
+        if (deletedIds.has(d.id)) {
+          deleteDoc(doc(db, COLLECTIONS.CUSTOMERS, d.id)).catch(() => {});
+        } else if (!FAKE_CUSTOMER_IDS.includes(d.id)) {
+          remoteCustomers.push(cust);
+        }
       });
 
       remoteCustomers.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-      if (remoteCustomers.length === 0 && memoryCustomers.length > 0) {
-        memoryCustomers.forEach(c => {
-          setDoc(doc(db, COLLECTIONS.CUSTOMERS, c.id), c).catch(err => {
-            console.error('Error migrating customer to Firestore:', err);
+      // One-time initial migration only if Firestore is completely empty on the very first boot
+      const hasMigrated = localStorage.getItem(MIGRATED_FLAG_KEY) === 'true';
+      if (!hasMigrated) {
+        localStorage.setItem(MIGRATED_FLAG_KEY, 'true');
+        if (remoteCustomers.length === 0 && memoryCustomers.length > 0) {
+          memoryCustomers.forEach(c => {
+            if (!deletedIds.has(c.id)) {
+              setDoc(doc(db, COLLECTIONS.CUSTOMERS, c.id), c).catch(err => {
+                console.error('Error migrating customer to Firestore:', err);
+              });
+            }
           });
-        });
-      } else {
-        memoryCustomers = remoteCustomers;
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteCustomers));
-        } catch {}
-        listeners.forEach(fn => fn(memoryCustomers));
+          return;
+        }
       }
+
+      memoryCustomers = remoteCustomers;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteCustomers));
+      } catch {}
+      listeners.forEach(fn => fn(memoryCustomers));
     }, (error) => {
       console.warn('Firestore customers snapshot listener warning:', error);
     });
@@ -88,6 +134,8 @@ export const customerStorage = {
       updatedAt: now
     };
 
+    removeDeletedCustomerId(newCustomer.id);
+
     memoryCustomers = [newCustomer, ...memoryCustomers.filter(c => c.id !== newCustomer.id)];
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCustomers));
@@ -112,6 +160,9 @@ export const customerStorage = {
       location: lead.location || 'Alger',
       industry: lead.industry || 'Services professionnels & IT',
       status: 'active',
+      contactedAt: lead.contactedAt,
+      contactMethod: lead.contactMethod,
+      contactHistory: lead.contactHistory ? [...lead.contactHistory] : [],
       notes: `Converted from Sales Lead #${lead.id}. Origin: ${lead.source}. Initial notes: ${lead.notes || lead.message || 'None'}`
     });
   },
@@ -139,21 +190,26 @@ export const customerStorage = {
     return updated;
   },
 
-  deleteCustomer(id: string): boolean {
+  async deleteCustomer(id: string): Promise<boolean> {
+    // 1. Immediately record in permanent tombstone set
+    addDeletedCustomerId(id);
+
+    // 2. Remove from local memory & localStorage mirror
     const prevLen = memoryCustomers.length;
     memoryCustomers = memoryCustomers.filter(c => c.id !== id);
-    if (memoryCustomers.length === prevLen) return false;
-
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCustomers));
     } catch {}
     listeners.forEach(fn => fn(memoryCustomers));
 
-    deleteDoc(doc(db, COLLECTIONS.CUSTOMERS, id)).catch(err => {
+    // 3. Await deletion on Firestore cloud database to ensure completion before any refresh
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.CUSTOMERS, id));
+    } catch (err) {
       console.error('Firestore deleteCustomer error:', err);
-    });
+    }
 
-    return true;
+    return memoryCustomers.length !== prevLen;
   },
 
   exportCSV(): void {
@@ -182,7 +238,7 @@ export const customerStorage = {
       `"${(c.phone || '').replace(/"/g, '""')}"`,
       `"${(c.location || '').replace(/"/g, '""')}"`,
       `"${(c.industry || '').replace(/"/g, '""')}"`,
-      `"${c.status}"`,
+      `"${c.status || ''}"`,
       `"${(c.website || '').replace(/"/g, '""')}"`,
       `"${(c.taxId || '').replace(/"/g, '""')}"`,
       `"${(c.notes || '').replace(/"/g, '""')}"`
@@ -193,10 +249,8 @@ export const customerStorage = {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `jetnext-customers-${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
+    link.download = `jetnext_customers_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
 };

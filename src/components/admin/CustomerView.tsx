@@ -17,11 +17,15 @@ import {
   FileText,
   TrendingUp,
   FolderGit2,
-  AlertCircle
+  AlertCircle,
+  PhoneCall,
+  History,
+  MessageCircle
 } from 'lucide-react';
-import { Customer, CustomerStatus } from '../../types';
+import { Customer, CustomerStatus, ClientInteraction, ContactChannel } from '../../types';
 import { customerStorage } from '../../services/customerStorage';
 import { LOCATION_PRESETS, INDUSTRY_PRESETS, JOB_TITLE_PRESETS } from '../../pages/Admin';
+import { ClientContactLogModal } from './ClientContactLogModal';
 
 const STATUS_CONFIG: Record<CustomerStatus, { label: string; color: string; bg: string; border: string }> = {
   active: { label: 'Active Client', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
@@ -70,6 +74,74 @@ export function CustomerView({
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [contactLogCustomer, setContactLogCustomer] = useState<Customer | null>(null);
+
+  const handleLogCustomerContact = (customerId: string, method: string = 'phone', interactionDetails?: Partial<ClientInteraction>) => {
+    const existing = customers.find(c => c.id === customerId);
+    if (!existing) return;
+    const nowIso = interactionDetails?.contactedAt || new Date().toISOString();
+
+    const currentHistory: ClientInteraction[] = existing.contactHistory ? [...existing.contactHistory] : [];
+    if (currentHistory.length === 0 && existing.contactedAt) {
+      currentHistory.push({
+        id: `legacy-${Date.now()}`,
+        channel: (existing.contactMethod as any) || 'phone',
+        contactedAt: existing.contactedAt,
+        summary: 'Prior contact recorded',
+        loggedBy: 'Team'
+      });
+    }
+
+    const newInteraction: ClientInteraction = {
+      id: interactionDetails?.id || `cnt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      channel: (method as any) || 'phone',
+      contactedAt: nowIso,
+      summary: interactionDetails?.summary || '',
+      outcome: interactionDetails?.outcome || 'In Discussion / Interested',
+      loggedBy: interactionDetails?.loggedBy || 'Rayan Aouf',
+      nextFollowUpDate: interactionDetails?.nextFollowUpDate
+    };
+
+    const updatedHistory = [newInteraction, ...currentHistory];
+
+    const updates: Partial<Customer> = {
+      contactedAt: nowIso,
+      contactMethod: method,
+      contactHistory: updatedHistory
+    };
+
+    customerStorage.updateCustomer(customerId, updates);
+    onRefresh();
+    if (viewingCustomer?.id === customerId) {
+      setViewingCustomer(prev => prev ? { ...prev, ...updates } : null);
+    }
+    if (contactLogCustomer?.id === customerId) {
+      setContactLogCustomer(prev => prev ? { ...prev, ...updates } : null);
+    }
+    showToast(`Logged ${method} contact with ${existing.company || existing.name}.`);
+  };
+
+  const handleDeleteCustomerInteraction = (customerId: string, interactionId: string) => {
+    const existing = customers.find(c => c.id === customerId);
+    if (!existing || !existing.contactHistory) return;
+    const filtered = existing.contactHistory.filter(i => i.id !== interactionId);
+    const latest = filtered[0];
+    const updates: Partial<Customer> = {
+      contactHistory: filtered,
+      contactedAt: latest ? latest.contactedAt : undefined,
+      contactMethod: latest ? latest.channel : undefined
+    };
+    customerStorage.updateCustomer(customerId, updates);
+    onRefresh();
+    if (viewingCustomer?.id === customerId) {
+      setViewingCustomer(prev => prev ? { ...prev, ...updates } : null);
+    }
+    if (contactLogCustomer?.id === customerId) {
+      setContactLogCustomer(prev => prev ? { ...prev, ...updates } : null);
+    }
+    showToast('Contact interaction removed from customer history.');
+  };
 
   // Form inputs (purely customer account fields - no contract, no cost, no monthly support)
   const [company, setCompany] = useState('');
@@ -150,12 +222,19 @@ export function CustomerView({
     onRefresh();
   };
 
-  const handleDeleteConfirm = () => {
-    if (!customerToDelete) return;
-    customerStorage.deleteCustomer(customerToDelete.id);
-    showToast(`Deleted customer "${customerToDelete.company}"`);
-    setCustomerToDelete(null);
-    onRefresh();
+  const handleDeleteConfirm = async () => {
+    if (!customerToDelete || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await customerStorage.deleteCustomer(customerToDelete.id);
+      showToast(`Deleted customer "${customerToDelete.company}"`);
+    } catch {
+      showToast('Error deleting customer');
+    } finally {
+      setIsDeleting(false);
+      setCustomerToDelete(null);
+      onRefresh();
+    }
   };
 
   // Filtered customer list
@@ -396,6 +475,7 @@ export function CustomerView({
                   <th className="py-3.5 px-4">Location / Wilaya</th>
                   <th className="py-3.5 px-4">Industry Sector</th>
                   <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Contact History</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -476,9 +556,58 @@ export function CustomerView({
                         </span>
                       </td>
 
+                      {/* Contact History */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {c.contactHistory && c.contactHistory.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setContactLogCustomer(c)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-2xs group"
+                            title="Click to view all contact history and log new contact"
+                          >
+                            <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="font-bold">{c.contactHistory.length}</span>
+                            <span className="text-[11px] text-emerald-700 capitalize">
+                              {c.contactMethod || 'contact'}{c.contactHistory.length > 1 ? 's' : ''}
+                            </span>
+                          </button>
+                        ) : c.contactedAt ? (
+                          <button
+                            type="button"
+                            onClick={() => setContactLogCustomer(c)}
+                            className="inline-flex items-center gap-1 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md hover:bg-blue-100 font-medium"
+                            title="1 contact recorded • Click to view history"
+                          >
+                            <span>1 contact ({c.contactMethod || 'phone'})</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setContactLogCustomer(c)}
+                            className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-[#1b6b6a] transition-colors"
+                            title="Log client contact (WhatsApp, Mail, Phone, Face-to-Face)"
+                          >
+                            <PhoneCall className="h-3 w-3 text-slate-400" />
+                            <span>+ Log</span>
+                          </button>
+                        )}
+                      </td>
+
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setContactLogCustomer(c)}
+                            className="rounded-lg p-1.5 text-slate-500 hover:bg-[#e6f4f4] hover:text-[#1b6b6a] transition-colors relative"
+                            title="Log client contact (WhatsApp, Mail, Phone, Face-to-Face) / View History"
+                          >
+                            <PhoneCall className="h-4 w-4" />
+                            {c.contactHistory && c.contactHistory.length > 1 && (
+                              <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-[#1b6b6a] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                {c.contactHistory.length}
+                              </span>
+                            )}
+                          </button>
                           {onCreateOpportunityForCustomer && (
                             <button
                               onClick={() => onCreateOpportunityForCustomer(c)}
@@ -813,6 +942,89 @@ export function CustomerView({
                 </div>
               )}
 
+              {/* ── CLIENT CONTACT ACTIVITY TRACKING & HISTORY ── */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/90 text-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <History className="h-4 w-4 text-[#1b6b6a]" />
+                      <span className="font-bold text-slate-800 text-sm">
+                        Client Interaction Log & History
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                        {(viewingCustomer.contactHistory?.length || (viewingCustomer.contactedAt ? 1 : 0))} logged
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Record every WhatsApp, phone call, email, or face-to-face meeting with full discussion notes.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setContactLogCustomer(viewingCustomer)}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#1b6b6a] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#155453] shadow-xs transition-all shrink-0 self-start sm:self-auto"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>+ Log Contact</span>
+                  </button>
+                </div>
+
+                {/* Summary of interactions */}
+                {viewingCustomer.contactHistory && viewingCustomer.contactHistory.length > 0 ? (
+                  <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>Recent Interactions:</span>
+                      <button
+                        type="button"
+                        onClick={() => setContactLogCustomer(viewingCustomer)}
+                        className="text-[#1b6b6a] font-bold hover:underline"
+                      >
+                        View Full History ({viewingCustomer.contactHistory.length}) →
+                      </button>
+                    </div>
+                    {viewingCustomer.contactHistory.slice(0, 3).map((ci, idx) => (
+                      <div key={ci.id || idx} className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start justify-between gap-2 text-xs shadow-2xs">
+                        <div className="flex items-start gap-2">
+                          <span className="capitalize font-bold text-[#1b6b6a] bg-teal-50 px-2 py-0.5 rounded text-[10px] border border-teal-200/60">
+                            {ci.channel.replace('_', ' ')}
+                          </span>
+                          <div>
+                            <p className="text-slate-800 font-medium line-clamp-1">{ci.summary || 'Interaction logged'}</p>
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(ci.contactedAt).toLocaleDateString()} at {new Date(ci.contactedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} by {ci.loggedBy || 'Team'}
+                            </span>
+                          </div>
+                        </div>
+                        {ci.outcome && (
+                          <span className="text-[10px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 shrink-0">
+                            {ci.outcome}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : viewingCustomer.contactedAt ? (
+                  <div className="mt-1 p-3 rounded-xl bg-white border border-slate-200 text-xs flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      <span>Contacted on {new Date(viewingCustomer.contactedAt).toLocaleDateString()} via {viewingCustomer.contactMethod || 'phone'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setContactLogCustomer(viewingCustomer)}
+                      className="text-xs text-[#1b6b6a] font-bold hover:underline"
+                    >
+                      Manage History
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-1 p-3.5 rounded-xl bg-white border border-dashed border-slate-200 text-xs text-slate-400 text-center">
+                    No contacts recorded yet for this client account. Click "+ Log Contact" above to record an interaction.
+                  </div>
+                )}
+              </div>
+
               {viewingCustomer.notes && (
                 <div className="p-4 rounded-xl bg-slate-50 text-xs">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Internal Notes</span>
@@ -901,20 +1113,49 @@ export function CustomerView({
             </p>
             <div className="mt-5 flex items-center justify-end gap-2">
               <button
+                disabled={isDeleting}
                 onClick={() => setCustomerToDelete(null)}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
+                disabled={isDeleting}
                 onClick={handleDeleteConfirm}
-                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700"
+                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 transition-all flex items-center gap-1.5"
               >
-                Delete Account
+                {isDeleting ? (
+                  <>
+                    <span className="h-3 w-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <span>Delete Account</span>
+                )}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── CLIENT CONTACT LOG & INTERACTION HISTORY MODAL ── */}
+      {contactLogCustomer && (
+        <ClientContactLogModal
+          isOpen={Boolean(contactLogCustomer)}
+          onClose={() => setContactLogCustomer(null)}
+          clientName={contactLogCustomer.name}
+          clientCompany={contactLogCustomer.company}
+          clientPhone={contactLogCustomer.phone}
+          clientEmail={contactLogCustomer.email}
+          contactHistory={contactLogCustomer.contactHistory || []}
+          currentUserName="Rayan Aouf"
+          onSaveInteraction={(interaction) => {
+            handleLogCustomerContact(contactLogCustomer.id, interaction.channel, interaction);
+          }}
+          onDeleteInteraction={(interactionId) => {
+            handleDeleteCustomerInteraction(contactLogCustomer.id, interactionId);
+          }}
+        />
       )}
     </div>
   );

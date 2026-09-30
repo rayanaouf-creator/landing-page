@@ -10,12 +10,41 @@ import {
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_leads_database_v1';
+const DELETED_LEADS_KEY = 'jetnext_deleted_lead_ids_v1';
+const MIGRATED_FLAG_KEY = 'jetnext_leads_migrated_flag_v2';
 const INITIAL_SEEDED_LEADS: Lead[] = [];
 
 type LeadListener = (leads: Lead[]) => void;
 const listeners: Set<LeadListener> = new Set();
 let memoryLeads: Lead[] = [];
 let isInitialized = false;
+
+function getDeletedLeadIds(): Set<string> {
+  try {
+    const raw = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(DELETED_LEADS_KEY) : null;
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function addDeletedLeadId(id: string): void {
+  try {
+    const set = getDeletedLeadIds();
+    set.add(id);
+    localStorage.setItem(DELETED_LEADS_KEY, JSON.stringify([...set]));
+  } catch {}
+}
+
+function removeDeletedLeadId(id: string): void {
+  try {
+    const set = getDeletedLeadIds();
+    set.delete(id);
+    localStorage.setItem(DELETED_LEADS_KEY, JSON.stringify([...set]));
+  } catch {}
+}
 
 // Read local mirror first so UI is instant
 function loadLocalMirror(): Lead[] {
@@ -24,7 +53,8 @@ function loadLocalMirror(): Lead[] {
     if (!data) return [];
     const parsed: Lead[] = JSON.parse(data);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(l => l.id !== 'lead-1' && l.id !== 'lead-2' && l.id !== 'lead-3');
+    const deleted = getDeletedLeadIds();
+    return parsed.filter(l => l.id !== 'lead-1' && l.id !== 'lead-2' && l.id !== 'lead-3' && !deleted.has(l.id));
   } catch {
     return [];
   }
@@ -40,28 +70,43 @@ function initFirestoreSync() {
   try {
     const colRef = collection(db, COLLECTIONS.LEADS);
     onSnapshot(colRef, (snapshot) => {
+      const deletedIds = getDeletedLeadIds();
       const remoteLeads: Lead[] = [];
+
       snapshot.forEach((d) => {
-        remoteLeads.push(d.data() as Lead);
+        const lead = d.data() as Lead;
+        // If this ID was marked deleted locally, purge it from Firestore and ignore it
+        if (deletedIds.has(d.id)) {
+          deleteDoc(doc(db, COLLECTIONS.LEADS, d.id)).catch(() => {});
+        } else if (d.id !== 'lead-1' && d.id !== 'lead-2' && d.id !== 'lead-3') {
+          remoteLeads.push(lead);
+        }
       });
 
       // Sort by createdAt descending
       remoteLeads.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-      // If Firestore is empty but we have local leads, migrate them to Firestore
-      if (remoteLeads.length === 0 && memoryLeads.length > 0) {
-        memoryLeads.forEach(lead => {
-          setDoc(doc(db, COLLECTIONS.LEADS, lead.id), lead).catch(err => {
-            console.error('Error migrating lead to Firestore:', err);
+      // One-time initial migration only if Firestore is completely empty on first boot
+      const hasMigrated = localStorage.getItem(MIGRATED_FLAG_KEY) === 'true';
+      if (!hasMigrated) {
+        localStorage.setItem(MIGRATED_FLAG_KEY, 'true');
+        if (remoteLeads.length === 0 && memoryLeads.length > 0) {
+          memoryLeads.forEach(lead => {
+            if (!deletedIds.has(lead.id)) {
+              setDoc(doc(db, COLLECTIONS.LEADS, lead.id), lead).catch(err => {
+                console.error('Error migrating lead to Firestore:', err);
+              });
+            }
           });
-        });
-      } else {
-        memoryLeads = remoteLeads;
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteLeads));
-        } catch {}
-        listeners.forEach(fn => fn(memoryLeads));
+          return;
+        }
       }
+
+      memoryLeads = remoteLeads;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteLeads));
+      } catch {}
+      listeners.forEach(fn => fn(memoryLeads));
     }, (error) => {
       console.warn('Firestore leads snapshot listener warning:', error);
     });
@@ -91,6 +136,8 @@ export const leadStorage = {
       createdAt: now,
       updatedAt: now
     };
+
+    removeDeletedLeadId(newLead.id);
 
     // Update memory & local mirror immediately
     memoryLeads = [newLead, ...memoryLeads.filter(l => l.id !== newLead.id)];
@@ -131,22 +178,26 @@ export const leadStorage = {
     return updatedLead;
   },
 
-  deleteLead(id: string): boolean {
+  async deleteLead(id: string): Promise<boolean> {
+    // 1. Record in permanent tombstone set
+    addDeletedLeadId(id);
+
+    // 2. Remove from memory and localStorage mirror
     const prevLength = memoryLeads.length;
     memoryLeads = memoryLeads.filter((l) => l.id !== id);
-    if (memoryLeads.length === prevLength) return false;
-
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryLeads));
     } catch {}
     listeners.forEach(fn => fn(memoryLeads));
 
-    // Delete in Firebase Firestore
-    deleteDoc(doc(db, COLLECTIONS.LEADS, id)).catch(err => {
+    // 3. Await deletion on Firestore cloud database
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.LEADS, id));
+    } catch (err) {
       console.error('Firestore deleteLead error:', err);
-    });
+    }
 
-    return true;
+    return memoryLeads.length !== prevLength;
   },
 
   resetToInitial(): Lead[] {
@@ -168,30 +219,33 @@ export const leadStorage = {
       'Post / Function',
       'Location / Wilaya',
       'Industry / Sector',
-      'Emergency Level',
-      'Email', 
-      'Phone', 
-      'Service', 
-      'Acquisition Source',
+      'Urgency',
+      'Requested Solution', 
       'Status', 
       'Priority', 
-      'Notes'
+      'Acquisition Source', 
+      'Phone', 
+      'Email', 
+      'Additional Phones',
+      'Notes & Message'
     ];
-    const rows = leads.map(l => [
+
+    const rows = leads.map((l) => [
       `"${l.id}"`,
-      `"${new Date(l.createdAt).toLocaleDateString()}"`,
+      `"${l.createdAt ? new Date(l.createdAt).toLocaleDateString() : ''}"`,
       `"${(l.company || '').replace(/"/g, '""')}"`,
       `"${(l.name || '').replace(/"/g, '""')}"`,
       `"${(l.jobTitle || '').replace(/"/g, '""')}"`,
       `"${(l.location || '').replace(/"/g, '""')}"`,
       `"${(l.industry || '').replace(/"/g, '""')}"`,
-      `"${(l.emergencyLevel || '').replace(/"/g, '""')}"`,
-      `"${(l.email || '').replace(/"/g, '""')}"`,
-      `"${([l.phone, ...(l.additionalPhones || [])].filter(Boolean).join(' | ')).replace(/"/g, '""')}"`,
+      `"${l.emergencyLevel || 'medium'}"`,
       `"${(l.serviceRequested || '').replace(/"/g, '""')}"`,
-      `"${(l.source || '').replace(/"/g, '""')}"`,
       `"${l.status}"`,
       `"${l.priority}"`,
+      `"${l.source}"`,
+      `"${l.phone}"`,
+      `"${l.email}"`,
+      `"${(l.additionalPhones || []).join('; ')}"`,
       `"${(l.notes || l.message || '').replace(/"/g, '""')}"`
     ]);
 
@@ -200,39 +254,66 @@ export const leadStorage = {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `jetnext-leads-${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
+    link.download = `jetnext_leads_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   },
 
   exportJSON(): void {
-    const leads = this.getLeads();
-    const blob = new Blob([JSON.stringify(leads, null, 2)], { type: 'application/json' });
+    const dataStr = JSON.stringify(this.getLeads(), null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `jetnext-leads-backup-${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(link);
+    link.download = `jetnext_leads_export_${new Date().toISOString().split('T')[0]}.json`;
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   },
 
   importJSON(jsonString: string): boolean {
     try {
       const parsed = JSON.parse(jsonString);
-      if (Array.isArray(parsed)) {
-        memoryLeads = parsed;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-        listeners.forEach(fn => fn(memoryLeads));
-        parsed.forEach(lead => {
-          setDoc(doc(db, COLLECTIONS.LEADS, lead.id), lead).catch(console.error);
+      if (!Array.isArray(parsed)) return false;
+      
+      const validated: Lead[] = parsed.map((item) => {
+        const id = item.id || `lead-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        removeDeletedLeadId(id);
+        return {
+          id,
+          name: item.name || 'Anonymous Contact',
+          email: item.email || '',
+          phone: item.phone || '',
+          additionalPhones: Array.isArray(item.additionalPhones) ? item.additionalPhones : [],
+          company: item.company || 'Enterprise Client',
+          jobTitle: item.jobTitle || 'Executive Contact',
+          location: item.location || 'Alger',
+          industry: item.industry || 'Distribution & Commerce',
+          emergencyLevel: item.emergencyLevel || 'medium',
+          serviceRequested: item.serviceRequested || 'Consulting & ERP',
+          message: item.message || '',
+          status: item.status || 'new',
+          priority: item.priority || 'medium',
+          source: item.source || 'direct_entry',
+          createdAt: item.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          notes: item.notes || item.message || ''
+        };
+      });
+
+      memoryLeads = [...validated, ...memoryLeads];
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryLeads));
+      } catch {}
+      listeners.forEach(fn => fn(memoryLeads));
+
+      // Sync to Firebase Firestore
+      validated.forEach(lead => {
+        setDoc(doc(db, COLLECTIONS.LEADS, lead.id), lead).catch(err => {
+          console.error('Firestore import lead error:', err);
         });
-        return true;
-      }
-      return false;
+      });
+
+      return true;
     } catch {
       return false;
     }
