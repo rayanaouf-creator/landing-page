@@ -10,41 +10,12 @@ import {
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_leads_database_v1';
-const DELETED_LEADS_KEY = 'jetnext_deleted_lead_ids_v1';
-const MIGRATED_FLAG_KEY = 'jetnext_leads_migrated_flag_v2';
 const INITIAL_SEEDED_LEADS: Lead[] = [];
 
 type LeadListener = (leads: Lead[]) => void;
 const listeners: Set<LeadListener> = new Set();
 let memoryLeads: Lead[] = [];
 let isInitialized = false;
-
-function getDeletedLeadIds(): Set<string> {
-  try {
-    const raw = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(DELETED_LEADS_KEY) : null;
-    if (!raw) return new Set();
-    const arr = JSON.parse(raw);
-    return new Set(Array.isArray(arr) ? arr : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function addDeletedLeadId(id: string): void {
-  try {
-    const set = getDeletedLeadIds();
-    set.add(id);
-    localStorage.setItem(DELETED_LEADS_KEY, JSON.stringify([...set]));
-  } catch {}
-}
-
-function removeDeletedLeadId(id: string): void {
-  try {
-    const set = getDeletedLeadIds();
-    set.delete(id);
-    localStorage.setItem(DELETED_LEADS_KEY, JSON.stringify([...set]));
-  } catch {}
-}
 
 // Read local mirror first so UI is instant
 function loadLocalMirror(): Lead[] {
@@ -53,8 +24,7 @@ function loadLocalMirror(): Lead[] {
     if (!data) return [];
     const parsed: Lead[] = JSON.parse(data);
     if (!Array.isArray(parsed)) return [];
-    const deleted = getDeletedLeadIds();
-    return parsed.filter(l => l.id !== 'lead-1' && l.id !== 'lead-2' && l.id !== 'lead-3' && !deleted.has(l.id));
+    return parsed.filter(l => l.id !== 'lead-1' && l.id !== 'lead-2' && l.id !== 'lead-3');
   } catch {
     return [];
   }
@@ -62,7 +32,7 @@ function loadLocalMirror(): Lead[] {
 
 memoryLeads = loadLocalMirror();
 
-// Setup real-time Firestore listener
+// Real-time Firestore sync: STRICTLY READ-ONLY in onSnapshot to prevent cyclical loops
 function initFirestoreSync() {
   if (isInitialized || typeof window === 'undefined') return;
   isInitialized = true;
@@ -70,38 +40,18 @@ function initFirestoreSync() {
   try {
     const colRef = collection(db, COLLECTIONS.LEADS);
     onSnapshot(colRef, (snapshot) => {
-      const deletedIds = getDeletedLeadIds();
       const remoteLeads: Lead[] = [];
 
       snapshot.forEach((d) => {
-        const lead = d.data() as Lead;
-        // If this ID was marked deleted locally, purge it from Firestore and ignore it
-        if (deletedIds.has(d.id)) {
-          deleteDoc(doc(db, COLLECTIONS.LEADS, d.id)).catch(() => {});
-        } else if (d.id !== 'lead-1' && d.id !== 'lead-2' && d.id !== 'lead-3') {
-          remoteLeads.push(lead);
+        if (d.id !== 'lead-1' && d.id !== 'lead-2' && d.id !== 'lead-3') {
+          remoteLeads.push(d.data() as Lead);
         }
       });
 
       // Sort by createdAt descending
       remoteLeads.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-      // One-time initial migration only if Firestore is completely empty on first boot
-      const hasMigrated = localStorage.getItem(MIGRATED_FLAG_KEY) === 'true';
-      if (!hasMigrated) {
-        localStorage.setItem(MIGRATED_FLAG_KEY, 'true');
-        if (remoteLeads.length === 0 && memoryLeads.length > 0) {
-          memoryLeads.forEach(lead => {
-            if (!deletedIds.has(lead.id)) {
-              setDoc(doc(db, COLLECTIONS.LEADS, lead.id), lead).catch(err => {
-                console.error('Error migrating lead to Firestore:', err);
-              });
-            }
-          });
-          return;
-        }
-      }
-
+      // Update memory & local mirror with Firestore source of truth
       memoryLeads = remoteLeads;
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteLeads));
@@ -136,8 +86,6 @@ export const leadStorage = {
       createdAt: now,
       updatedAt: now
     };
-
-    removeDeletedLeadId(newLead.id);
 
     // Update memory & local mirror immediately
     memoryLeads = [newLead, ...memoryLeads.filter(l => l.id !== newLead.id)];
@@ -179,10 +127,7 @@ export const leadStorage = {
   },
 
   async deleteLead(id: string): Promise<boolean> {
-    // 1. Record in permanent tombstone set
-    addDeletedLeadId(id);
-
-    // 2. Remove from memory and localStorage mirror
+    // 1. Immediately remove from local memory & storage
     const prevLength = memoryLeads.length;
     memoryLeads = memoryLeads.filter((l) => l.id !== id);
     try {
@@ -190,7 +135,7 @@ export const leadStorage = {
     } catch {}
     listeners.forEach(fn => fn(memoryLeads));
 
-    // 3. Await deletion on Firestore cloud database
+    // 2. Await deletion on Firestore cloud database
     try {
       await deleteDoc(doc(db, COLLECTIONS.LEADS, id));
     } catch (err) {
@@ -277,7 +222,6 @@ export const leadStorage = {
       
       const validated: Lead[] = parsed.map((item) => {
         const id = item.id || `lead-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-        removeDeletedLeadId(id);
         return {
           id,
           name: item.name || 'Anonymous Contact',

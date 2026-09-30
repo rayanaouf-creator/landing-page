@@ -44,19 +44,11 @@ function initFirestoreSync() {
 
       remoteOpportunities.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-      if (remoteOpportunities.length === 0 && memoryOpportunities.length > 0) {
-        memoryOpportunities.forEach(o => {
-          setDoc(doc(db, COLLECTIONS.OPPORTUNITIES, o.id), o).catch(err => {
-            console.error('Error migrating opportunity to Firestore:', err);
-          });
-        });
-      } else {
-        memoryOpportunities = remoteOpportunities;
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteOpportunities));
-        } catch {}
-        listeners.forEach(fn => fn(memoryOpportunities));
-      }
+      memoryOpportunities = remoteOpportunities;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteOpportunities));
+      } catch {}
+      listeners.forEach(fn => fn(memoryOpportunities));
     }, (error) => {
       console.warn('Firestore opportunities snapshot listener warning:', error);
     });

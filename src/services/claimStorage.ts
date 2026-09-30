@@ -45,19 +45,11 @@ function initFirestoreSync() {
 
       remoteClaims.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-      if (remoteClaims.length === 0 && memoryClaims.length > 0) {
-        memoryClaims.forEach(c => {
-          setDoc(doc(db, COLLECTIONS.CLAIMS, c.id), c).catch(err => {
-            console.error('Error migrating claim to Firestore:', err);
-          });
-        });
-      } else {
-        memoryClaims = remoteClaims;
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteClaims));
-        } catch {}
-        listeners.forEach(fn => fn(memoryClaims));
-      }
+      memoryClaims = remoteClaims;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteClaims));
+      } catch {}
+      listeners.forEach(fn => fn(memoryClaims));
     }, (error) => {
       console.warn('Firestore claims snapshot listener warning:', error);
     });

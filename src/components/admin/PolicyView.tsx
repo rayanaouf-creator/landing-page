@@ -258,14 +258,6 @@ export function PolicyView({ policies, onRefresh, showToast }: PolicyViewProps) 
     }
   };
 
-  const handleResetDefaults = async () => {
-    if (confirm('Restore default organizational policies & types?')) {
-      await policyStorage.resetToDefaults();
-      showToast('Default policies restored.', 'success');
-      onRefresh();
-    }
-  };
-
   const getTypeColor = (type: PolicyType) => {
     switch (type) {
       case 'Event policy':
@@ -330,170 +322,86 @@ export function PolicyView({ policies, onRefresh, showToast }: PolicyViewProps) 
         </div>
       </div>
 
-      {/* ── POLICY TYPES QUOTA & STATUS BANNER ── */}
-      <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200 space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-[#1b6b6a]" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-              Policy Types & Allocation Limits
-            </h3>
-          </div>
-          <span className="text-[11px] text-slate-500 font-medium">
-            Limit: Max 1 policy for each specific type • Unlimited for "other"
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          {typeQuotas.map((t) => {
-            const colors = getTypeColor(t.id);
-            const isSelected = typeFilter === t.id;
-            return (
-              <div
-                key={t.id}
-                onClick={() => setTypeFilter(typeFilter === t.id ? 'all' : t.id)}
-                className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                  isSelected
-                    ? 'border-[#44ACAB] bg-[#e6f4f4] ring-2 ring-[#44ACAB]/30 shadow-xs'
-                    : 'border-slate-200 bg-slate-50/70 hover:bg-white hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="text-xs font-bold text-slate-900 truncate" title={t.label}>
-                    {t.label}
-                  </span>
-                  {t.isSingleton ? (
-                    t.isFilled ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.2 rounded-full shrink-0">
-                        <CheckCircle2 className="h-2.5 w-2.5" />
-                        1/1
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.2 rounded-full shrink-0">
-                        0/1
-                      </span>
-                    )
-                  ) : (
-                    <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.2 rounded-full shrink-0">
-                      {t.count}
-                    </span>
-                  )}
-                </div>
-
-                <p className="text-[10px] text-slate-500 line-clamp-1">{t.description}</p>
-
-                <div className="mt-2 pt-1.5 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
-                  <span className="text-slate-400">
-                    {t.isSingleton ? 'Max: 1' : 'Unlimited'}
-                  </span>
-                  {t.isSingleton ? (
-                    t.isFilled && t.existingPolicy ? (
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setViewingPolicy(t.existingPolicy!);
-                          }}
-                          className="text-slate-600 hover:text-[#1b6b6a] font-semibold hover:underline"
-                          title="View this policy"
-                        >
-                          View
-                        </button>
-                        <span className="text-slate-300">•</span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenEdit(t.existingPolicy!);
-                          }}
-                          className="text-[#1b6b6a] hover:underline font-bold"
-                          title="Edit this policy"
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenAdd(t.id);
-                        }}
-                        className="text-[#1b6b6a] hover:underline font-bold"
-                      >
-                        + Create
-                      </button>
-                    )
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenAdd('other');
-                      }}
-                      className="text-purple-700 hover:underline font-bold"
-                    >
-                      + Add
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* ── SEARCH & FILTER CONTROLS ── */}
-      <div className="rounded-2xl bg-white p-4 shadow-xs ring-1 ring-slate-200 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search policies, tags, authors..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden"
-          />
-        </div>
+      <div className="rounded-2xl bg-white p-3.5 sm:p-4 shadow-xs ring-1 ring-slate-200">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          {/* Search bar */}
+          <div className="relative w-full sm:w-64 md:w-72 shrink-0">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              id="admin-search-policies"
+              type="text"
+              placeholder="Search policies, tags, authors..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#44ACAB] focus:bg-white focus:outline-hidden transition-all"
+            />
+          </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
-          {/* Policy Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 focus:border-[#44ACAB] focus:outline-hidden"
-          >
-            <option value="all">All Policy Types ({policies.length})</option>
-            {POLICY_TYPES.map(t => (
-              <option key={t.id} value={t.id}>
-                {t.label} ({policies.filter(p => p.type === t.id).length})
-              </option>
-            ))}
-          </select>
+          {/* Policy Types & Allocation Limits Dropdown Filter (right side of search bar) */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Type & Limit:</span>
+            <select
+              id="admin-policy-type-quota-filter"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 transition-all shadow-2xs"
+            >
+              <option value="all">All Policy Types & Limits ({policies.length})</option>
+              {typeQuotas.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label} • {t.isSingleton ? (t.isFilled ? '1/1 Allocated (Max 1)' : '0/1 Available (Max 1)') : `${t.count} Policies (Unlimited)`}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 focus:border-[#44ACAB] focus:outline-hidden"
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="under_review">Under Review</option>
-            <option value="archived">Archived</option>
-          </select>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Status:</span>
+            <select
+              id="admin-policy-status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 transition-all shadow-2xs"
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="under_review">Under Review</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
 
+          {/* Quick Create shortcut if an unfilled singleton type is selected */}
+          {typeFilter !== 'all' && (() => {
+            const selectedQuota = typeQuotas.find(t => t.id === typeFilter);
+            if (selectedQuota && selectedQuota.isSingleton && !selectedQuota.isFilled) {
+              return (
+                <button
+                  type="button"
+                  onClick={() => handleOpenAdd(selectedQuota.id)}
+                  className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1.5 text-xs font-bold hover:bg-emerald-100 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Create {selectedQuota.label}</span>
+                </button>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Reset Filters button */}
           {(searchTerm || typeFilter !== 'all' || statusFilter !== 'all') && (
             <button
+              type="button"
               onClick={() => {
                 setSearchTerm('');
                 setTypeFilter('all');
                 setStatusFilter('all');
               }}
-              className="text-xs text-slate-500 hover:text-slate-800 font-medium px-2 py-1"
+              className="ml-auto text-xs font-bold text-[#1b6b6a] hover:text-[#155453] hover:underline whitespace-nowrap pl-1"
             >
-              Reset Filters
+              Reset filters
             </button>
           )}
         </div>
@@ -504,8 +412,22 @@ export function PolicyView({ policies, onRefresh, showToast }: PolicyViewProps) 
         {filteredPolicies.length === 0 ? (
           <div className="col-span-full rounded-2xl bg-white p-12 text-center shadow-xs ring-1 ring-slate-200">
             <BookOpen className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-            <p className="text-base font-bold text-slate-700">No policy documents match your criteria</p>
-            <p className="text-xs text-slate-400 mt-1">Try adjusting your search keywords or filter options.</p>
+            <p className="text-base font-bold text-slate-700">No policy documents found</p>
+            <p className="text-xs text-slate-400 mt-1">
+              {policies.length === 0
+                ? "Start building your organization's governance by publishing your first policy document."
+                : 'Try adjusting your search keywords or filter options.'}
+            </p>
+            {policies.length === 0 && (
+              <button
+                type="button"
+                onClick={() => handleOpenAdd()}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#1b6b6a] px-4 py-2 text-xs font-bold text-white hover:bg-[#155453] transition-colors shadow-xs"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Create First Policy</span>
+              </button>
+            )}
           </div>
         ) : (
           filteredPolicies.map((policy) => {
@@ -639,16 +561,22 @@ export function PolicyView({ policies, onRefresh, showToast }: PolicyViewProps) 
         )}
       </div>
 
-      {/* Table Footer Reset */}
+      {/* Table Footer */}
       <div className="border-t border-slate-200 bg-slate-50/70 p-4 rounded-xl flex items-center justify-between text-xs text-slate-500">
         <span>Showing <strong>{filteredPolicies.length}</strong> of <strong>{policies.length}</strong> policy documents</span>
-        <button
-          onClick={handleResetDefaults}
-          className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          <RotateCcw className="h-3 w-3" />
-          <span>Restore Default Policies</span>
-        </button>
+        {(searchTerm || typeFilter !== 'all' || statusFilter !== 'all') && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchTerm('');
+              setTypeFilter('all');
+              setStatusFilter('all');
+            }}
+            className="text-xs font-bold text-[#1b6b6a] hover:text-[#155453] hover:underline"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {/* ── POLICY READER MODAL ── */}

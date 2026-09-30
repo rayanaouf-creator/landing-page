@@ -10,8 +10,6 @@ import {
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_customers_database_v2';
-const DELETED_CUSTOMERS_KEY = 'jetnext_deleted_customer_ids_v1';
-const MIGRATED_FLAG_KEY = 'jetnext_customers_migrated_flag_v2';
 const FAKE_CUSTOMER_IDS = ['cust-101', 'cust-102', 'cust-103'];
 
 type CustomerListener = (customers: Customer[]) => void;
@@ -19,41 +17,13 @@ const listeners: Set<CustomerListener> = new Set();
 let memoryCustomers: Customer[] = [];
 let isInitialized = false;
 
-function getDeletedCustomerIds(): Set<string> {
-  try {
-    const raw = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(DELETED_CUSTOMERS_KEY) : null;
-    if (!raw) return new Set();
-    const arr = JSON.parse(raw);
-    return new Set(Array.isArray(arr) ? arr : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function addDeletedCustomerId(id: string): void {
-  try {
-    const set = getDeletedCustomerIds();
-    set.add(id);
-    localStorage.setItem(DELETED_CUSTOMERS_KEY, JSON.stringify([...set]));
-  } catch {}
-}
-
-function removeDeletedCustomerId(id: string): void {
-  try {
-    const set = getDeletedCustomerIds();
-    set.delete(id);
-    localStorage.setItem(DELETED_CUSTOMERS_KEY, JSON.stringify([...set]));
-  } catch {}
-}
-
 function loadLocalMirror(): Customer[] {
   try {
     const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
     if (!data) return [];
     const parsed: Customer[] = JSON.parse(data);
     if (!Array.isArray(parsed)) return [];
-    const deleted = getDeletedCustomerIds();
-    return parsed.filter(c => !FAKE_CUSTOMER_IDS.includes(c.id) && !deleted.has(c.id));
+    return parsed.filter(c => !FAKE_CUSTOMER_IDS.includes(c.id));
   } catch {
     return [];
   }
@@ -61,6 +31,7 @@ function loadLocalMirror(): Customer[] {
 
 memoryCustomers = loadLocalMirror();
 
+// Real-time Firestore sync: STRICTLY READ-ONLY in onSnapshot to prevent cyclical loops
 function initFirestoreSync() {
   if (isInitialized || typeof window === 'undefined') return;
   isInitialized = true;
@@ -68,37 +39,17 @@ function initFirestoreSync() {
   try {
     const colRef = collection(db, COLLECTIONS.CUSTOMERS);
     onSnapshot(colRef, (snapshot) => {
-      const deletedIds = getDeletedCustomerIds();
       const remoteCustomers: Customer[] = [];
 
       snapshot.forEach((d) => {
-        const cust = d.data() as Customer;
-        // If this ID was permanently deleted by the user, ensure it is wiped from Firestore and skip it
-        if (deletedIds.has(d.id)) {
-          deleteDoc(doc(db, COLLECTIONS.CUSTOMERS, d.id)).catch(() => {});
-        } else if (!FAKE_CUSTOMER_IDS.includes(d.id)) {
-          remoteCustomers.push(cust);
+        if (!FAKE_CUSTOMER_IDS.includes(d.id)) {
+          remoteCustomers.push(d.data() as Customer);
         }
       });
 
       remoteCustomers.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-      // One-time initial migration only if Firestore is completely empty on the very first boot
-      const hasMigrated = localStorage.getItem(MIGRATED_FLAG_KEY) === 'true';
-      if (!hasMigrated) {
-        localStorage.setItem(MIGRATED_FLAG_KEY, 'true');
-        if (remoteCustomers.length === 0 && memoryCustomers.length > 0) {
-          memoryCustomers.forEach(c => {
-            if (!deletedIds.has(c.id)) {
-              setDoc(doc(db, COLLECTIONS.CUSTOMERS, c.id), c).catch(err => {
-                console.error('Error migrating customer to Firestore:', err);
-              });
-            }
-          });
-          return;
-        }
-      }
-
+      // Update memory & local mirror with Firestore source of truth
       memoryCustomers = remoteCustomers;
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteCustomers));
@@ -133,8 +84,6 @@ export const customerStorage = {
       createdAt: now,
       updatedAt: now
     };
-
-    removeDeletedCustomerId(newCustomer.id);
 
     memoryCustomers = [newCustomer, ...memoryCustomers.filter(c => c.id !== newCustomer.id)];
     try {
@@ -191,10 +140,7 @@ export const customerStorage = {
   },
 
   async deleteCustomer(id: string): Promise<boolean> {
-    // 1. Immediately record in permanent tombstone set
-    addDeletedCustomerId(id);
-
-    // 2. Remove from local memory & localStorage mirror
+    // 1. Immediately remove from local memory & storage so UI is reactive
     const prevLen = memoryCustomers.length;
     memoryCustomers = memoryCustomers.filter(c => c.id !== id);
     try {
@@ -202,7 +148,7 @@ export const customerStorage = {
     } catch {}
     listeners.forEach(fn => fn(memoryCustomers));
 
-    // 3. Await deletion on Firestore cloud database to ensure completion before any refresh
+    // 2. Await actual deletion in Firestore cloud database
     try {
       await deleteDoc(doc(db, COLLECTIONS.CUSTOMERS, id));
     } catch (err) {

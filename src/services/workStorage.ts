@@ -118,8 +118,10 @@ function initFirestoreSync() {
 
       remoteWork.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
 
-      if (remoteWork.length === 0) {
-        // Seed default projects to Firestore if collection is empty
+      const hasSeeded = typeof window !== 'undefined' && localStorage.getItem('jetnext_work_projects_seeded_v1') === 'true';
+      if (remoteWork.length === 0 && !hasSeeded) {
+        if (typeof window !== 'undefined') localStorage.setItem('jetnext_work_projects_seeded_v1', 'true');
+        // Seed default projects to Firestore if collection is empty on first install
         DEFAULT_WORK_PROJECTS.forEach((p) => {
           setDoc(doc(db, COLLECTIONS.WORK_PROJECTS, p.id), p).catch((err) => {
             console.error('Error seeding default work project to Firestore:', err);

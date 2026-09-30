@@ -44,19 +44,11 @@ function initFirestoreSync() {
 
       remoteProjects.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-      if (remoteProjects.length === 0 && memoryProjects.length > 0) {
-        memoryProjects.forEach(p => {
-          setDoc(doc(db, COLLECTIONS.PROJECTS, p.id), p).catch(err => {
-            console.error('Error migrating project to Firestore:', err);
-          });
-        });
-      } else {
-        memoryProjects = remoteProjects;
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProjects));
-        } catch {}
-        listeners.forEach(fn => fn(memoryProjects));
-      }
+      memoryProjects = remoteProjects;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProjects));
+      } catch {}
+      listeners.forEach(fn => fn(memoryProjects));
     }, (error) => {
       console.warn('Firestore projects snapshot listener warning:', error);
     });
