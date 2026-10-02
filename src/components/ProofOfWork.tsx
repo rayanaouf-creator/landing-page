@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { WorkProject } from '../types';
-import { workStorage, DEFAULT_WORK_PROJECTS } from '../services/workStorage';
+import { workStorage } from '../services/workStorage';
 
 export function ProofOfWork() {
   const { t } = useTranslation();
@@ -27,7 +27,7 @@ export function ProofOfWork() {
   useEffect(() => {
     const unsub = workStorage.subscribe((allItems) => {
       const published = allItems.filter(p => p.published);
-      setProjects(published.length > 0 ? published : DEFAULT_WORK_PROJECTS);
+      setProjects(published);
     });
     return () => unsub();
   }, []);

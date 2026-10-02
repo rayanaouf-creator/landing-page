@@ -221,14 +221,6 @@ export function WorkView({ projects, onRefresh, showNotification }: WorkViewProp
     onRefresh();
   };
 
-  const handleResetDefaults = () => {
-    if (window.confirm('Reset the Our Work section to the standard case studies (Optilens, CH Optic, Lutech)?')) {
-      workStorage.resetToDefaults();
-      showNotification('Reset Our Work showcase to defaults.');
-      onRefresh();
-    }
-  };
-
   return (
     <div className="space-y-8">
       {/* Header & Stats */}

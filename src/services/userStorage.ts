@@ -4,95 +4,34 @@ import {
   collection, 
   doc, 
   setDoc, 
-  updateDoc, 
   deleteDoc, 
+  getDocs,
   onSnapshot 
 } from 'firebase/firestore';
 
-const STORAGE_KEY = 'jetnext_users_directory_v1';
+const STORAGE_KEY = 'jetnext_users_directory_v2';
 
-export const DEFAULT_USERS: AppUser[] = [
-  {
-    id: 'user-rayan-aouf',
-    name: 'Rayan Aouf',
-    username: 'rayan.aouf',
-    password: 'Admin@JetNext2026',
-    email: 'rayanaouf@jethings.com',
-    role: 'admin',
-    status: 'active',
-    assignedResources: ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events'],
-    department: 'Executive',
-    title: 'Lead Administrator & CEO',
-    phone: '+213 550 12 34 56',
-    notes: 'Super administrator with full rights over CRM, projects, claims, and team access.',
-    createdAt: '2026-01-01T08:00:00.000Z',
-    updatedAt: '2026-01-01T08:00:00.000Z'
-  },
-  {
-    id: 'user-amina-benali',
-    name: 'Amina Benali',
-    username: 'amina.benali',
-    password: 'Sales#JetNext2026',
-    email: 'amina.benali@jethings.com',
-    role: 'sales_manager',
-    status: 'active',
-    assignedResources: ['lead', 'opportunity', 'customer', 'events'],
-    department: 'Commercial & Sales',
-    title: 'Head of Business Development',
-    phone: '+213 551 23 45 67',
-    notes: 'Oversees pipeline deals, qualified leads, and enterprise proposal submissions.',
-    createdAt: '2026-01-15T09:00:00.000Z',
-    updatedAt: '2026-01-15T09:00:00.000Z'
-  },
-  {
-    id: 'user-karim-messaoudi',
-    name: 'Karim Messaoudi',
-    username: 'karim.m',
-    password: 'Commercial@2026',
-    email: 'karim.m@jethings.com',
-    role: 'sales_rep',
-    status: 'active',
-    assignedResources: ['lead', 'opportunity'],
-    department: 'Commercial & Sales',
-    title: 'Senior Account Executive',
-    phone: '+213 552 34 56 78',
-    notes: 'Handles client inquiries, daily cold/warm lead outreach, and initial discovery calls.',
-    createdAt: '2026-02-01T10:00:00.000Z',
-    updatedAt: '2026-02-01T10:00:00.000Z'
-  },
-  {
-    id: 'user-sofia-khelil',
-    name: 'Sofia Khelil',
-    username: 'sofia.k',
-    password: 'Support#CAPA2026',
-    email: 'sofia.k@jethings.com',
-    role: 'support_agent',
-    status: 'active',
-    assignedResources: ['customer', 'claim', 'policy'],
-    department: 'Customer Success',
-    title: 'ISO 9001 Quality & Support Lead',
-    phone: '+213 553 45 67 89',
-    notes: 'Manages incoming claims, client tickets, incident logs, and ISO 9001 CAPA records.',
-    createdAt: '2026-02-10T11:00:00.000Z',
-    updatedAt: '2026-02-10T11:00:00.000Z'
-  },
-  {
-    id: 'user-yacine-zerrouki',
-    name: 'Yacine Zerrouki',
-    username: 'yacine.z',
-    password: 'ERPNext#Lead2026',
-    email: 'yacine.z@jethings.com',
-    role: 'project_manager',
-    status: 'active',
-    assignedResources: ['customer', 'project', 'work', 'events'],
-    department: 'Technical Operations',
-    title: 'ERPNext Implementation Lead',
-    phone: '+213 554 56 78 90',
-    notes: 'Supervises ERP client rollouts, custom software sprints, and technical milestones.',
-    createdAt: '2026-02-15T14:30:00.000Z',
-    updatedAt: '2026-02-15T14:30:00.000Z'
-  }
-];
+export const DEFAULT_USERS: AppUser[] = [];
+
+function sanitizeForFirestore(user: AppUser): Record<string, any> {
+  return {
+    id: user.id || '',
+    name: (user.name || '').trim(),
+    username: (user.username || '').trim().toLowerCase().replace(/^@/, ''),
+    password: (user.password || '').trim(),
+    email: (user.email || '').trim().toLowerCase(),
+    role: user.role || 'sales_rep',
+    status: user.status || 'active',
+    assignedResources: Array.isArray(user.assignedResources) ? user.assignedResources : ['lead', 'opportunity'],
+    department: (user.department || '').trim(),
+    title: (user.title || '').trim(),
+    phone: (user.phone || '').trim(),
+    notes: (user.notes || '').trim(),
+    lastLoginAt: user.lastLoginAt || null,
+    createdAt: user.createdAt || new Date().toISOString(),
+    updatedAt: user.updatedAt || new Date().toISOString()
+  };
+}
 
 class UserStorageService {
   private users: AppUser[] = [];
@@ -105,21 +44,25 @@ class UserStorageService {
 
   private loadFromStorage() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
       if (stored) {
-        this.users = JSON.parse(stored);
-      } else {
-        this.users = [...DEFAULT_USERS];
-        this.saveToStorage();
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.users = parsed;
+          return;
+        }
       }
+      this.users = [];
     } catch {
-      this.users = [...DEFAULT_USERS];
+      this.users = [];
     }
   }
 
   private saveToStorage() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.users));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.users));
+      }
     } catch (e) {
       console.warn('Error saving users to local storage:', e);
     }
@@ -134,30 +77,40 @@ class UserStorageService {
     this.listeners.push(callback);
     callback([...this.users]);
 
-    let unsubscribeFirestore: (() => void) | null = null;
+    if (!this.isFirebaseConnected) {
+      this.isFirebaseConnected = true;
+      this.setupFirestoreListener();
+    }
+
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== callback);
+    };
+  }
+
+  private setupFirestoreListener() {
     try {
       const usersCol = collection(db, COLLECTIONS.USERS);
-      unsubscribeFirestore = onSnapshot(
+      onSnapshot(
         usersCol,
         (snapshot) => {
-          this.isFirebaseConnected = true;
           if (snapshot.empty) {
-            // First time seeding to Firestore
-            this.seedInitialUsers();
+            this.users = [];
+            this.notify();
             return;
           }
-          const loaded: AppUser[] = [];
+
+          const remoteUsers: AppUser[] = [];
           snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            loaded.push({
+            remoteUsers.push({
               id: docSnap.id,
               name: data.name || '',
-              username: data.username || '',
+              username: (data.username || '').trim().toLowerCase().replace(/^@/, ''),
               password: data.password || '',
-              email: data.email || '',
-              role: (data.role || 'viewer') as UserRole,
+              email: (data.email || '').trim().toLowerCase(),
+              role: (data.role || 'sales_rep') as UserRole,
               status: (data.status || 'active') as UserStatus,
-              assignedResources: (data.assignedResources as CrmResource[]) || undefined,
+              assignedResources: Array.isArray(data.assignedResources) ? data.assignedResources : ['lead', 'opportunity'],
               department: data.department || '',
               title: data.title || '',
               phone: data.phone || '',
@@ -168,40 +121,74 @@ class UserStorageService {
             });
           });
 
-          // Sort by creation date or name
-          loaded.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-          this.users = loaded;
+          // Intelligent merge: keep any pending local additions that haven't synchronized to remote yet
+          const remoteIds = new Set(remoteUsers.map((u) => u.id));
+          const pendingLocals = this.users.filter((u) => !remoteIds.has(u.id) && u.id.startsWith('user-'));
+
+          this.users = [...remoteUsers, ...pendingLocals].sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
           this.notify();
         },
         (error) => {
-          console.warn('Firestore user subscription error (offline fallback used):', error);
-          this.isFirebaseConnected = false;
+          console.warn('Firestore user subscription error (operating in offline fallback):', error);
         }
       );
     } catch (e) {
       console.warn('Could not initialize Firestore user listener:', e);
     }
-
-    return () => {
-      this.listeners = this.listeners.filter((l) => l !== callback);
-      if (unsubscribeFirestore) {
-        unsubscribeFirestore();
-      }
-    };
   }
 
-  private async seedInitialUsers() {
+  /**
+   * Directly fetch freshest users from Firestore cloud database.
+   * Crucial for verifying login credentials on devices where local cache is cold.
+   */
+  public async fetchUsersFromFirestore(): Promise<AppUser[]> {
     try {
-      for (const item of DEFAULT_USERS) {
-        const docRef = doc(db, COLLECTIONS.USERS, item.id);
-        await setDoc(docRef, { ...item });
+      const usersCol = collection(db, COLLECTIONS.USERS);
+      const snapshot = await getDocs(usersCol);
+      if (!snapshot.empty) {
+        const remoteUsers: AppUser[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          remoteUsers.push({
+            id: docSnap.id,
+            name: data.name || '',
+            username: (data.username || '').trim().toLowerCase().replace(/^@/, ''),
+            password: data.password || '',
+            email: (data.email || '').trim().toLowerCase(),
+            role: (data.role || 'sales_rep') as UserRole,
+            status: (data.status || 'active') as UserStatus,
+            assignedResources: Array.isArray(data.assignedResources) ? data.assignedResources : ['lead', 'opportunity'],
+            department: data.department || '',
+            title: data.title || '',
+            phone: data.phone || '',
+            notes: data.notes || '',
+            lastLoginAt: data.lastLoginAt,
+            createdAt: data.createdAt || new Date().toISOString(),
+            updatedAt: data.updatedAt || new Date().toISOString()
+          });
+        });
+
+        if (remoteUsers.length > 0) {
+          const remoteIds = new Set(remoteUsers.map((u) => u.id));
+          const pendingLocals = this.users.filter((u) => !remoteIds.has(u.id) && u.id.startsWith('user-'));
+          this.users = [...remoteUsers, ...pendingLocals].sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          this.notify();
+        }
       }
     } catch (err) {
-      console.warn('Error seeding initial users to Firestore:', err);
+      console.warn('Error fetching fresh users from Firestore:', err);
     }
+    return [...this.users];
   }
 
   public getUsers(): AppUser[] {
+    if (this.users.length === 0) {
+      this.loadFromStorage();
+    }
     return [...this.users];
   }
 
@@ -209,25 +196,60 @@ class UserStorageService {
     return this.users.find((u) => u.id === id);
   }
 
+  /**
+   * Instant user creation:
+   * 1. Updates memory & localStorage synchronously (instant UI response & modal close).
+   * 2. Synchronizes to Firebase Firestore asynchronously without blocking or hanging popup.
+   */
   public async createUser(userData: Omit<AppUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<AppUser> {
+    const cleanUsername = (userData.username || '').trim().toLowerCase().replace(/^@/, '');
+    const cleanEmail = (userData.email || '').trim().toLowerCase();
+
+    if (!cleanUsername) {
+      throw new Error('Username handle cannot be blank.');
+    }
+    if (!cleanEmail) {
+      throw new Error('Email address cannot be blank.');
+    }
+
+    if (this.users.length === 0) {
+      this.loadFromStorage();
+    }
+
+    // Check duplicate username or email
+    const duplicate = this.users.find(
+      (u) =>
+        (u.username && u.username.toLowerCase().replace(/^@/, '') === cleanUsername) ||
+        (u.email && u.email.toLowerCase() === cleanEmail)
+    );
+    if (duplicate) {
+      if (duplicate.username?.toLowerCase().replace(/^@/, '') === cleanUsername) {
+        throw new Error(`Username @${cleanUsername} is already registered to ${duplicate.name}. Please choose another.`);
+      }
+      throw new Error(`Email ${cleanEmail} is already registered to user ${duplicate.name}.`);
+    }
+
     const now = new Date().toISOString();
     const id = `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const newUser: AppUser = {
       ...userData,
       id,
+      username: cleanUsername,
+      email: cleanEmail,
       createdAt: now,
       updatedAt: now
     };
 
+    // 1. Immediately update memory and localStorage
     this.users.push(newUser);
     this.notify();
 
-    try {
-      const docRef = doc(db, COLLECTIONS.USERS, id);
-      await setDoc(docRef, newUser);
-    } catch (err) {
-      console.warn('Could not write user to Firestore (stored locally):', err);
-    }
+    // 2. Persist to Firebase Firestore asynchronously without blocking the UI
+    const sanitized = sanitizeForFirestore(newUser);
+    const docRef = doc(db, COLLECTIONS.USERS, id);
+    setDoc(docRef, sanitized).catch((err) => {
+      console.warn('User saved locally; cloud sync pending/offline:', err);
+    });
 
     return newUser;
   }
@@ -241,22 +263,28 @@ class UserStorageService {
     const updatedUser: AppUser = {
       ...this.users[index],
       ...updates,
-      id, // Preserve id
+      id,
       updatedAt: new Date().toISOString()
     };
+
+    if (updates.username) {
+      updatedUser.username = updates.username.trim().toLowerCase().replace(/^@/, '');
+    }
+    if (updates.email) {
+      updatedUser.email = updates.email.trim().toLowerCase();
+    }
+    if (updates.password) {
+      updatedUser.password = updates.password.trim();
+    }
 
     this.users[index] = updatedUser;
     this.notify();
 
-    try {
-      const docRef = doc(db, COLLECTIONS.USERS, id);
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: updatedUser.updatedAt
-      });
-    } catch (err) {
-      console.warn('Could not update user in Firestore (saved locally):', err);
-    }
+    const sanitized = sanitizeForFirestore(updatedUser);
+    const docRef = doc(db, COLLECTIONS.USERS, id);
+    setDoc(docRef, sanitized, { merge: true }).catch((err) => {
+      console.warn('User updated locally; cloud sync pending/offline:', err);
+    });
 
     return updatedUser;
   }
@@ -270,7 +298,7 @@ class UserStorageService {
   }
 
   public async updateUserCredentials(id: string, username: string, password?: string): Promise<AppUser> {
-    const updates: Partial<AppUser> = { username: username.trim().toLowerCase() };
+    const updates: Partial<AppUser> = { username: username.trim().toLowerCase().replace(/^@/, '') };
     if (password !== undefined && password.trim() !== '') {
       updates.password = password.trim();
     }
@@ -285,28 +313,80 @@ class UserStorageService {
     this.users = this.users.filter((u) => u.id !== id);
     this.notify();
 
-    try {
-      const docRef = doc(db, COLLECTIONS.USERS, id);
-      await deleteDoc(docRef);
-    } catch (err) {
-      console.warn('Could not delete user from Firestore (removed locally):', err);
-    }
+    const docRef = doc(db, COLLECTIONS.USERS, id);
+    deleteDoc(docRef).catch((err) => {
+      console.warn('User deleted locally; cloud sync pending/offline:', err);
+    });
 
     return true;
   }
 
-  public async resetToDefaults(): Promise<void> {
-    this.users = [...DEFAULT_USERS];
-    this.notify();
+  /**
+   * Unified Authentication Method
+   * Supports username (with or without @), email address, full name, and case-tolerant matching.
+   */
+  public authenticate(identifier: string, passInput: string): { user?: AppUser; error?: string } {
+    const cleanId = (identifier || '').trim().toLowerCase().replace(/^@/, '');
+    const cleanPass = (passInput || '').trim();
 
-    try {
-      for (const item of DEFAULT_USERS) {
-        const docRef = doc(db, COLLECTIONS.USERS, item.id);
-        await setDoc(docRef, { ...item });
-      }
-    } catch (err) {
-      console.warn('Could not reset users in Firestore:', err);
+    if (!cleanId) {
+      return { error: 'Please enter your username or email address.' };
     }
+    if (!cleanPass) {
+      return { error: 'Please enter your password.' };
+    }
+
+    // Refresh users from storage if empty
+    let list = this.users;
+    if (list.length === 0) {
+      this.loadFromStorage();
+      list = this.users;
+    }
+
+    // Lookup user by username, email, or full name
+    const matched = list.find((u) => {
+      const uUsername = (u.username || '').trim().toLowerCase().replace(/^@/, '');
+      const uEmail = (u.email || '').trim().toLowerCase();
+      const uName = (u.name || '').trim().toLowerCase();
+      return uUsername === cleanId || uEmail === cleanId || uName === cleanId;
+    });
+
+    if (!matched) {
+      return { error: `No registered account found for "${identifier}". Please check with an administrator.` };
+    }
+
+    if (matched.status === 'inactive' || matched.status === 'suspended') {
+      return {
+        error: `Account @${matched.username || matched.name} is ${matched.status}. Access denied. Please contact an administrator.`
+      };
+    }
+
+    const savedPass = (matched.password || '').trim();
+    const isValid = 
+      savedPass && (
+        cleanPass === savedPass || 
+        passInput === matched.password ||
+        cleanPass.toLowerCase() === savedPass.toLowerCase()
+      );
+
+    if (!isValid) {
+      return { error: 'Incorrect password for this account. Please verify and try again.' };
+    }
+
+    return { user: matched };
+  }
+
+  /**
+   * Async Authentication with Automatic Cloud Firestore Fallback
+   */
+  public async authenticateAsync(identifier: string, passInput: string): Promise<{ user?: AppUser; error?: string }> {
+    let result = this.authenticate(identifier, passInput);
+    if (!result.user) {
+      // Fetch fresh users directly from cloud in case this is a cold session
+      await this.fetchUsersFromFirestore();
+      result = this.authenticate(identifier, passInput);
+    }
+    return result;
   }
 
   public exportCSV() {

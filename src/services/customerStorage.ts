@@ -10,7 +10,6 @@ import {
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_customers_database_v2';
-const FAKE_CUSTOMER_IDS = ['cust-101', 'cust-102', 'cust-103'];
 
 type CustomerListener = (customers: Customer[]) => void;
 const listeners: Set<CustomerListener> = new Set();
@@ -23,7 +22,7 @@ function loadLocalMirror(): Customer[] {
     if (!data) return [];
     const parsed: Customer[] = JSON.parse(data);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(c => !FAKE_CUSTOMER_IDS.includes(c.id));
+    return parsed;
   } catch {
     return [];
   }
@@ -42,9 +41,7 @@ function initFirestoreSync() {
       const remoteCustomers: Customer[] = [];
 
       snapshot.forEach((d) => {
-        if (!FAKE_CUSTOMER_IDS.includes(d.id)) {
-          remoteCustomers.push(d.data() as Customer);
-        }
+        remoteCustomers.push(d.data() as Customer);
       });
 
       remoteCustomers.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());

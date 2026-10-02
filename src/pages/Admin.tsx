@@ -184,18 +184,19 @@ export function AdminPage() {
     return (
       localStorage.getItem('jetnext_remembered_identifier') ||
       localStorage.getItem('jetnext_remembered_email') ||
-      'rayan.aouf'
+      ''
     );
   });
   const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState<string>(() => {
     return (
       localStorage.getItem('jetnext_admin_email') ||
       sessionStorage.getItem('jetnext_admin_email') ||
-      'rayanaouf@jethings.com'
+      ''
     );
   });
 
@@ -319,6 +320,7 @@ export function AdminPage() {
     const list = userStorage.getUsers();
     setUsers(list);
     const unsubUsers = userStorage.subscribe((items) => setUsers(items));
+    userStorage.fetchUsersFromFirestore().then((items) => setUsers(items)).catch(() => {});
     return () => unsubUsers();
   }, []);
 
@@ -457,7 +459,7 @@ export function AdminPage() {
     setTimeout(() => setNotification(null), 3500);
   };
 
-  const handleLogin = (e: FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     const cleanIdentifier = loginIdentifier.trim().toLowerCase().replace(/^@/, '');
     const passInput = loginPassword.trim();
@@ -471,116 +473,79 @@ export function AdminPage() {
       return;
     }
 
-    // 1. Look up registered user from userStorage (by username or email)
-    const allUsers = userStorage.getUsers();
-    const matchedUser = allUsers.find((u) => {
-      const uUsername = (u.username || '').trim().toLowerCase().replace(/^@/, '');
-      const uEmail = (u.email || '').trim().toLowerCase();
-      return uUsername === cleanIdentifier || uEmail === cleanIdentifier;
-    });
+    setAuthError('');
+    setIsLoggingIn(true);
 
-    if (matchedUser) {
-      // Check account status
-      if (matchedUser.status === 'inactive' || matchedUser.status === 'suspended') {
-        setAuthError(`The account for @${matchedUser.username || matchedUser.name} is ${matchedUser.status}. Access denied. Please contact an administrator.`);
+    try {
+      // 1. Look up registered user from local memory
+      let allUsers = userStorage.getUsers();
+      let matchedUser = allUsers.find((u) => {
+        const uUsername = (u.username || '').trim().toLowerCase().replace(/^@/, '');
+        const uEmail = (u.email || '').trim().toLowerCase();
+        const uName = (u.name || '').trim().toLowerCase();
+        return uUsername === cleanIdentifier || uEmail === cleanIdentifier || uName === cleanIdentifier;
+      });
+
+      // 2. If not found locally, immediately query cloud Firestore directly to ensure latest team accounts
+      if (!matchedUser) {
+        allUsers = await userStorage.fetchUsersFromFirestore();
+        matchedUser = allUsers.find((u) => {
+          const uUsername = (u.username || '').trim().toLowerCase().replace(/^@/, '');
+          const uEmail = (u.email || '').trim().toLowerCase();
+          const uName = (u.name || '').trim().toLowerCase();
+          return uUsername === cleanIdentifier || uEmail === cleanIdentifier || uName === cleanIdentifier;
+        });
+      }
+
+      if (matchedUser) {
+        // Check account status
+        if (matchedUser.status === 'inactive' || matchedUser.status === 'suspended') {
+          setAuthError(`The account for @${matchedUser.username || matchedUser.name} is ${matchedUser.status}. Access denied. Please contact an administrator.`);
+          return;
+        }
+
+        // Check credentials (exact match, trimmed match, or case-tolerant match)
+        const savedPass = (matchedUser.password || '').trim();
+        const isValidPassword = 
+          savedPass && (
+            passInput === savedPass ||
+            passInput === matchedUser.password ||
+            passInput.toLowerCase() === savedPass.toLowerCase()
+          );
+
+        if (!isValidPassword) {
+          setAuthError('Incorrect password. Please verify your credentials and try again.');
+          return;
+        }
+
+        // Successfully authenticated with user credentials!
+        if (rememberMe) {
+          localStorage.setItem('jetnext_admin_auth', 'true');
+          localStorage.setItem('jetnext_current_user', JSON.stringify(matchedUser));
+          localStorage.setItem('jetnext_admin_email', matchedUser.email);
+          localStorage.setItem('jetnext_remembered_identifier', loginIdentifier);
+        } else {
+          sessionStorage.setItem('jetnext_admin_auth', 'true');
+          sessionStorage.setItem('jetnext_current_user', JSON.stringify(matchedUser));
+          sessionStorage.setItem('jetnext_admin_email', matchedUser.email);
+          localStorage.removeItem('jetnext_admin_auth');
+        }
+
+        setCurrentUser(matchedUser);
+        setCurrentUserEmail(matchedUser.email);
+        setIsAuthenticated(true);
+        setAuthError('');
+
+        // Update lastLoginAt timestamp
+        userStorage.updateUser(matchedUser.id, { lastLoginAt: new Date().toISOString() }).catch(() => {});
+        showToast(`Welcome back, ${matchedUser.name}!`);
         return;
       }
 
-      // Check credentials (user's saved password or emergency master password)
-      const isValidPassword = 
-        (matchedUser.password && passInput === matchedUser.password) ||
-        passInput === 'jetnext2026' ||
-        passInput === 'Admin@JetNext2026';
-
-      if (!isValidPassword) {
-        setAuthError('Incorrect password. Please verify and try again.');
-        return;
-      }
-
-      // Successfully authenticated with user credentials!
-      if (rememberMe) {
-        localStorage.setItem('jetnext_admin_auth', 'true');
-        localStorage.setItem('jetnext_current_user', JSON.stringify(matchedUser));
-        localStorage.setItem('jetnext_admin_email', matchedUser.email);
-        localStorage.setItem('jetnext_remembered_identifier', loginIdentifier);
-      } else {
-        sessionStorage.setItem('jetnext_admin_auth', 'true');
-        sessionStorage.setItem('jetnext_current_user', JSON.stringify(matchedUser));
-        sessionStorage.setItem('jetnext_admin_email', matchedUser.email);
-        localStorage.removeItem('jetnext_admin_auth');
-      }
-
-      setCurrentUser(matchedUser);
-      setCurrentUserEmail(matchedUser.email);
-      setIsAuthenticated(true);
-      setAuthError('');
-
-      // Update lastLoginAt timestamp
-      userStorage.updateUser(matchedUser.id, { lastLoginAt: new Date().toISOString() }).catch(() => {});
-      showToast(`Welcome back, ${matchedUser.name}! (@${matchedUser.username || matchedUser.email.split('@')[0]})`);
-      return;
+      setAuthError('Incorrect username or password. Please verify your credentials.');
+    } finally {
+      setIsLoggingIn(false);
     }
-
-    // 2. Fallback root admin credentials
-    const validRootPasswords = ['jetnext2026', 'admin', 'jethings', 'Admin@JetNext2026'];
-    const savedCredsRaw = localStorage.getItem('jetnext_custom_admin_creds');
-    let customCreds: { email?: string; password?: string } | null = null;
-    if (savedCredsRaw) {
-      try {
-        customCreds = JSON.parse(savedCredsRaw);
-      } catch {
-        // ignore
-      }
-    }
-    if (customCreds?.password) {
-      validRootPasswords.push(customCreds.password);
-    }
-
-    const isRootValid = 
-      cleanIdentifier === 'rayanaouf' ||
-      cleanIdentifier === 'admin' ||
-      cleanIdentifier === 'rayanaouf@jethings.com' ||
-      cleanIdentifier === 'admin@jethings.com' ||
-      cleanIdentifier === 'admin@jetnext.dz' ||
-      cleanIdentifier.endsWith('@jethings.com') ||
-      cleanIdentifier.endsWith('@jetnext.dz') ||
-      (customCreds?.email && cleanIdentifier === customCreds.email.toLowerCase());
-
-    if (isRootValid && validRootPasswords.includes(passInput)) {
-      const syntheticAdmin: AppUser = {
-        id: 'admin-root',
-        name: 'Rayan Aouf',
-        username: 'rayan.aouf',
-        email: cleanIdentifier.includes('@') ? cleanIdentifier : `${cleanIdentifier}@jethings.com`,
-        role: 'admin',
-        status: 'active',
-        department: 'Executive',
-        title: 'Lead Administrator & CEO',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      if (rememberMe) {
-        localStorage.setItem('jetnext_admin_auth', 'true');
-        localStorage.setItem('jetnext_current_user', JSON.stringify(syntheticAdmin));
-        localStorage.setItem('jetnext_admin_email', syntheticAdmin.email);
-        localStorage.setItem('jetnext_remembered_identifier', loginIdentifier);
-      } else {
-        sessionStorage.setItem('jetnext_admin_auth', 'true');
-        sessionStorage.setItem('jetnext_current_user', JSON.stringify(syntheticAdmin));
-        sessionStorage.setItem('jetnext_admin_email', syntheticAdmin.email);
-        localStorage.removeItem('jetnext_admin_auth');
-      }
-
-      setCurrentUser(syntheticAdmin);
-      setCurrentUserEmail(syntheticAdmin.email);
-      setIsAuthenticated(true);
-      setAuthError('');
-      showToast(`Welcome back, ${syntheticAdmin.name}!`);
-      return;
-    }
-
-    setAuthError('Incorrect username or password. Please verify your credentials or select a demo user below.');
   };
 
   const handleLogout = () => {
@@ -1037,12 +1002,56 @@ export function AdminPage() {
             <button
               id="admin-login-submit"
               type="submit"
-              className="w-full rounded-xl bg-[#1b6b6a] py-3 text-sm font-bold text-white shadow-md hover:bg-[#155453] transition-all flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-[0.99]"
+              disabled={isLoggingIn}
+              className="w-full rounded-xl bg-[#1b6b6a] py-3 text-sm font-bold text-white shadow-md hover:bg-[#155453] transition-all flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60"
             >
-              <ShieldCheck className="h-4 w-4" />
-              <span>Sign In to CRM Portal</span>
+              {isLoggingIn ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>Verifying Credentials...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Sign In to CRM Portal</span>
+                </>
+              )}
             </button>
           </form>
+
+          {/* Quick Registered Team Accounts Chips */}
+          {users.length > 0 && (
+            <div className="mt-5 pt-4 border-t border-slate-100">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 text-center">
+                Registered Team Accounts
+              </span>
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                {users.map((u) => {
+                  const handle = u.username || u.email.split('@')[0];
+                  const isSelected = loginIdentifier.toLowerCase().replace(/^@/, '') === handle.toLowerCase();
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => {
+                        setLoginIdentifier(`@${handle}`);
+                        setAuthError('');
+                        document.getElementById('admin-password-input')?.focus();
+                      }}
+                      className={`text-xs px-2.5 py-1 rounded-lg border transition-all font-mono font-medium flex items-center gap-1 ${
+                        isSelected
+                          ? 'border-[#44ACAB] bg-[#e6f4f4] text-[#1b6b6a] font-bold shadow-xs'
+                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                      }`}
+                      title={`${u.name} (${u.role.replace('_', ' ')})`}
+                    >
+                      <span>@{handle}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 pt-4 border-t border-slate-100 text-center">
             <Link to="/" className="text-xs text-slate-500 hover:text-[#44ACAB] transition-colors">
@@ -1063,7 +1072,7 @@ export function AdminPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 right-6 z-50 rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-xl flex items-center gap-2"
+            className="fixed top-6 right-6 z-[200] rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-xl flex items-center gap-2"
           >
             <CheckCircle2 className="h-4 w-4 text-[#44ACAB]" />
             <span>{notification}</span>

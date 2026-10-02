@@ -11,16 +11,6 @@ import {
 
 const STORAGE_KEY = 'jetnext_policies_directory_v1';
 
-export const FAKE_POLICY_IDS = [
-  'pol-event-policy',
-  'pol-cleaning-policy',
-  'pol-recrutment-policy',
-  'pol-dayly-policy',
-  'pol-weekly-policy',
-  'pol-iso-quality-other',
-  'pol-data-security-other'
-];
-
 export const DEFAULT_POLICIES: CompanyPolicy[] = [];
 
 class PolicyStorageService {
@@ -37,9 +27,7 @@ class PolicyStorageService {
       const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
       if (stored) {
         const parsed = JSON.parse(stored);
-        this.policies = Array.isArray(parsed)
-          ? parsed.filter((p: CompanyPolicy) => !FAKE_POLICY_IDS.includes(p.id))
-          : [];
+        this.policies = Array.isArray(parsed) ? parsed : [];
       } else {
         this.policies = [];
       }
@@ -83,12 +71,6 @@ class PolicyStorageService {
         (snapshot) => {
           const remotePolicies: CompanyPolicy[] = [];
           snapshot.forEach((docSnap) => {
-            // Automatically clean up any fake/mock policies stored in Firestore
-            if (FAKE_POLICY_IDS.includes(docSnap.id)) {
-              deleteDoc(doc(db, COLLECTIONS.POLICIES, docSnap.id)).catch(() => {});
-              return;
-            }
-
             const data = docSnap.data();
             remotePolicies.push({
               id: docSnap.id,
@@ -229,11 +211,6 @@ class PolicyStorageService {
     }
 
     return true;
-  }
-
-  public async resetToDefaults(): Promise<void> {
-    this.policies = [];
-    this.notify();
   }
 
   public exportCSV(): void {

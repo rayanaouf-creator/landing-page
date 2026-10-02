@@ -10,7 +10,6 @@ import {
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_claims_database_v2';
-const FAKE_CLAIM_IDS = ['clm-1', 'clm-2', 'clm-3'];
 
 type ClaimListener = (claims: Claim[]) => void;
 const listeners: Set<ClaimListener> = new Set();
@@ -23,7 +22,7 @@ function loadLocalMirror(): Claim[] {
     if (!data) return [];
     const parsed: Claim[] = JSON.parse(data);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(c => !FAKE_CLAIM_IDS.includes(c.id));
+    return parsed;
   } catch {
     return [];
   }

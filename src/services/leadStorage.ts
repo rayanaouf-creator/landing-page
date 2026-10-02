@@ -10,7 +10,6 @@ import {
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'jetnext_leads_database_v1';
-const INITIAL_SEEDED_LEADS: Lead[] = [];
 
 type LeadListener = (leads: Lead[]) => void;
 const listeners: Set<LeadListener> = new Set();
@@ -24,7 +23,7 @@ function loadLocalMirror(): Lead[] {
     if (!data) return [];
     const parsed: Lead[] = JSON.parse(data);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(l => l.id !== 'lead-1' && l.id !== 'lead-2' && l.id !== 'lead-3');
+    return parsed;
   } catch {
     return [];
   }
@@ -43,9 +42,7 @@ function initFirestoreSync() {
       const remoteLeads: Lead[] = [];
 
       snapshot.forEach((d) => {
-        if (d.id !== 'lead-1' && d.id !== 'lead-2' && d.id !== 'lead-3') {
-          remoteLeads.push(d.data() as Lead);
-        }
+        remoteLeads.push(d.data() as Lead);
       });
 
       // Sort by createdAt descending
@@ -143,15 +140,6 @@ export const leadStorage = {
     }
 
     return memoryLeads.length !== prevLength;
-  },
-
-  resetToInitial(): Lead[] {
-    memoryLeads = [...INITIAL_SEEDED_LEADS];
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_SEEDED_LEADS));
-    } catch {}
-    listeners.forEach(fn => fn(memoryLeads));
-    return INITIAL_SEEDED_LEADS;
   },
 
   exportCSV(): void {

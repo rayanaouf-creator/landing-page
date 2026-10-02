@@ -11,112 +11,7 @@ import {
 
 const STORAGE_KEY = 'jetnext_events_directory_v1';
 
-export const DEFAULT_EVENTS: CompanyEvent[] = [
-  {
-    id: 'evt-erpnext-launch-summit',
-    title: 'ERPNext v16 Enterprise Solutions Launch Summit',
-    description: 'Executive demonstration of JetNext custom ERPNext manufacturing modules, multi-warehouse integrations, and localized Algerian fiscal compliance.',
-    type: 'launch',
-    status: 'upcoming',
-    startDate: '2026-10-15',
-    endDate: '2026-10-15',
-    time: '09:30 - 16:30',
-    location: 'El Aurassi Hotel & Virtual Stream, Algiers',
-    organizer: 'Rayan Aouf & Amina Benali',
-    attendeesCount: 120,
-    tags: ['ERPNext', 'Enterprise', 'Product Launch', 'Commercial'],
-    isImportant: true,
-    tasks: [
-      { id: 'et-1', policyTaskId: 'ptask-1', title: 'Verify booth marketing banners, brochures & company collateral', isCompleted: true, completedBy: 'Amina Benali' },
-      { id: 'et-2', policyTaskId: 'ptask-2', title: 'Deploy and test offline & cloud ERPNext / IoT live demo sandbox', isCompleted: true, completedBy: 'Yacine Zerrouki' },
-      { id: 'et-3', policyTaskId: 'ptask-3', title: 'Confirm team attendees, corporate attire standards & badges', isCompleted: false },
-      { id: 'et-4', policyTaskId: 'ptask-4', title: 'Set up digital lead scanner, QR code & CRM real-time intake form', isCompleted: true, completedBy: 'Rayan Aouf' },
-      { id: 'et-5', policyTaskId: 'ptask-5', title: 'Verify venue logistics, power backups & presentation slides', isCompleted: false },
-      { id: 'et-6', policyTaskId: 'ptask-6', title: 'Schedule 24h post-event commercial follow-up & debrief', isCompleted: false }
-    ],
-    createdAt: '2026-09-01T08:00:00.000Z',
-    updatedAt: '2026-09-01T08:00:00.000Z'
-  },
-  {
-    id: 'evt-iso-surveillance-audit',
-    title: 'ISO 9001:2015 Annual Surveillance Audit',
-    description: 'External certification body audit evaluating client claim resolution SLAs, internal development standards, and continuous improvement registers.',
-    type: 'audit',
-    status: 'upcoming',
-    startDate: '2026-10-22',
-    endDate: '2026-10-23',
-    time: '08:30 - 17:00',
-    location: 'JetNext Headquarters, Algiers',
-    organizer: 'Sofia Khelil (Quality Lead)',
-    attendeesCount: 18,
-    tags: ['ISO 9001', 'Audit', 'Quality Assurance', 'Compliance'],
-    isImportant: true,
-    tasks: [
-      { id: 'et-7', policyTaskId: 'ptask-1', title: 'Verify audit documentation, register printouts & evidence binders', isCompleted: true, completedBy: 'Sofia Khelil' },
-      { id: 'et-8', policyTaskId: 'ptask-3', title: 'Confirm team attendees, corporate attire standards & badges', isCompleted: true, completedBy: 'Sofia Khelil' },
-      { id: 'et-9', policyTaskId: 'ptask-5', title: 'Verify boardroom logistics, projector & CAPA presentation slides', isCompleted: true, completedBy: 'Sofia Khelil' },
-      { id: 'et-10', policyTaskId: 'ptask-6', title: 'Schedule internal closing meeting & auditor debrief', isCompleted: true, completedBy: 'Rayan Aouf' }
-    ],
-    createdAt: '2026-09-05T09:00:00.000Z',
-    updatedAt: '2026-09-05T09:00:00.000Z'
-  },
-  {
-    id: 'evt-q4-pipeline-strategy',
-    title: 'Q4 Commercial Strategy & Pipeline Acceleration Meeting',
-    description: 'Quarterly review of enterprise inquiries, target deal conversions, pricing thresholds, and sales rep pipeline quotas.',
-    type: 'meeting',
-    status: 'upcoming',
-    startDate: '2026-10-05',
-    endDate: '2026-10-05',
-    time: '14:00 - 17:00',
-    location: 'Main Boardroom & Google Meet',
-    organizer: 'Amina Benali (Head of BD)',
-    attendeesCount: 14,
-    tags: ['Sales', 'Strategy', 'Pipeline', 'Quarterly'],
-    isImportant: false,
-    tasks: [
-      { id: 'et-11', policyTaskId: 'ptask-2', title: 'Prepare pipeline metrics report and closed-won analytics', isCompleted: false },
-      { id: 'et-12', policyTaskId: 'ptask-3', title: 'Confirm commercial team attendance & agenda review', isCompleted: true, completedBy: 'Amina Benali' },
-      { id: 'et-13', policyTaskId: 'ptask-6', title: 'Schedule Q4 target allocation assignments debrief', isCompleted: false }
-    ],
-    createdAt: '2026-09-10T10:00:00.000Z',
-    updatedAt: '2026-09-10T10:00:00.000Z'
-  },
-  {
-    id: 'evt-iot-telematics-workshop',
-    title: 'IoT Industrial Telematics Hands-on Training Workshop',
-    description: 'Technical deep-dive on sensor hardware calibration, MQTT gateway configuration, and live dashboard telemetry for client operations teams.',
-    type: 'training',
-    status: 'upcoming',
-    startDate: '2026-11-04',
-    endDate: '2026-11-05',
-    time: '09:00 - 15:30',
-    location: 'JetNext Tech Lab, Bab Ezzouar',
-    organizer: 'Yacine Zerrouki (Implementation Lead)',
-    attendeesCount: 25,
-    tags: ['IoT', 'Training', 'Hardware', 'Engineering'],
-    isImportant: false,
-    createdAt: '2026-09-15T11:00:00.000Z',
-    updatedAt: '2026-09-15T11:00:00.000Z'
-  },
-  {
-    id: 'evt-algiers-industry-expo',
-    title: 'North Africa Industrial & Tech Exhibition 2026',
-    description: 'Primary trade exhibition booth showcase for ERPNext automation, smart warehouse telemetry, and B2B lead generation.',
-    type: 'conference',
-    status: 'upcoming',
-    startDate: '2026-11-18',
-    endDate: '2026-11-21',
-    time: '10:00 - 18:00',
-    location: 'SAFEX Exhibition Center, Pins Maritimes, Algiers',
-    organizer: 'Commercial & Marketing Team',
-    attendeesCount: 450,
-    tags: ['Exhibition', 'SAFEX', 'Leads', 'Conference'],
-    isImportant: true,
-    createdAt: '2026-09-18T12:00:00.000Z',
-    updatedAt: '2026-09-18T12:00:00.000Z'
-  }
-];
+export const DEFAULT_EVENTS: CompanyEvent[] = [];
 
 class EventStorageService {
   private events: CompanyEvent[] = [];
@@ -133,11 +28,10 @@ class EventStorageService {
       if (stored) {
         this.events = JSON.parse(stored);
       } else {
-        this.events = [...DEFAULT_EVENTS];
-        this.saveToStorage();
+        this.events = [];
       }
     } catch {
-      this.events = [...DEFAULT_EVENTS];
+      this.events = [];
     }
   }
 
@@ -200,7 +94,8 @@ class EventStorageService {
             this.events = remoteEvents;
             this.notify();
           } else {
-            this.seedInitialEvents();
+            this.events = [];
+            this.notify();
           }
         },
         (error) => {
@@ -209,17 +104,6 @@ class EventStorageService {
       );
     } catch (err) {
       console.warn('Could not initialize Firestore events listener:', err);
-    }
-  }
-
-  private async seedInitialEvents() {
-    try {
-      for (const item of DEFAULT_EVENTS) {
-        const docRef = doc(db, COLLECTIONS.EVENTS, item.id);
-        await setDoc(docRef, { ...item });
-      }
-    } catch (err) {
-      console.warn('Error seeding initial events to Firestore:', err);
     }
   }
 
@@ -339,19 +223,6 @@ class EventStorageService {
     }
 
     return true;
-  }
-
-  public async resetToDefaults(): Promise<void> {
-    this.events = [...DEFAULT_EVENTS];
-    this.notify();
-    try {
-      for (const item of DEFAULT_EVENTS) {
-        const docRef = doc(db, COLLECTIONS.EVENTS, item.id);
-        await setDoc(docRef, { ...item });
-      }
-    } catch (err) {
-      console.warn('Could not reset Firestore events:', err);
-    }
   }
 
   public exportCSV(): void {

@@ -11,79 +11,7 @@ import {
 
 const STORAGE_KEY = 'jetnext_work_projects_database_v1';
 
-export const DEFAULT_WORK_PROJECTS: WorkProject[] = [
-  {
-    id: 'work-optilens',
-    name: 'Optilens',
-    industry: 'Optical Distribution (14 Wilayas)',
-    category: 'ERPNext & Logistics',
-    description: 'A leading optical enterprise that imports and distributes lenses across 14 wilayas in Algeria.',
-    solution: 'We developed and implemented a tailored ERPNext solution, featuring a robust multi-company architecture, to streamline their entire national distribution network. The setup centralizes inventory management, coordinates supply chain operations across multiple legal entities, and provides executive real-time visibility across all regional hubs.',
-    delivered: 'What we delivered:',
-    highlights: [
-      'Custom ERPNext Implementation tailored to optical distribution',
-      'Inventory and warehouse management across 14 Wilayas',
-      'Optimized national distribution and dispatch workflows',
-      'Dead stock elimination and dynamic replenishment control',
-      'Multi-company accounting with automated inter-company transactions'
-    ],
-    metricValue: '+45%',
-    metricLabel: 'Faster Regional Fulfillment',
-    clientWebsite: '',
-    logoLetter: 'O',
-    published: true,
-    order: 1,
-    createdAt: '2026-01-10T08:00:00.000Z',
-    updatedAt: '2026-01-10T08:00:00.000Z'
-  },
-  {
-    id: 'work-choptic',
-    name: 'CH Optic',
-    industry: 'Contact Lens Wholesaler',
-    category: 'SaaS Software',
-    description: 'A prominent wholesaler providing contact lenses and optical consumables to opticians, retailers, and medical clinics.',
-    solution: 'We deployed our proprietary Joptic-Pro SaaS platform to streamline their wholesale operations, automate complex B2B clinic orders, and provide real-time inventory tracking for their extensive multi-brand catalog.',
-    delivered: 'What we delivered:',
-    highlights: [
-      'Proprietary Joptic-Pro SaaS Software deployment',
-      'B2B clinic order intake and self-service wholesale portal',
-      'Real-time wholesale multi-depot inventory tracking',
-      'Prescription matrix power and cylinder calculation rules',
-      'Automated delivery waybills and wholesale invoice exports'
-    ],
-    metricValue: '-70%',
-    metricLabel: 'Order Turnaround Time',
-    clientWebsite: '',
-    logoLetter: 'C',
-    published: true,
-    order: 2,
-    createdAt: '2026-01-20T09:30:00.000Z',
-    updatedAt: '2026-01-20T09:30:00.000Z'
-  },
-  {
-    id: 'work-lutech',
-    name: 'Lutech',
-    industry: 'Ophthalmic Optics & Equipment',
-    category: 'Machinery & Maintenance',
-    description: 'A trusted provider of precision ophthalmic lenses, clinical diagnostic machinery, and optical laboratory equipment.',
-    solution: 'We developed a comprehensive tracking and computerized maintenance management system (GMAO) to monitor optical machines and stock via serial numbers, track warranty status, manage customer accounts, and automate recurring service billing.',
-    delivered: 'What we delivered:',
-    highlights: [
-      'Machine and high-value stock tracking by unique serial number',
-      'Client relationship and equipment warranty lifecycle management',
-      'Automated billing, periodic service contracts, and fiscal invoicing',
-      'Preventive calibration scheduling and technical intervention records'
-    ],
-    metricValue: '100%',
-    metricLabel: 'Machine Traceability',
-    clientWebsite: '',
-    logoLetter: 'L',
-    published: true,
-    order: 3,
-    createdAt: '2026-02-05T11:00:00.000Z',
-    updatedAt: '2026-02-05T11:00:00.000Z'
-  }
-];
+export const DEFAULT_WORK_PROJECTS: WorkProject[] = [];
 
 type WorkListener = (projects: WorkProject[]) => void;
 const listeners: Set<WorkListener> = new Set();
@@ -93,12 +21,12 @@ let isInitialized = false;
 function loadLocalMirror(): WorkProject[] {
   try {
     const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
-    if (!data) return DEFAULT_WORK_PROJECTS;
+    if (!data) return [];
     const parsed: WorkProject[] = JSON.parse(data);
-    if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_WORK_PROJECTS;
+    if (!Array.isArray(parsed) || parsed.length === 0) return [];
     return parsed;
   } catch {
-    return DEFAULT_WORK_PROJECTS;
+    return [];
   }
 }
 
@@ -117,20 +45,7 @@ function initFirestoreSync() {
       });
 
       remoteWork.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
-
-      const hasSeeded = typeof window !== 'undefined' && localStorage.getItem('jetnext_work_projects_seeded_v1') === 'true';
-      if (remoteWork.length === 0 && !hasSeeded) {
-        if (typeof window !== 'undefined') localStorage.setItem('jetnext_work_projects_seeded_v1', 'true');
-        // Seed default projects to Firestore if collection is empty on first install
-        DEFAULT_WORK_PROJECTS.forEach((p) => {
-          setDoc(doc(db, COLLECTIONS.WORK_PROJECTS, p.id), p).catch((err) => {
-            console.error('Error seeding default work project to Firestore:', err);
-          });
-        });
-        memoryWork = [...DEFAULT_WORK_PROJECTS];
-      } else {
-        memoryWork = remoteWork;
-      }
+      memoryWork = remoteWork;
 
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryWork));
@@ -240,22 +155,6 @@ export const workStorage = {
     });
 
     return true;
-  },
-
-  resetToDefaults(): WorkProject[] {
-    memoryWork = [...DEFAULT_WORK_PROJECTS];
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryWork));
-    } catch {}
-    listeners.forEach((fn) => fn(memoryWork));
-
-    DEFAULT_WORK_PROJECTS.forEach((p) => {
-      setDoc(doc(db, COLLECTIONS.WORK_PROJECTS, p.id), p).catch((err) => {
-        console.error('Error restoring default work project:', err);
-      });
-    });
-
-    return memoryWork;
   },
 
   exportCSV(): void {
