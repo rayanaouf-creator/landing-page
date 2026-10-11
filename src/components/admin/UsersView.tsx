@@ -1,30 +1,30 @@
 import { useState, useMemo, type FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Users, 
-  UserPlus, 
-  ShieldCheck, 
-  Search, 
-  Trash2, 
-  Edit3, 
-  Mail, 
-  Phone, 
-  Building2, 
-  UserCheck, 
-  UserX, 
-  CheckCircle2, 
-  AlertCircle, 
-  TrendingUp, 
-  LifeBuoy, 
-  FolderGit2, 
-  Eye, 
+import {
+  Users,
+  UserPlus,
+  ShieldCheck,
+  Search,
+  Trash2,
+  Edit3,
+  Mail,
+  Phone,
+  Building2,
+  UserCheck,
+  UserX,
+  CheckCircle2,
+  AlertCircle,
+  TrendingUp,
+  LifeBuoy,
+  FolderGit2,
+  Eye,
   EyeOff,
   KeyRound,
   Copy,
   Check,
   Lock,
   RefreshCw,
-  FileSpreadsheet, 
+  FileSpreadsheet,
   RotateCcw,
   Sparkles,
   ChevronDown,
@@ -35,7 +35,8 @@ import {
   Layers,
   LayoutGrid,
   FileText,
-  Calendar
+  Calendar,
+  Bell
 } from 'lucide-react';
 import { AppUser, UserRole, UserStatus, CrmResource, ALL_CRM_RESOURCES } from '../../types';
 import { userStorage } from '../../services/userStorage';
@@ -58,6 +59,7 @@ export const getSidebarItemIcon = (id: CrmResource) => {
     case 'users': return Users;
     case 'policy': return FileText;
     case 'events': return Calendar;
+    case 'reminder': return Bell;
   }
 };
 

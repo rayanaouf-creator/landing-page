@@ -131,29 +131,26 @@ export function ReminderView({ reminders, leads = [], currentUser, onRefresh, sh
       return;
     }
 
-    const leadId = formData.leadId || undefined;
-    const leadName = leadId ? leads.find(l => l.id === leadId)?.company : undefined;
+    const hasLeadLink = formData.leadId && formData.leadId.trim() !== '';
+    const reminderData: any = {
+      title: formData.title,
+      description: formData.description,
+      status: formData.status,
+      priority: formData.priority,
+      dueDate: new Date(formData.dueDate).toISOString()
+    };
+
+    if (hasLeadLink) {
+      reminderData.leadId = formData.leadId;
+      reminderData.leadName = leads.find(l => l.id === formData.leadId)?.company;
+    }
 
     if (editingReminder) {
-      reminderStorage.updateReminder(editingReminder.id, {
-        title: formData.title,
-        description: formData.description,
-        leadId,
-        leadName,
-        status: formData.status,
-        priority: formData.priority,
-        dueDate: new Date(formData.dueDate).toISOString()
-      });
+      reminderStorage.updateReminder(editingReminder.id, reminderData);
       showToast('Reminder updated successfully');
     } else {
       reminderStorage.saveReminder({
-        title: formData.title,
-        description: formData.description,
-        leadId,
-        leadName,
-        status: formData.status,
-        priority: formData.priority,
-        dueDate: new Date(formData.dueDate).toISOString(),
+        ...reminderData,
         createdBy: currentUser?.name || 'Admin'
       });
       showToast('Reminder created successfully');
@@ -199,29 +196,29 @@ export function ReminderView({ reminders, leads = [], currentUser, onRefresh, sh
   return (
     <div className="space-y-6">
       {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Reminders</p>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">{metrics.total}</p>
-          <p className="mt-1 text-xs text-slate-400">All reminders</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="rounded-xl bg-white p-3 shadow-xs ring-1 ring-slate-200">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Reminders</p>
+          <p className="mt-1 text-xl sm:text-2xl font-black text-slate-900">{metrics.total}</p>
+          <p className="mt-0.5 text-[10px] text-slate-400">All reminders</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200 border-l-4 border-amber-500">
-          <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Pending</p>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-amber-600">{metrics.pending}</p>
-          <p className="mt-1 text-xs text-slate-400">Awaiting action</p>
+        <div className="rounded-xl bg-white p-3 shadow-xs ring-1 ring-slate-200 border-l-4 border-amber-500">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Pending</p>
+          <p className="mt-1 text-xl sm:text-2xl font-black text-amber-600">{metrics.pending}</p>
+          <p className="mt-0.5 text-[10px] text-slate-400">Awaiting action</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200 border-l-4 border-rose-500">
-          <p className="text-xs font-bold uppercase tracking-wider text-rose-700">Overdue</p>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-rose-600">{metrics.overdue}</p>
-          <p className="mt-1 text-xs text-slate-400">Past due date</p>
+        <div className="rounded-xl bg-white p-3 shadow-xs ring-1 ring-slate-200 border-l-4 border-rose-500">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Overdue</p>
+          <p className="mt-1 text-xl sm:text-2xl font-black text-rose-600">{metrics.overdue}</p>
+          <p className="mt-0.5 text-[10px] text-slate-400">Past due date</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200 border-l-4 border-emerald-500">
-          <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Completed</p>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-emerald-600">{metrics.completed}</p>
-          <p className="mt-1 text-xs text-slate-400">Finished tasks</p>
+        <div className="rounded-xl bg-white p-3 shadow-xs ring-1 ring-slate-200 border-l-4 border-emerald-500">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Completed</p>
+          <p className="mt-1 text-xl sm:text-2xl font-black text-emerald-600">{metrics.completed}</p>
+          <p className="mt-0.5 text-[10px] text-slate-400">Finished tasks</p>
         </div>
       </div>
 

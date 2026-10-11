@@ -91,10 +91,14 @@ export const reminderStorage = {
     } catch {}
     listeners.forEach(fn => fn(memoryReminders));
 
-    // Persist to Firebase Firestore
-    setDoc(doc(db, COLLECTIONS.REMINDERS, newReminder.id), newReminder).catch(err => {
-      console.error('Firestore saveReminder error:', err);
-    });
+    // Persist to Firebase Firestore - remove undefined fields
+    const firestoreData = Object.fromEntries(
+      Object.entries(newReminder).filter(([_, value]) => value !== undefined)
+    );
+    setDoc(doc(db, COLLECTIONS.REMINDERS, newReminder.id), firestoreData)
+      .catch(err => {
+        console.warn('Reminder saved locally only (Firestore sync failed):', err);
+      });
 
     return newReminder;
   },
@@ -115,10 +119,14 @@ export const reminderStorage = {
     } catch {}
     listeners.forEach(fn => fn(memoryReminders));
 
-    // Persist to Firebase Firestore
-    updateDoc(doc(db, COLLECTIONS.REMINDERS, id), updates).catch(err => {
-      console.error('Firestore updateReminder error:', err);
-    });
+    // Persist to Firebase Firestore - remove undefined fields
+    const firestoreUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+    updateDoc(doc(db, COLLECTIONS.REMINDERS, id), firestoreUpdates)
+      .catch(err => {
+        console.warn('Reminder updated locally only (Firestore sync failed):', err);
+      });
 
     return updated;
   },
