@@ -50,9 +50,10 @@ import {
   FileText,
   MessageCircle,
   History,
-  MessageSquare
+  MessageSquare,
+  Bell
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser, CrmResource, ALL_CRM_RESOURCES, CompanyPolicy, CompanyEvent, ClientInteraction, ContactChannel } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser, CrmResource, ALL_CRM_RESOURCES, CompanyPolicy, CompanyEvent, ClientInteraction, ContactChannel, Reminder } from '../types';
 import { leadStorage } from '../services/leadStorage';
 import { customerStorage } from '../services/customerStorage';
 import { claimStorage } from '../services/claimStorage';
@@ -62,6 +63,7 @@ import { workStorage } from '../services/workStorage';
 import { userStorage } from '../services/userStorage';
 import { policyStorage } from '../services/policyStorage';
 import { eventStorage } from '../services/eventStorage';
+import { reminderStorage } from '../services/reminderStorage';
 import { CustomerView } from '../components/admin/CustomerView';
 import { ClaimView } from '../components/admin/ClaimView';
 import { OpportunityView } from '../components/admin/OpportunityView';
@@ -70,6 +72,7 @@ import { WorkView } from '../components/admin/WorkView';
 import { UsersView, ROLE_CONFIG } from '../components/admin/UsersView';
 import { PolicyView } from '../components/admin/PolicyView';
 import { EventsView } from '../components/admin/EventsView';
+import { ReminderView } from '../components/admin/ReminderView';
 import { DailyContactGraph } from '../components/admin/DailyContactGraph';
 import { ClientContactLogModal } from '../components/admin/ClientContactLogModal';
 
@@ -162,7 +165,8 @@ export const SERVICE_PRESETS = [
   'HR & Algerian Payroll Localization (CNAS, IRG)',
   'Custom Frappe Development & API Integrations',
   'ERPNext Version Upgrade & Data Migration',
-  'Enterprise SLA Support & Frappe Cloud Hosting'
+  'Enterprise SLA Support & Frappe Cloud Hosting',
+  'WebSite'
 ];
 
 export function AdminPage() {
@@ -212,11 +216,12 @@ export function AdminPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [policies, setPolicies] = useState<CompanyPolicy[]>([]);
   const [events, setEvents] = useState<CompanyEvent[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
 
   // Compute permitted sidebar resources for the logged-in user
   const userAssignedResources = useMemo<CrmResource[]>(() => {
     if (!currentUser) {
-      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events'];
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events', 'reminder'];
     }
     // If assignedResources is explicitly configured for this user, strictly show ONLY what is selected
     if (Array.isArray(currentUser.assignedResources)) {
@@ -224,7 +229,7 @@ export function AdminPage() {
     }
     // Legacy fallback only if assignedResources has never been defined
     return currentUser.role === 'admin'
-      ? ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events']
+      ? ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events', 'reminder']
       : ['lead', 'opportunity', 'customer'];
   }, [currentUser]);
 
@@ -309,7 +314,7 @@ export function AdminPage() {
   const [formLocation, setFormLocation] = useState('Alger');
   const [formIndustry, setFormIndustry] = useState('Fabrication & Production Industrielle');
   const [formEmergencyLevel, setFormEmergencyLevel] = useState<EmergencyLevel>('high');
-  const [formService, setFormService] = useState('ERPNext Implementation');
+  const [formService, setFormService] = useState('WebSite');
   const [formStatus, setFormStatus] = useState<LeadStatus>('new');
   const [formPriority, setFormPriority] = useState<LeadPriority>('high');
   const [formSource, setFormSource] = useState<LeadSource>('direct_entry');
@@ -335,6 +340,7 @@ export function AdminPage() {
     loadWorkProjects();
     loadPolicies();
     loadEvents();
+    loadReminders();
 
     // Real-time synchronization subscriptions to Firebase Firestore collections
     const unsubLeads = leadStorage.subscribe((items) => setLeads(items));
@@ -345,6 +351,7 @@ export function AdminPage() {
     const unsubWork = workStorage.subscribe((items) => setWorkProjects(items));
     const unsubPolicies = policyStorage.subscribe((items) => setPolicies(items));
     const unsubEvents = eventStorage.subscribe((items) => setEvents(items));
+    const unsubReminders = reminderStorage.subscribe((items) => setReminders(items));
 
     return () => {
       unsubLeads();
@@ -355,6 +362,7 @@ export function AdminPage() {
       unsubWork();
       unsubPolicies();
       unsubEvents();
+      unsubReminders();
     };
   }, [isAuthenticated]);
 
@@ -376,6 +384,11 @@ export function AdminPage() {
   const loadEvents = () => {
     const list = eventStorage.getEvents();
     setEvents(list);
+  };
+
+  const loadReminders = () => {
+    const list = reminderStorage.getReminders();
+    setReminders(list);
   };
 
   const loadLeads = () => {
@@ -602,7 +615,7 @@ export function AdminPage() {
     setFormLocation('Alger');
     setFormIndustry('Fabrication & Production Industrielle');
     setFormEmergencyLevel('high');
-    setFormService('ERPNext Implementation');
+    setFormService('WebSite');
     setFormStatus('new');
     setFormPriority('high');
     setFormSource('direct_entry');
@@ -1390,6 +1403,32 @@ export function AdminPage() {
                 </span>
               </button>
             )}
+
+            {/* 10. Reminders */}
+            {canAccess('reminder') && (
+              <button
+                id="admin-sidebar-nav-reminder"
+                onClick={() => {
+                  setActiveTab('reminder');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'reminder'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Bell className={`h-4 w-4 ${activeTab === 'reminder' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Reminders</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'reminder' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {reminders.filter(r => r.status === 'pending').length}
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1564,6 +1603,16 @@ export function AdminPage() {
           />
         )}
 
+        {activeTab === 'reminder' && canAccess('reminder') && (
+          <ReminderView
+            reminders={reminders}
+            leads={leads}
+            currentUser={currentUser}
+            onRefresh={loadReminders}
+            showToast={showToast}
+          />
+        )}
+
         {/* Access Restricted Banner if User tries to access an unassigned resource */}
         {!canAccess(activeTab as CrmResource) && (
           <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-2xl shadow-xs ring-1 ring-slate-200 my-8">
@@ -1580,73 +1629,73 @@ export function AdminPage() {
         {activeTab === 'lead' && canAccess('lead') && (
           <div>
             {/* Workspace Top Header (Clean replacement of old topbar) */}
-            <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="pb-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-md bg-[#e6f4f4] px-2.5 py-0.5 text-xs font-bold text-[#1b6b6a]">
+              <span className="inline-flex items-center rounded-md bg-[#e6f4f4] px-2 py-0.5 text-[10px] font-bold text-[#1b6b6a]">
                 Lead Pipeline
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20" title="All operations persist in Firebase Firestore cloud database">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20" title="All operations persist in Firebase Firestore cloud database">
+                <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
                 Firebase Firestore
               </span>
-              <span className="text-xs text-slate-400 font-medium">
+              <span className="text-[10px] text-slate-400 font-medium">
                 {statusFilter === 'all' ? 'All Inquiries' : `Filter: ${statusFilter}`}
               </span>
             </div>
-            <h1 className="mt-1 text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <h1 className="mt-0.5 text-lg sm:text-xl font-black text-slate-900 tracking-tight">
               Customer Pipeline & Inquiries
             </h1>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowContactGraph(prev => !prev)}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-bold transition-all shadow-xs ${
-                showContactGraph 
-                  ? 'border-[#44ACAB]/40 bg-[#e6f4f4] text-[#1b6b6a]' 
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[10px] sm:text-xs font-bold transition-all shadow-xs ${
+                showContactGraph
+                  ? 'border-[#44ACAB]/40 bg-[#e6f4f4] text-[#1b6b6a]'
                   : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
               }`}
               title="Toggle daily contact analytics graph"
             >
-              <BarChart3 className="h-4 w-4 text-[#44ACAB]" />
-              <span>{showContactGraph ? 'Hide Contact Graph' : 'Daily Contact Graph'}</span>
+              <BarChart3 className="h-3.5 w-3.5 text-[#44ACAB]" />
+              <span>{showContactGraph ? 'Hide' : 'Graph'}</span>
             </button>
             <button
               id="admin-main-new-lead-btn"
               onClick={handleOpenAddModal}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#44ACAB] px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-[#328887] transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#44ACAB] px-3 py-1.5 text-[10px] sm:text-xs font-bold text-white hover:bg-[#328887] transition-all shadow-sm"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               <span>New Lead</span>
             </button>
           </div>
         </div>
 
         {/* Metrics Grid */}
-        <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Leads</p>
-            <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">{metrics.total}</p>
-            <p className="mt-1 text-xs text-slate-400">All registered inquiries</p>
+        <div className="mt-3 grid grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="rounded-lg bg-white p-2 shadow-xs ring-1 ring-slate-200">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total Leads</p>
+            <p className="mt-0.5 text-lg sm:text-xl font-black text-slate-900">{metrics.total}</p>
+            <p className="mt-0 text-[9px] text-slate-400">All inquiries</p>
           </div>
 
-          <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200 border-l-4 border-emerald-500">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">New Inquiries</p>
-            <p className="mt-2 text-2xl sm:text-3xl font-black text-emerald-600">{metrics.newCount}</p>
-            <p className="mt-1 text-xs text-slate-400">Needs initial follow-up</p>
+          <div className="rounded-lg bg-white p-2 shadow-xs ring-1 ring-slate-200 border-l-4 border-emerald-500">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-700">New Inquiries</p>
+            <p className="mt-0.5 text-lg sm:text-xl font-black text-emerald-600">{metrics.newCount}</p>
+            <p className="mt-0 text-[9px] text-slate-400">Needs follow-up</p>
           </div>
 
-          <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200 border-l-4 border-teal-500">
-            <p className="text-xs font-bold uppercase tracking-wider text-teal-700">In Pipeline</p>
-            <p className="mt-2 text-2xl sm:text-3xl font-black text-teal-600">{metrics.active}</p>
-            <p className="mt-1 text-xs text-slate-400">Discussions & Proposals</p>
+          <div className="rounded-lg bg-white p-2 shadow-xs ring-1 ring-slate-200 border-l-4 border-teal-500">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-teal-700">In Pipeline</p>
+            <p className="mt-0.5 text-lg sm:text-xl font-black text-teal-600">{metrics.active}</p>
+            <p className="mt-0 text-[9px] text-slate-400">Discussions</p>
           </div>
 
-          <div className="rounded-2xl bg-white p-5 shadow-xs ring-1 ring-slate-200 border-l-4 border-indigo-500">
-            <p className="text-xs font-bold uppercase tracking-wider text-indigo-700">Converted Clients</p>
-            <p className="mt-2 text-2xl sm:text-3xl font-black text-indigo-600">{metrics.converted}</p>
-            <p className="mt-1 text-xs text-slate-400">Won enterprise contracts</p>
+          <div className="rounded-lg bg-white p-2 shadow-xs ring-1 ring-slate-200 border-l-4 border-indigo-500">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-indigo-700">Converted Clients</p>
+            <p className="mt-0.5 text-lg sm:text-xl font-black text-indigo-600">{metrics.converted}</p>
+            <p className="mt-0 text-[9px] text-slate-400">Won contracts</p>
           </div>
         </div>
 
@@ -1836,9 +1885,10 @@ export function AdminPage() {
                   <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     <th className="py-3.5 pl-6 pr-3">Enterprise & Location</th>
                     <th className="px-3 py-3.5">Contact & Function</th>
+                    <th className="px-3 py-3.5">Acquisition Source</th>
                     <th className="px-3 py-3.5">Urgency</th>
                     <th className="px-3 py-3.5">Requested Solution</th>
-                    <th 
+                    <th
                       className="px-3 py-3.5 cursor-pointer hover:bg-slate-100 transition-colors select-none group"
                       onClick={() => {
                         if (sortBy === 'status_new_first') setSortBy('status_contacted_first');
@@ -1874,14 +1924,6 @@ export function AdminPage() {
                         <td className="py-4 pl-6 pr-3">
                           <div className="font-bold text-slate-900 flex items-center gap-2 flex-wrap">
                             <span>{lead.company}</span>
-                            {(() => {
-                              const badge = getSourceBadge(lead.source);
-                              return (
-                                <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold border ${badge.bg} ${badge.color} ${badge.border}`}>
-                                  {badge.label}
-                                </span>
-                              );
-                            })()}
                             {lead.opportunityId && (
                               <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200" title="Commercial Opportunity created">
                                 <TrendingUp className="h-2.5 w-2.5" />
@@ -1997,6 +2039,18 @@ export function AdminPage() {
                               </div>
                             )}
                           </div>
+                        </td>
+
+                        {/* Acquisition Source */}
+                        <td className="px-3 py-4">
+                          {(() => {
+                            const badge = getSourceBadge(lead.source);
+                            return (
+                              <span className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold border ${badge.bg} ${badge.color} ${badge.border}`}>
+                                {badge.label}
+                              </span>
+                            );
+                          })()}
                         </td>
 
                         {/* Urgency / Emergency Level */}
@@ -2397,6 +2451,7 @@ export function AdminPage() {
                         <option value="Data Migration & Auditing">Data Migration & Auditing</option>
                         <option value="Staff Formation & Training">Staff Formation & Training</option>
                         <option value="Dedicated Support SLA">Dedicated Support SLA</option>
+                        <option value="WebSite">WebSite</option>
                       </select>
                     </div>
                   </div>
@@ -2869,6 +2924,7 @@ export function AdminPage() {
           clientCompany={contactLogClient.company}
           clientPhone={contactLogClient.phone}
           clientEmail={contactLogClient.email}
+          clientLeadId={contactLogClient.id}
           contactHistory={contactLogClient.contactHistory || []}
           currentUserName={currentUser?.name || 'Rayan Aouf'}
           onSaveInteraction={(interaction) => {
@@ -2876,6 +2932,20 @@ export function AdminPage() {
           }}
           onDeleteInteraction={(interactionId) => {
             handleDeleteLeadInteraction(contactLogClient.id, interactionId);
+          }}
+          onCreateReminder={(title, dueDate, description) => {
+            reminderStorage.saveReminder({
+              title,
+              description,
+              leadId: contactLogClient.id,
+              leadName: contactLogClient.company,
+              status: 'pending',
+              priority: 'medium',
+              dueDate: new Date(dueDate).toISOString(),
+              createdBy: currentUser?.name || 'Admin'
+            });
+            loadReminders();
+            showToast('Reminder created successfully');
           }}
         />
       )}

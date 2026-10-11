@@ -1,22 +1,23 @@
 import { useState, type FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  X, 
-  MessageCircle, 
-  Mail, 
-  PhoneCall, 
-  Users, 
-  Video, 
-  Clock, 
-  CheckCircle2, 
-  Trash2, 
-  Plus, 
+import {
+  X,
+  MessageCircle,
+  Mail,
+  PhoneCall,
+  Users,
+  Video,
+  Clock,
+  CheckCircle2,
+  Trash2,
+  Plus,
   Calendar,
   Building2,
   User,
   History,
   Send,
-  Sparkles
+  Sparkles,
+  Bell
 } from 'lucide-react';
 import { ContactChannel, ClientInteraction } from '../../types';
 
@@ -110,10 +111,12 @@ interface ClientContactLogModalProps {
   clientCompany?: string;
   clientPhone?: string;
   clientEmail?: string;
+  clientLeadId?: string;
   contactHistory?: ClientInteraction[];
   currentUserName?: string;
   onSaveInteraction: (interaction: ClientInteraction) => void;
   onDeleteInteraction?: (interactionId: string) => void;
+  onCreateReminder?: (title: string, dueDate: string, description?: string) => void;
 }
 
 export function ClientContactLogModal({
@@ -123,10 +126,12 @@ export function ClientContactLogModal({
   clientCompany,
   clientPhone,
   clientEmail,
+  clientLeadId,
   contactHistory = [],
   currentUserName = 'Rayan Aouf',
   onSaveInteraction,
-  onDeleteInteraction
+  onDeleteInteraction,
+  onCreateReminder
 }: ClientContactLogModalProps) {
   const [selectedChannel, setSelectedChannel] = useState<ContactChannel>('whatsapp');
   const [summary, setSummary] = useState('');
@@ -140,6 +145,10 @@ export function ClientContactLogModal({
   const [nextFollowUpDate, setNextFollowUpDate] = useState('');
   const [loggedBy, setLoggedBy] = useState(currentUserName);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showReminderForm, setShowReminderForm] = useState(false);
+  const [reminderTitle, setReminderTitle] = useState('');
+  const [reminderDueDate, setReminderDueDate] = useState('');
+  const [reminderDescription, setReminderDescription] = useState('');
 
   if (!isOpen) return null;
 
@@ -355,6 +364,89 @@ export function ClientContactLogModal({
                 </button>
               </div>
             </form>
+
+            {/* ── CREATE REMINDER ── */}
+            {onCreateReminder && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-[#1b6b6a]" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                      Set Reminder
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowReminderForm(!showReminderForm)}
+                    className="text-[11px] font-bold text-[#44ACAB] hover:text-[#328887] transition-colors"
+                  >
+                    {showReminderForm ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+
+                {showReminderForm && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                        Reminder Title *
+                      </label>
+                      <input
+                        type="text"
+                        value={reminderTitle}
+                        onChange={(e) => setReminderTitle(e.target.value)}
+                        placeholder="e.g., Follow-up meeting with Optilens"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:outline-hidden"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                        Due Date *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={reminderDueDate}
+                        onChange={(e) => setReminderDueDate(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:outline-hidden"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                        Description (Optional)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={reminderDescription}
+                        onChange={(e) => setReminderDescription(e.target.value)}
+                        placeholder="Add details about this reminder..."
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-[#44ACAB] focus:outline-hidden leading-relaxed"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (reminderTitle.trim() && reminderDueDate) {
+                            onCreateReminder(reminderTitle, reminderDueDate, reminderDescription);
+                            setReminderTitle('');
+                            setReminderDueDate('');
+                            setReminderDescription('');
+                            setShowReminderForm(false);
+                          }
+                        }}
+                        disabled={!reminderTitle.trim() || !reminderDueDate}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 disabled:cursor-not-allowed px-4 py-2 text-xs font-bold text-white shadow-xs transition-all"
+                      >
+                        <Bell className="h-3.5 w-3.5" />
+                        <span>Create Reminder</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ── ALL CONTACT INTERACTIONS TIMELINE ── */}
             <div>

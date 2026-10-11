@@ -39,6 +39,7 @@ export interface Lead {
   contactHistory?: ClientInteraction[]; // Complete historical log of all client interactions
   estimatedValueDZD?: number;
   opportunityId?: string;         // Linked Opportunity ID once converted/created
+  reminderIds?: string[];         // Linked Reminder IDs
 }
 
 // ── CUSTOMER DEFINITIONS ─────────────────────────────────────────────
@@ -140,6 +141,25 @@ export interface Claim {
   updatedAt: string;
 }
 
+// ── REMINDER DEFINITIONS ─────────────────────────────────────────────
+export type ReminderStatus = 'pending' | 'completed' | 'cancelled';
+export type ReminderPriority = 'high' | 'medium' | 'low';
+
+export interface Reminder {
+  id: string;
+  title: string;
+  description?: string;
+  leadId?: string;              // Optional: link to a specific lead
+  leadName?: string;            // Cached lead company name for display
+  status: ReminderStatus;
+  priority: ReminderPriority;
+  dueDate: string;             // ISO timestamp
+  completedAt?: string;        // ISO timestamp when marked as completed
+  createdBy: string;           // User who created the reminder
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ── OUR WORK / PORTFOLIO PROJECT DEFINITIONS ─────────────────────────
 export interface WorkProject {
   id: string;
@@ -172,16 +192,17 @@ export type UserRole =
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 
 // ── SIDEBAR CRM RESOURCES / PERMISSION MODULES ──────────────────────
-export type CrmResource = 
-  | 'lead' 
-  | 'opportunity' 
-  | 'customer' 
-  | 'project' 
-  | 'claim' 
-  | 'work' 
+export type CrmResource =
+  | 'lead'
+  | 'opportunity'
+  | 'customer'
+  | 'project'
+  | 'claim'
+  | 'work'
   | 'users'
   | 'policy'
-  | 'events';
+  | 'events'
+  | 'reminder';
 
 export interface CrmResourceMeta {
   id: CrmResource;
@@ -284,6 +305,16 @@ export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
     color: 'text-violet-700',
     bgLight: 'bg-violet-50',
     borderClass: 'border-violet-200'
+  },
+  {
+    id: 'reminder',
+    label: 'Reminders',
+    shortLabel: 'Reminders',
+    description: 'Meeting reminders, follow-ups & task notifications',
+    category: 'Commercial',
+    color: 'text-rose-700',
+    bgLight: 'bg-rose-50',
+    borderClass: 'border-rose-200'
   }
 ];
 

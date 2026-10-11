@@ -18,16 +18,40 @@ const partners = [
       </div>
     )
   },
-  { 
-    name: 'Jethings', 
+  {
+    name: 'Jethings',
     logo: (
       <div className="flex items-center gap-2">
         <span className="text-2xl font-extrabold tracking-tighter">Jethings</span>
       </div>
     )
   },
-  { 
-    name: 'Novalis Ai', 
+  {
+    name: 'J-Optic',
+    logo: (
+      <div className="flex items-center gap-2">
+        <span className="text-2xl font-bold tracking-tight">J-Optic</span>
+      </div>
+    )
+  },
+  {
+    name: 'J-Optic-Pro',
+    logo: (
+      <div className="flex items-center gap-2">
+        <span className="text-2xl font-semibold tracking-tight">J-Optic-Pro</span>
+      </div>
+    )
+  },
+  {
+    name: 'J-Store',
+    logo: (
+      <div className="flex items-center gap-2">
+        <span className="text-2xl font-medium tracking-tight">J-Store</span>
+      </div>
+    )
+  },
+  {
+    name: 'Novalis Ai',
     logo: (
       <div className="flex items-center gap-2">
         <span className="text-2xl font-light tracking-wide">Novalis <strong className="font-bold">Ai</strong></span>

@@ -45,7 +45,8 @@ export const COLLECTIONS = {
   WORK_PROJECTS: 'work_projects',
   USERS: 'users',
   POLICIES: 'policies',
-  EVENTS: 'events'
+  EVENTS: 'events',
+  REMINDERS: 'reminders'
 } as const;
 
 export {
