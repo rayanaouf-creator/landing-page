@@ -117,23 +117,26 @@ export const customerStorage = {
     const idx = memoryCustomers.findIndex(c => c.id === id);
     if (idx === -1) return null;
 
-    const updated: Customer = {
+    const updatedCustomer: Customer = {
       ...memoryCustomers[idx],
       ...updates,
       updatedAt: new Date().toISOString()
     };
 
-    memoryCustomers[idx] = updated;
+    memoryCustomers[idx] = updatedCustomer;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCustomers));
     } catch {}
     listeners.forEach(fn => fn(memoryCustomers));
 
-    updateDoc(doc(db, COLLECTIONS.CUSTOMERS, id), updates as any).catch(err => {
+    const firestoreUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+    updateDoc(doc(db, COLLECTIONS.CUSTOMERS, id), firestoreUpdates as any).catch(err => {
       console.error('Firestore updateCustomer error:', err);
     });
 
-    return updated;
+    return updatedCustomer;
   },
 
   async deleteCustomer(id: string): Promise<boolean> {

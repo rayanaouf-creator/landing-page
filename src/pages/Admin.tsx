@@ -28,15 +28,6 @@ import {
   RefreshCw,
   Search,
   CheckCircle2,
-  Clock,
-  ArrowUpDown,
-  FileSpreadsheet,
-  Menu,
-  LayoutDashboard,
-  Globe,
-  MapPin,
-  Briefcase,
-  Factory,
   AlertCircle,
   Flame,
   Zap,
@@ -51,9 +42,16 @@ import {
   MessageCircle,
   History,
   MessageSquare,
-  Bell
+  Bell,
+  UserCircle,
+  Menu,
+  Briefcase,
+  Globe,
+  ArrowUpDown,
+  MapPin,
+  Factory
 } from 'lucide-react';
-import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser, CrmResource, ALL_CRM_RESOURCES, CompanyPolicy, CompanyEvent, ClientInteraction, ContactChannel, Reminder } from '../types';
+import { Lead, LeadStatus, LeadPriority, LeadSource, EmergencyLevel, Customer, Claim, Opportunity, Project, WorkProject, AppUser, CrmResource, ALL_CRM_RESOURCES, CompanyPolicy, CompanyEvent, ClientInteraction, ContactChannel, Reminder, Candidate } from '../types';
 import { leadStorage } from '../services/leadStorage';
 import { customerStorage } from '../services/customerStorage';
 import { claimStorage } from '../services/claimStorage';
@@ -64,6 +62,7 @@ import { userStorage } from '../services/userStorage';
 import { policyStorage } from '../services/policyStorage';
 import { eventStorage } from '../services/eventStorage';
 import { reminderStorage } from '../services/reminderStorage';
+import { candidateStorage } from '../services/candidateStorage';
 import { CustomerView } from '../components/admin/CustomerView';
 import { ClaimView } from '../components/admin/ClaimView';
 import { OpportunityView } from '../components/admin/OpportunityView';
@@ -73,6 +72,7 @@ import { UsersView, ROLE_CONFIG } from '../components/admin/UsersView';
 import { PolicyView } from '../components/admin/PolicyView';
 import { EventsView } from '../components/admin/EventsView';
 import { ReminderView } from '../components/admin/ReminderView';
+import { CandidateView } from '../components/admin/CandidateView';
 import { DailyContactGraph } from '../components/admin/DailyContactGraph';
 import { ClientContactLogModal } from '../components/admin/ClientContactLogModal';
 
@@ -217,11 +217,12 @@ export function AdminPage() {
   const [policies, setPolicies] = useState<CompanyPolicy[]>([]);
   const [events, setEvents] = useState<CompanyEvent[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
 
   // Compute permitted sidebar resources for the logged-in user
   const userAssignedResources = useMemo<CrmResource[]>(() => {
     if (!currentUser) {
-      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events', 'reminder'];
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events', 'reminder', 'candidate'];
     }
     // If assignedResources is explicitly configured for this user, strictly show ONLY what is selected
     if (Array.isArray(currentUser.assignedResources)) {
@@ -229,7 +230,7 @@ export function AdminPage() {
     }
     // Legacy fallback only if assignedResources has never been defined
     return currentUser.role === 'admin'
-      ? ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events', 'reminder']
+      ? ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events', 'reminder', 'candidate']
       : ['lead', 'opportunity', 'customer'];
   }, [currentUser]);
 
@@ -352,6 +353,7 @@ export function AdminPage() {
     const unsubPolicies = policyStorage.subscribe((items) => setPolicies(items));
     const unsubEvents = eventStorage.subscribe((items) => setEvents(items));
     const unsubReminders = reminderStorage.subscribe((items) => setReminders(items));
+    const unsubCandidates = candidateStorage.subscribe((items) => setCandidates(items));
 
     return () => {
       unsubLeads();
@@ -363,6 +365,7 @@ export function AdminPage() {
       unsubPolicies();
       unsubEvents();
       unsubReminders();
+      unsubCandidates();
     };
   }, [isAuthenticated]);
 
@@ -389,6 +392,11 @@ export function AdminPage() {
   const loadReminders = () => {
     const list = reminderStorage.getReminders();
     setReminders(list);
+  };
+
+  const loadCandidates = () => {
+    const list = candidateStorage.getCandidates();
+    setCandidates(list);
   };
 
   const loadLeads = () => {
@@ -741,9 +749,12 @@ export function AdminPage() {
       contactedAt: nowIso,
       summary: interactionDetails?.summary || '',
       outcome: interactionDetails?.outcome || 'In Discussion / Interested',
-      loggedBy: interactionDetails?.loggedBy || currentUser?.name || 'Rayan Aouf',
-      nextFollowUpDate: interactionDetails?.nextFollowUpDate
+      loggedBy: interactionDetails?.loggedBy || currentUser?.name || 'Rayan Aouf'
     };
+
+    if (interactionDetails?.nextFollowUpDate) {
+      newInteraction.nextFollowUpDate = interactionDetails.nextFollowUpDate;
+    }
 
     const updatedHistory = [newInteraction, ...currentHistory];
 
@@ -772,10 +783,12 @@ export function AdminPage() {
     const filtered = existing.contactHistory.filter(i => i.id !== interactionId);
     const latest = filtered[0];
     const updates: Partial<Lead> = {
-      contactHistory: filtered,
-      contactedAt: latest ? latest.contactedAt : undefined,
-      contactMethod: latest ? latest.channel : undefined
+      contactHistory: filtered
     };
+    if (latest) {
+      updates.contactedAt = latest.contactedAt;
+      updates.contactMethod = latest.channel;
+    }
     leadStorage.updateLead(leadId, updates);
     loadLeads();
     if (viewingLead?.id === leadId) {
@@ -784,7 +797,7 @@ export function AdminPage() {
     if (contactLogClient?.id === leadId) {
       setContactLogClient(prev => prev ? { ...prev, ...updates } : null);
     }
-    showToast('Contact interaction removed from history.');
+    showToast('Contact interaction removed from lead history.');
   };
 
   const handleCopy = (text: string, id: string) => {
@@ -1429,6 +1442,32 @@ export function AdminPage() {
                 </span>
               </button>
             )}
+
+            {/* 11. Candidates */}
+            {canAccess('candidate') && (
+              <button
+                id="admin-sidebar-nav-candidate"
+                onClick={() => {
+                  setActiveTab('candidate');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === 'candidate'
+                    ? 'bg-[#1b6b6a] text-white font-bold shadow-xs ring-1 ring-[#44ACAB]/50'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <UserCircle className={`h-4 w-4 ${activeTab === 'candidate' ? 'text-[#44ACAB]' : 'text-slate-400'}`} />
+                  <span className="text-sm">Candidates</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'candidate' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {candidates.filter(c => ['applied', 'screening', 'interview'].includes(c.status)).length}
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1609,6 +1648,15 @@ export function AdminPage() {
             leads={leads}
             currentUser={currentUser}
             onRefresh={loadReminders}
+            showToast={showToast}
+          />
+        )}
+
+        {activeTab === 'candidate' && canAccess('candidate') && (
+          <CandidateView
+            candidates={candidates}
+            currentUser={currentUser}
+            onRefresh={loadCandidates}
             showToast={showToast}
           />
         )}

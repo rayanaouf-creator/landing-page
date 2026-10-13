@@ -121,7 +121,10 @@ export const claimStorage = {
     } catch {}
     listeners.forEach(fn => fn(memoryClaims));
 
-    updateDoc(doc(db, COLLECTIONS.CLAIMS, id), updates as any).catch(err => {
+    const firestoreUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+    updateDoc(doc(db, COLLECTIONS.CLAIMS, id), firestoreUpdates as any).catch(err => {
       console.error('Firestore updateClaim error:', err);
     });
 

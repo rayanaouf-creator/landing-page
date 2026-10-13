@@ -149,11 +149,15 @@ export const reminderStorage = {
     return true;
   },
 
-  markAsCompleted(id: string): Reminder | null {
-    return this.updateReminder(id, {
+  markAsCompleted(id: string, completionNotes?: string): Reminder | null {
+    const updates: any = {
       status: 'completed',
       completedAt: new Date().toISOString()
-    });
+    };
+    if (completionNotes) {
+      updates.completionNotes = completionNotes;
+    }
+    return this.updateReminder(id, updates);
   },
 
   getRemindersByLead(leadId: string): Reminder[] {

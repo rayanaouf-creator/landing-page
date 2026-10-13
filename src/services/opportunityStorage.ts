@@ -85,9 +85,14 @@ export const opportunityStorage = {
     } catch {}
     listeners.forEach(fn => fn(memoryOpportunities));
 
-    setDoc(doc(db, COLLECTIONS.OPPORTUNITIES, newOpp.id), newOpp).catch(err => {
-      console.error('Firestore saveOpportunity error:', err);
-    });
+    // Persist to Firebase Firestore - remove undefined fields
+    const firestoreData = Object.fromEntries(
+      Object.entries(newOpp).filter(([_, value]) => value !== undefined)
+    );
+    setDoc(doc(db, COLLECTIONS.OPPORTUNITIES, newOpp.id), firestoreData)
+      .catch(err => {
+        console.warn('Opportunity saved locally only (Firestore sync failed):', err);
+      });
 
     return newOpp;
   },
@@ -127,9 +132,14 @@ export const opportunityStorage = {
     } catch {}
     listeners.forEach(fn => fn(memoryOpportunities));
 
-    updateDoc(doc(db, COLLECTIONS.OPPORTUNITIES, id), updates as any).catch(err => {
-      console.error('Firestore updateOpportunity error:', err);
-    });
+    // Persist to Firebase Firestore - remove undefined fields
+    const firestoreUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+    updateDoc(doc(db, COLLECTIONS.OPPORTUNITIES, id), firestoreUpdates as any)
+      .catch(err => {
+        console.warn('Opportunity updated locally only (Firestore sync failed):', err);
+      });
 
     return updated;
   },

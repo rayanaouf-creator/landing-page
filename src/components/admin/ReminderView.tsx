@@ -48,6 +48,8 @@ export function ReminderView({ reminders, leads = [], currentUser, onRefresh, sh
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [deletingReminder, setDeletingReminder] = useState<Reminder | null>(null);
+  const [completingReminder, setCompletingReminder] = useState<Reminder | null>(null);
+  const [completionNotes, setCompletionNotes] = useState('');
 
   // Form State
   const [formData, setFormData] = useState<{
@@ -170,8 +172,16 @@ export function ReminderView({ reminders, leads = [], currentUser, onRefresh, sh
   };
 
   const handleMarkComplete = (reminder: Reminder) => {
-    reminderStorage.markAsCompleted(reminder.id);
+    setCompletingReminder(reminder);
+    setCompletionNotes('');
+  };
+
+  const handleCompleteWithNotes = () => {
+    if (!completingReminder) return;
+    reminderStorage.markAsCompleted(completingReminder.id, completionNotes);
     showToast('Reminder marked as completed');
+    setCompletingReminder(null);
+    setCompletionNotes('');
     onRefresh();
   };
 
@@ -308,6 +318,13 @@ export function ReminderView({ reminders, leads = [], currentUser, onRefresh, sh
 
                       {reminder.description && (
                         <p className="text-xs text-slate-600 mt-1 line-clamp-2">{reminder.description}</p>
+                      )}
+
+                      {reminder.status === 'completed' && reminder.completionNotes && (
+                        <div className="mt-2 p-2 bg-emerald-50 rounded-lg border border-emerald-200">
+                          <p className="text-xs text-emerald-800 font-medium mb-1">Completion Notes:</p>
+                          <p className="text-xs text-emerald-700">{reminder.completionNotes}</p>
+                        </div>
                       )}
 
                       <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -552,6 +569,61 @@ export function ReminderView({ reminders, leads = [], currentUser, onRefresh, sh
                     className="flex-1 px-4 py-2 rounded-lg bg-rose-600 text-sm font-bold text-white hover:bg-rose-700 transition-colors"
                   >
                     Delete
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Completion Notes Modal */}
+      <AnimatePresence>
+        {completingReminder && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCompletingReminder(null)}
+              className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md"
+            />
+            <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-8 sm:px-6 flex items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200 p-6"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">Complete Reminder</h3>
+                </div>
+                <p className="text-sm text-slate-600 mb-4">
+                  Add notes about completing "{completingReminder.title}" (optional)
+                </p>
+                <textarea
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
+                  placeholder="What was the result? Any follow-up needed?"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#44ACAB] focus:ring-1 focus:ring-[#44ACAB] outline-none resize-none"
+                  rows={3}
+                />
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={() => setCompletingReminder(null)}
+                    className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCompleteWithNotes}
+                    className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
+                  >
+                    Complete
                   </button>
                 </div>
               </motion.div>

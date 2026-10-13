@@ -155,7 +155,33 @@ export interface Reminder {
   priority: ReminderPriority;
   dueDate: string;             // ISO timestamp
   completedAt?: string;        // ISO timestamp when marked as completed
+  completionNotes?: string;    // Notes added when completing the reminder
   createdBy: string;           // User who created the reminder
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── CANDIDATE DEFINITIONS ─────────────────────────────────────────────
+export type CandidateStatus = 'applied' | 'screening' | 'interview' | 'offer' | 'hired' | 'rejected' | 'withdrawn';
+export type CandidatePriority = 'high' | 'medium' | 'low';
+
+export interface Candidate {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  position: string;             // Job title applied for
+  department?: string;         // Department (e.g., Sales, Engineering, HR)
+  experience?: string;         // Years of experience
+  skills?: string[];           // List of skills
+  resumeUrl?: string;          // Link to resume/CV
+  linkedinUrl?: string;        // LinkedIn profile link
+  status: CandidateStatus;
+  priority: CandidatePriority;
+  appliedDate: string;         // ISO timestamp when application received
+  interviewDate?: string;      // ISO timestamp for scheduled interview
+  notes?: string;
+  assignedTo?: string;         // Recruiter or hiring manager
   createdAt: string;
   updatedAt: string;
 }
@@ -202,7 +228,8 @@ export type CrmResource =
   | 'users'
   | 'policy'
   | 'events'
-  | 'reminder';
+  | 'reminder'
+  | 'candidate';
 
 export interface CrmResourceMeta {
   id: CrmResource;
@@ -315,6 +342,16 @@ export const ALL_CRM_RESOURCES: CrmResourceMeta[] = [
     color: 'text-rose-700',
     bgLight: 'bg-rose-50',
     borderClass: 'border-rose-200'
+  },
+  {
+    id: 'candidate',
+    label: 'Candidates',
+    shortLabel: 'Candidates',
+    description: 'Job applicants & recruitment pipeline',
+    category: 'Administration',
+    color: 'text-orange-700',
+    bgLight: 'bg-orange-50',
+    borderClass: 'border-orange-200'
   }
 ];
 

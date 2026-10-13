@@ -36,7 +36,8 @@ import {
   LayoutGrid,
   FileText,
   Calendar,
-  Bell
+  Bell,
+  UserCircle
 } from 'lucide-react';
 import { AppUser, UserRole, UserStatus, CrmResource, ALL_CRM_RESOURCES } from '../../types';
 import { userStorage } from '../../services/userStorage';
@@ -60,13 +61,14 @@ export const getSidebarItemIcon = (id: CrmResource) => {
     case 'policy': return FileText;
     case 'events': return Calendar;
     case 'reminder': return Bell;
+    case 'candidate': return UserCircle;
   }
 };
 
 export const getDefaultResourcesForRole = (role: UserRole): CrmResource[] => {
   switch (role) {
     case 'admin':
-      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events'];
+      return ['lead', 'opportunity', 'customer', 'project', 'claim', 'work', 'users', 'policy', 'events', 'candidate'];
     case 'sales_manager':
       return ['lead', 'opportunity', 'customer', 'events'];
     case 'sales_rep':

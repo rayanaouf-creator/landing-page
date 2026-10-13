@@ -96,23 +96,26 @@ export const projectStorage = {
     const idx = memoryProjects.findIndex(p => p.id === id);
     if (idx === -1) return null;
 
-    const updated: Project = {
+    const updatedProject: Project = {
       ...memoryProjects[idx],
       ...updates,
       updatedAt: new Date().toISOString()
     };
 
-    memoryProjects[idx] = updated;
+    memoryProjects[idx] = updatedProject;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryProjects));
     } catch {}
     listeners.forEach(fn => fn(memoryProjects));
 
-    updateDoc(doc(db, COLLECTIONS.PROJECTS, id), updates as any).catch(err => {
+    const firestoreUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+    updateDoc(doc(db, COLLECTIONS.PROJECTS, id), firestoreUpdates as any).catch(err => {
       console.error('Firestore updateProject error:', err);
     });
 
-    return updated;
+    return updatedProject;
   },
 
   deleteProject(id: string): boolean {

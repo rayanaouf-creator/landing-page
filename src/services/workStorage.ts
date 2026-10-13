@@ -127,7 +127,10 @@ export const workStorage = {
     } catch {}
     listeners.forEach((fn) => fn(memoryWork));
 
-    updateDoc(doc(db, COLLECTIONS.WORK_PROJECTS, id), updates as any).catch((err) => {
+    const firestoreUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+    updateDoc(doc(db, COLLECTIONS.WORK_PROJECTS, id), firestoreUpdates as any).catch((err) => {
       console.error('Firestore updateWorkProject error:', err);
     });
 
