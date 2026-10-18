@@ -106,6 +106,7 @@ export interface Project {
   projectManager?: string;
   keyDeliverables?: string;
   notes?: string;
+  opportunityId?: string;       // Linked Opportunity ID if created from opportunity
   createdAt: string;
   updatedAt: string;
 }

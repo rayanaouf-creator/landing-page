@@ -9,7 +9,9 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 
-const STORAGE_KEY = 'jetnext_projects_database_v1';
+const STORAGE_KEY = 'jetnext_projects_database_v2';
+const STORAGE_VERSION_KEY = 'jetnext_projects_version';
+const CURRENT_VERSION = '2.0';
 
 type ProjectListener = (projects: Project[]) => void;
 const listeners: Set<ProjectListener> = new Set();
@@ -18,6 +20,16 @@ let isInitialized = false;
 
 function loadLocalMirror(): Project[] {
   try {
+    // Check version and clear stale data
+    const storedVersion = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_VERSION_KEY) : null;
+    if (storedVersion !== CURRENT_VERSION) {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
+      }
+      return [];
+    }
+
     const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
     if (!data) return [];
     const parsed: Project[] = JSON.parse(data);

@@ -1,25 +1,27 @@
 import { useState, useMemo, useEffect, FormEvent } from 'react';
-import { 
-  TrendingUp, 
-  Search, 
-  Plus, 
-  FileSpreadsheet, 
-  Mail, 
-  Phone, 
-  DollarSign, 
-  Calendar, 
-  Trash2, 
-  Edit, 
-  Eye, 
-  X, 
-  CheckCircle2, 
+import {
+  TrendingUp,
+  Search,
+  Plus,
+  FileSpreadsheet,
+  Mail,
+  Phone,
+  DollarSign,
+  Calendar,
+  Trash2,
+  Edit,
+  Eye,
+  X,
+  CheckCircle2,
   AlertCircle,
   Briefcase,
   Building2,
-  PieChart
+  PieChart,
+  Rocket
 } from 'lucide-react';
-import { Opportunity, OpportunityStage, Customer, Lead } from '../../types';
+import { Opportunity, OpportunityStage, Customer, Lead, Project } from '../../types';
 import { opportunityStorage } from '../../services/opportunityStorage';
+import { projectStorage } from '../../services/projectStorage';
 import { SERVICE_PRESETS } from '../../pages/Admin';
 
 const STAGE_CONFIG: Record<OpportunityStage, { label: string; color: string; bg: string; border: string }> = {
@@ -71,6 +73,7 @@ export function OpportunityView({
   const [editingOpp, setEditingOpp] = useState<Opportunity | null>(null);
   const [viewingOpp, setViewingOpp] = useState<Opportunity | null>(null);
   const [oppToDelete, setOppToDelete] = useState<Opportunity | null>(null);
+  const [oppToConvert, setOppToConvert] = useState<Opportunity | null>(null);
 
   // Origin info if created from Lead
   const [leadOrigin, setLeadOrigin] = useState<Lead | null>(initialLead || null);
@@ -93,6 +96,14 @@ export function OpportunityView({
   const [serviceInterest, setServiceInterest] = useState('ERPNext Manufacturing & Supply Chain');
   const [assignedTo, setAssignedTo] = useState('Senior Solutions Consultant');
   const [notes, setNotes] = useState('');
+
+  // Project creation form state
+  const [projectName, setProjectName] = useState('');
+  const [projectBudget, setProjectBudget] = useState<number | ''>('');
+  const [projectStartDate, setProjectStartDate] = useState('');
+  const [projectTargetDate, setProjectTargetDate] = useState('');
+  const [projectManager, setProjectManager] = useState('');
+  const [projectNotes, setProjectNotes] = useState('');
 
   const openAddModal = (cust?: Customer) => {
     setEditingOpp(null);
@@ -191,6 +202,46 @@ export function OpportunityView({
         setTitle(`${found.company} - Deal`);
       }
     }
+  };
+
+  const openConvertModal = (opp: Opportunity) => {
+    setOppToConvert(opp);
+    setProjectName(`${opp.customerName} - ${opp.serviceInterest} Project`);
+    setProjectBudget(opp.expectedValueDZD);
+    setProjectStartDate(new Date().toISOString().slice(0, 10));
+    setProjectTargetDate(opp.expectedCloseDate);
+    setProjectManager(opp.assignedTo || 'Senior Solutions Consultant');
+    setProjectNotes(`Converted from opportunity: ${opp.title}\n\nService: ${opp.serviceInterest}\nExpected Value: ${opp.expectedValueDZD.toLocaleString()} DZD`);
+  };
+
+  const handleConvertToProject = (e: FormEvent) => {
+    e.preventDefault();
+    if (!oppToConvert) return;
+
+    if (!projectName.trim() || !projectStartDate) {
+      showToast('Please fill project name and start date');
+      return;
+    }
+
+    const newProject: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
+      projectName: projectName.trim(),
+      customerId: oppToConvert.customerId,
+      customerName: oppToConvert.customerName,
+      status: 'planning',
+      budgetDZD: Number(projectBudget) || 0,
+      startDate: projectStartDate,
+      targetEndDate: projectTargetDate || undefined,
+      progress: 0,
+      projectManager: projectManager || undefined,
+      keyDeliverables: undefined,
+      notes: projectNotes || undefined,
+      opportunityId: oppToConvert.id
+    };
+
+    projectStorage.saveProject(newProject);
+    showToast(`Project "${projectName}" created from opportunity`);
+    setOppToConvert(null);
+    onRefresh();
   };
 
   const handleSave = (e: FormEvent) => {
@@ -554,6 +605,13 @@ export function OpportunityView({
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
+                            onClick={() => openConvertModal(opp)}
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                            title="Convert to Project"
+                          >
+                            <Rocket className="h-4 w-4" />
+                          </button>
+                          <button
                             onClick={() => setOppToDelete(opp)}
                             className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
                             title="Delete Deal"
@@ -893,7 +951,7 @@ export function OpportunityView({
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100">
             <h3 className="text-base font-bold text-slate-900">Delete Opportunity</h3>
             <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-              Are you sure you want to delete <span className="font-bold text-slate-900">"{oppToDelete.title}"</span>? 
+              Are you sure you want to delete <span className="font-bold text-slate-900">"{oppToDelete.title}"</span>?
               This will remove the deal from your sales pipeline.
             </p>
             <div className="mt-5 flex items-center justify-end gap-2">
@@ -908,6 +966,130 @@ export function OpportunityView({
                 className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700"
               >
                 Delete Deal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONVERT TO PROJECT MODAL */}
+      {oppToConvert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-100 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <Rocket className="h-5 w-5 text-emerald-600" />
+                <h3 className="text-base font-bold text-slate-900">Convert to Project</h3>
+              </div>
+              <button
+                onClick={() => setOppToConvert(null)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConvertToProject} className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs">
+                <p className="font-semibold text-emerald-900">Converting from: {oppToConvert.title}</p>
+                <p className="text-emerald-700 mt-1">Customer: {oppToConvert.customerName}</p>
+                <p className="text-emerald-700">Expected Value: {oppToConvert.expectedValueDZD.toLocaleString()} DZD</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Project Name *
+                </label>
+                <input
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                  placeholder="Enter project name"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Budget (DZD)
+                  </label>
+                  <input
+                    type="number"
+                    value={projectBudget}
+                    onChange={(e) => setProjectBudget(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={projectStartDate}
+                    onChange={(e) => setProjectStartDate(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Target End Date
+                </label>
+                <input
+                  type="date"
+                  value={projectTargetDate}
+                  onChange={(e) => setProjectTargetDate(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Project Manager
+                </label>
+                <input
+                  type="text"
+                  value={projectManager}
+                  onChange={(e) => setProjectManager(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                  placeholder="Assign project manager"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Notes
+                </label>
+                <textarea
+                  value={projectNotes}
+                  onChange={(e) => setProjectNotes(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none resize-none"
+                  rows={3}
+                  placeholder="Additional project notes..."
+                />
+              </div>
+            </form>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setOppToConvert(null)}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                onClick={handleConvertToProject}
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+              >
+                Create Project
               </button>
             </div>
           </div>

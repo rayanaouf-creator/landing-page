@@ -9,7 +9,9 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 
-const STORAGE_KEY = 'jetnext_leads_database_v1';
+const STORAGE_KEY = 'jetnext_leads_database_v2';
+const STORAGE_VERSION_KEY = 'jetnext_leads_version';
+const CURRENT_VERSION = '2.0';
 
 type LeadListener = (leads: Lead[]) => void;
 const listeners: Set<LeadListener> = new Set();
@@ -19,6 +21,17 @@ let isInitialized = false;
 // Read local mirror first so UI is instant
 function loadLocalMirror(): Lead[] {
   try {
+    // Check version and clear stale data
+    const storedVersion = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_VERSION_KEY) : null;
+    if (storedVersion !== CURRENT_VERSION) {
+      // Clear old data if version mismatch
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
+      }
+      return [];
+    }
+
     const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
     if (!data) return [];
     const parsed: Lead[] = JSON.parse(data);

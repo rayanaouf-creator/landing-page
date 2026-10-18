@@ -9,7 +9,9 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 
-const STORAGE_KEY = 'jetnext_claims_database_v2';
+const STORAGE_KEY = 'jetnext_claims_database_v3';
+const STORAGE_VERSION_KEY = 'jetnext_claims_version';
+const CURRENT_VERSION = '3.0';
 
 type ClaimListener = (claims: Claim[]) => void;
 const listeners: Set<ClaimListener> = new Set();
@@ -18,6 +20,16 @@ let isInitialized = false;
 
 function loadLocalMirror(): Claim[] {
   try {
+    // Check version and clear stale data
+    const storedVersion = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_VERSION_KEY) : null;
+    if (storedVersion !== CURRENT_VERSION) {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
+      }
+      return [];
+    }
+
     const data = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
     if (!data) return [];
     const parsed: Claim[] = JSON.parse(data);

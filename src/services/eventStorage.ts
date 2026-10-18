@@ -9,7 +9,9 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 
-const STORAGE_KEY = 'jetnext_events_directory_v1';
+const STORAGE_KEY = 'jetnext_events_directory_v2';
+const STORAGE_VERSION_KEY = 'jetnext_events_version';
+const CURRENT_VERSION = '2.0';
 
 export const DEFAULT_EVENTS: CompanyEvent[] = [];
 
@@ -24,6 +26,15 @@ class EventStorageService {
 
   private loadFromStorage() {
     try {
+      // Check version and clear stale data
+      const storedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+      if (storedVersion !== CURRENT_VERSION) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
+        this.events = [];
+        return;
+      }
+
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         this.events = JSON.parse(stored);
