@@ -107,6 +107,11 @@ export interface Project {
   keyDeliverables?: string;
   notes?: string;
   opportunityId?: string;       // Linked Opportunity ID if created from opportunity
+  // Financial tracking fields
+  projectValueDZD?: number;     // Total contract value of the project
+  startedAmountDZD?: number;    // Amount paid to start the project
+  currentPaidDZD?: number;      // Total amount paid so far
+  remainingAmountDZD?: number;  // Remaining amount to be paid
   createdAt: string;
   updatedAt: string;
 }

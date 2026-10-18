@@ -100,6 +100,9 @@ export function OpportunityView({
   // Project creation form state
   const [projectName, setProjectName] = useState('');
   const [projectBudget, setProjectBudget] = useState<number | ''>('');
+  const [projectValue, setProjectValue] = useState<number | ''>('');
+  const [startedAmount, setStartedAmount] = useState<number | ''>('');
+  const [currentPaid, setCurrentPaid] = useState<number | ''>('');
   const [projectStartDate, setProjectStartDate] = useState('');
   const [projectTargetDate, setProjectTargetDate] = useState('');
   const [projectManager, setProjectManager] = useState('');
@@ -208,6 +211,9 @@ export function OpportunityView({
     setOppToConvert(opp);
     setProjectName(`${opp.customerName} - ${opp.serviceInterest} Project`);
     setProjectBudget(opp.expectedValueDZD);
+    setProjectValue(opp.expectedValueDZD);
+    setStartedAmount(0);
+    setCurrentPaid(0);
     setProjectStartDate(new Date().toISOString().slice(0, 10));
     setProjectTargetDate(opp.expectedCloseDate);
     setProjectManager(opp.assignedTo || 'Senior Solutions Consultant');
@@ -235,7 +241,11 @@ export function OpportunityView({
       projectManager: projectManager || undefined,
       keyDeliverables: undefined,
       notes: projectNotes || undefined,
-      opportunityId: oppToConvert.id
+      opportunityId: oppToConvert.id,
+      projectValueDZD: Number(projectValue) || undefined,
+      startedAmountDZD: Number(startedAmount) || undefined,
+      currentPaidDZD: Number(currentPaid) || undefined,
+      remainingAmountDZD: (Number(projectValue) || 0) - (Number(currentPaid) || 0) || undefined
     };
 
     projectStorage.saveProject(newProject);
@@ -1027,6 +1037,68 @@ export function OpportunityView({
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Project Value (DZD)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={projectValue}
+                    onChange={(e) => setProjectValue(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                    placeholder="Total contract value"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Started Amount (DZD)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={startedAmount}
+                    onChange={(e) => setStartedAmount(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Current Paid (DZD)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={currentPaid}
+                    onChange={(e) => setCurrentPaid(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Remaining (DZD)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={(Number(projectValue) || 0) - (Number(currentPaid) || 0)}
+                    readOnly
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 outline-none"
+                    placeholder="Auto-calculated"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                     Start Date *
                   </label>
                   <input
@@ -1037,18 +1109,17 @@ export function OpportunityView({
                     required
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Target End Date
-                </label>
-                <input
-                  type="date"
-                  value={projectTargetDate}
-                  onChange={(e) => setProjectTargetDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
-                />
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Target End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={projectTargetDate}
+                    onChange={(e) => setProjectTargetDate(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                  />
+                </div>
               </div>
 
               <div>

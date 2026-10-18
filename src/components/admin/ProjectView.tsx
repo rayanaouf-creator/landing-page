@@ -72,6 +72,9 @@ export function ProjectView({
   const [statusValue, setStatusValue] = useState<ProjectStatus>('in_progress');
   const [budgetDZD, setBudgetDZD] = useState<number | ''>(3500000);
   const [monthlySupportDZD, setMonthlySupportDZD] = useState<number | ''>(120000);
+  const [projectValueDZD, setProjectValueDZD] = useState<number | ''>('');
+  const [startedAmountDZD, setStartedAmountDZD] = useState<number | ''>('');
+  const [currentPaidDZD, setCurrentPaidDZD] = useState<number | ''>('');
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [targetEndDate, setTargetEndDate] = useState(
     new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
@@ -89,6 +92,9 @@ export function ProjectView({
     setStatusValue('in_progress');
     setBudgetDZD(3500000);
     setMonthlySupportDZD(120000);
+    setProjectValueDZD(3500000);
+    setStartedAmountDZD(0);
+    setCurrentPaidDZD(0);
     setStartDate(new Date().toISOString().slice(0, 10));
     setTargetEndDate(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
     setProgress(20);
@@ -106,6 +112,9 @@ export function ProjectView({
     setStatusValue(proj.status);
     setBudgetDZD(proj.budgetDZD);
     setMonthlySupportDZD(proj.monthlySupportDZD !== undefined ? proj.monthlySupportDZD : '');
+    setProjectValueDZD(proj.projectValueDZD !== undefined ? proj.projectValueDZD : '');
+    setStartedAmountDZD(proj.startedAmountDZD !== undefined ? proj.startedAmountDZD : '');
+    setCurrentPaidDZD(proj.currentPaidDZD !== undefined ? proj.currentPaidDZD : '');
     setStartDate(proj.startDate);
     setTargetEndDate(proj.targetEndDate || '');
     setProgress(proj.progress);
@@ -140,6 +149,10 @@ export function ProjectView({
       status: statusValue,
       budgetDZD: budgetDZD === '' ? 0 : Number(budgetDZD),
       monthlySupportDZD: monthlySupportDZD === '' ? 0 : Number(monthlySupportDZD),
+      projectValueDZD: projectValueDZD === '' ? undefined : Number(projectValueDZD),
+      startedAmountDZD: startedAmountDZD === '' ? undefined : Number(startedAmountDZD),
+      currentPaidDZD: currentPaidDZD === '' ? undefined : Number(currentPaidDZD),
+      remainingAmountDZD: (projectValueDZD === '' ? 0 : Number(projectValueDZD)) - (currentPaidDZD === '' ? 0 : Number(currentPaidDZD)) || undefined,
       startDate,
       targetEndDate: targetEndDate || undefined,
       progress: Number(progress),
@@ -371,6 +384,7 @@ export function ProjectView({
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Progress</th>
                   <th className="py-3.5 px-4">Project Budget</th>
+                  <th className="py-3.5 px-4">Financials</th>
                   <th className="py-3.5 px-4">Support SLA (MRR)</th>
                   <th className="py-3.5 px-4">Timeline</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
@@ -418,6 +432,27 @@ export function ProjectView({
                         <p className="font-bold text-slate-900 text-sm">
                           {(proj.budgetDZD || 0).toLocaleString()} <span className="text-[11px] font-normal text-slate-500">DZD</span>
                         </p>
+                      </td>
+
+                      {/* Financials */}
+                      <td className="py-3.5 px-4">
+                        <div className="space-y-1">
+                          {proj.projectValueDZD !== undefined && (
+                            <p className="text-[11px] text-slate-600">
+                              <span className="font-semibold">Value:</span> {proj.projectValueDZD.toLocaleString()} DZD
+                            </p>
+                          )}
+                          {proj.currentPaidDZD !== undefined && (
+                            <p className="text-[11px] text-slate-600">
+                              <span className="font-semibold">Paid:</span> {proj.currentPaidDZD.toLocaleString()} DZD
+                            </p>
+                          )}
+                          {proj.remainingAmountDZD !== undefined && proj.remainingAmountDZD > 0 && (
+                            <p className="text-[11px] text-amber-600 font-semibold">
+                              Remaining: {proj.remainingAmountDZD.toLocaleString()} DZD
+                            </p>
+                          )}
+                        </div>
                       </td>
 
                       {/* Monthly Support */}
@@ -598,6 +633,59 @@ export function ProjectView({
                     value={monthlySupportDZD}
                     onChange={(e) => setMonthlySupportDZD(e.target.value === '' ? '' : Number(e.target.value))}
                     className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
+                  />
+                </div>
+
+                {/* Financial Tracking */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Project Value (DZD)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Total contract value"
+                    value={projectValueDZD}
+                    onChange={(e) => setProjectValueDZD(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Started Amount (DZD)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Amount paid to start"
+                    value={startedAmountDZD}
+                    onChange={(e) => setStartedAmountDZD(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Current Paid (DZD)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Total paid so far"
+                    value={currentPaidDZD}
+                    onChange={(e) => setCurrentPaidDZD(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#44ACAB] focus:ring-2 focus:ring-[#44ACAB]/20 outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Remaining (DZD)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={(projectValueDZD === '' ? 0 : Number(projectValueDZD)) - (currentPaidDZD === '' ? 0 : Number(currentPaidDZD))}
+                    readOnly
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs sm:text-sm text-slate-600 outline-hidden"
+                    placeholder="Auto-calculated"
                   />
                 </div>
 
