@@ -97,7 +97,11 @@ export const projectStorage = {
     } catch {}
     listeners.forEach(fn => fn(memoryProjects));
 
-    setDoc(doc(db, COLLECTIONS.PROJECTS, newProject.id), newProject).catch(err => {
+    // Filter out undefined values before sending to Firestore
+    const firestoreData = Object.fromEntries(
+      Object.entries(newProject).filter(([_, value]) => value !== undefined)
+    );
+    setDoc(doc(db, COLLECTIONS.PROJECTS, newProject.id), firestoreData).catch(err => {
       console.error('Firestore saveProject error:', err);
     });
 

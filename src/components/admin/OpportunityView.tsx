@@ -762,7 +762,7 @@ export function OpportunityView({
                   <input
                     type="number"
                     min="0"
-                    step="50000"
+                    step="1"
                     required
                     value={expectedValueDZD}
                     onChange={(e) => setExpectedValueDZD(e.target.value === '' ? '' : Number(e.target.value))}
@@ -1017,6 +1017,8 @@ export function OpportunityView({
                   </label>
                   <input
                     type="number"
+                    min="0"
+                    step="1"
                     value={projectBudget}
                     onChange={(e) => setProjectBudget(Number(e.target.value))}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
